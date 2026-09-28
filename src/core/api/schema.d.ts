@@ -947,7 +947,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                token: number;
+                token: string;
             };
             cookie?: never;
         };
@@ -974,7 +974,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                token: number;
+                token: string;
             };
             cookie?: never;
         };
@@ -1414,7 +1414,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };

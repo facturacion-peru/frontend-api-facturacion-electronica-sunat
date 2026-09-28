@@ -12,6 +12,20 @@
 
 const TOKEN_KEY = 'sunat.auth.token'
 
+type Listener = () => void
+const clearedListeners = new Set<Listener>()
+
+/**
+ * Avisa cuando se descarta el token (logout o 401 en cualquier petición).
+ * Así la sesión reacciona sin que el cliente HTTP conozca los stores.
+ * Devuelve la función para dejar de escuchar.
+ */
+export function onTokenCleared(listener: Listener): () => void {
+  clearedListeners.add(listener)
+
+  return () => clearedListeners.delete(listener)
+}
+
 export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY)
@@ -35,4 +49,6 @@ export function clearToken(): void {
   } catch {
     // Nada que limpiar si el almacenamiento no está disponible.
   }
+
+  clearedListeners.forEach((listener) => listener())
 }
