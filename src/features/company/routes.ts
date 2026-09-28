@@ -1,4 +1,10 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-// Rutas de la feature; se completan en la spec 001 (T110–T113).
-export const companyRoutes: RouteRecordRaw[] = []
+export const companyRoutes: RouteRecordRaw[] = [
+  {
+    path: 'empresa',
+    name: 'company',
+    component: () => import('./views/CompanyView.vue'),
+    meta: { roles: ['company_admin'], title: 'Mi empresa' },
+  },
+]
