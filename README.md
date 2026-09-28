@@ -58,11 +58,14 @@ La API emite *personal access tokens* de Sanctum. El flujo es:
 1. `POST /api/auth/login` devuelve un `access_token`.
 2. El token se guarda mediante `src/core/api/token-storage.ts`.
 3. Un middleware de `openapi-fetch` lo adjunta como `Authorization: Bearer <token>` en cada petición saliente.
-4. Ante un `401`, el middleware descarta el token local.
+4. Ante un `401`, el middleware descarta el token local; `token-storage` avisa (`onTokenCleared`) y la sesión de Pinia se vacía sin que el cliente HTTP conozca los stores.
+5. El guard global (`core/auth/guards.ts`) recupera la sesión al recargar (`GET /auth/me`) y, si no hay sesión, lleva a `/login?redirect=<ruta>`. Tras entrar, vuelve a esa ruta (solo rutas internas: `safeRedirect`).
 
 No hay cookies, ni CSRF, ni dominios *stateful*: el mismo código sirve para web y para el APK.
 
-El token caduca a las 24 h (`SANCTUM_EXPIRATION` en la API), así que la interfaz debe contemplar el re-login.
+El token caduca a las 24 h (`SANCTUM_EXPIRATION` en la API); el re-login devuelve al usuario a la pantalla en la que estaba.
+
+Las rutas declaran `meta.requiresAuth`, `meta.guestOnly`, `meta.public` y `meta.roles` (`company_admin`, `seller`). El guard es solo experiencia de usuario: la autorización real la aplica siempre la API. El administrador de la plataforma no usa esta aplicación y ve un aviso propio.
 
 `token-storage.ts` está aislado en su propio módulo a propósito: en web usa `localStorage`, pero al empaquetar con Capacitor conviene cambiarlo por el almacenamiento seguro del dispositivo, y esa sustitución no debería obligar a tocar el cliente HTTP ni los stores.
 
@@ -118,6 +121,7 @@ src/
 │   │   ├── schema.d.ts     # GENERADO — no editar
 │   │   ├── types.ts        # Sobre de respuesta de la API
 │   │   └── token-storage.ts
+│   ├── auth/               # Sesión (Pinia), guards del router y tipos de sesión
 │   └── config/env.ts       # Acceso tipado a variables de entorno
 ├── features/               # Un directorio por dominio
 │   └── <dominio>/
@@ -140,7 +144,18 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-`features/` está vacío por ahora: los módulos se irán agregando uno a uno.
+Features actuales (spec 001):
+
+| Feature | Pantallas |
+|---|---|
+| `auth` | Login, recuperar contraseña, restablecer y aceptar invitación |
+| `company` | Mi empresa: datos legales de solo lectura, contacto y logo |
+| `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar |
+| `audit` | Auditoría con filtros |
+
+Piezas compartidas: `shared/ui` (botón, campo, `FormField`, alerta, diálogo accesible, badge y estado vacío), `shared/composables/useApiForm` (envío y errores 422 por campo) y `shared/testing/mountWithRouter` (solo para pruebas).
+
+Las respuestas de la API se tipan a mano en el `types.ts` de cada feature, porque el OpenAPI aún no documenta respuestas. Cada tipo indica el `JsonResource` de Laravel que refleja; su forma la protegen las pruebas de contrato de la API.
 
 ## Comandos
 
