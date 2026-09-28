@@ -1,1 +1,31 @@
 @import 'tailwindcss';
+
+/*
+ * Tokens de la aplicación. Los componentes usan estos nombres (bg-brand-600,
+ * text-ink…) en lugar de colores sueltos, para poder cambiar la marca en un
+ * solo lugar.
+ */
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-ink: #0f172a;
+  --color-ink-muted: #475569;
+  --color-line: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-canvas: #f8fafc;
+}
+
+@layer base {
+  html {
+    color: var(--color-ink);
+    background-color: var(--color-canvas);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+}

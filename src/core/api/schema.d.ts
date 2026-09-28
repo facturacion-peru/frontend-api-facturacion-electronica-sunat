@@ -4,24 +4,24 @@
  */
 
 export interface paths {
-    "/api/auth/initialize": {
+    "/api/v1/audit-logs": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Listar audit-logs */
+        get: operations["auditLogIndex"];
         put?: never;
-        /** Inicializar sistema - Crear primer super admin */
-        post: operations["authInitialize"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/auth/login": {
+    "/api/v1/auth/forgot-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -30,93 +30,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Login - Autenticación */
+        /** La respuesta es idéntica exista o no el correo. */
+        post: operations["passwordResetForgot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login auth */
         post: operations["authLogin"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/setup/migrate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Migrar base de datos */
-        post: operations["setupMigrate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/setup/seed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Ejecutar seeders */
-        post: operations["setupSeed"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/setup/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Estado del sistema */
-        get: operations["setupStatus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/system/info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener información del sistema */
-        get: operations["authSystemInfo"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/create-user": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Crear usuarios adicionales (solo super admin) */
-        post: operations["authCreateUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -132,7 +64,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Logout */
+        /** Revoca solo el token de este dispositivo. */
         post: operations["authLogout"];
         delete?: never;
         options?: never;
@@ -147,7 +79,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Información del usuario autenticado */
+        /** Me auth */
         get: operations["authMe"];
         put?: never;
         post?: never;
@@ -157,33 +89,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boletas": {
+    "/api/v1/auth/reset-password": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Listar boletas con filtros */
-        get: operations["boletaIndex"];
+        get?: never;
         put?: never;
-        /** Crear nueva boleta */
-        post: operations["boletaStore"];
+        /** Cambia la contraseña y cierra todas las sesiones del usuario. */
+        post: operations["passwordResetReset"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boletas/{id}": {
+    "/api/v1/company": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Obtener boleta específica */
-        get: operations["boletaShow"];
+        /** Obtener company */
+        get: operations["companyShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Actualizar company */
+        patch: operations["companyUpdate"];
+        trace?: never;
+    };
+    "/api/v1/company/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update logo company */
+        post: operations["companyUpdateLogo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pendientes (vigentes o vencidas), no las aceptadas. */
+        get: operations["invitationIndex"];
+        put?: never;
+        /** Crear invitations */
+        post: operations["invitationStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{invitation}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Eliminar invitations */
+        delete: operations["invitationDestroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{invitation}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend invitations */
+        post: operations["invitationResend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener invitations */
+        get: operations["invitationAcceptanceShow"];
         put?: never;
         post?: never;
         delete?: never;
@@ -192,58 +210,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boletas/{id}/download-cdr": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Descargar CDR de boleta */
-        get: operations["boletaDownloadCdr"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/boletas/{id}/download-pdf": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Descargar PDF de boleta */
-        get: operations["boletaDownloadPdf"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/boletas/{id}/download-xml": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Descargar XML de boleta */
-        get: operations["boletaDownloadXml"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/boletas/{id}/generate-pdf": {
+    "/api/v1/invitations/{token}/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -252,239 +219,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Generar PDF de boleta */
-        post: operations["boletaGeneratePdf"];
+        /** Accept invitations */
+        post: operations["invitationAcceptanceAccept"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boletas/{id}/send-sunat": {
+    "/api/v1/platform/companies": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /** Enviar boleta a SUNAT */
-        post: operations["boletaSendToSunat"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/branches": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Listar sucursales de una empresa */
-        get: operations["branchIndex"];
-        put?: never;
-        /** Crear nueva sucursal */
-        post: operations["branchStore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/branches/{branch}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener sucursal específica */
-        get: operations["branchShow"];
-        /** Actualizar sucursal */
-        put: operations["branchUpdate"];
-        post?: never;
-        /** Eliminar sucursal (soft delete - marcar como inactiva) */
-        delete: operations["branchDestroy"];
-        options?: never;
-        head?: never;
-        /** Actualizar sucursal */
-        patch: operations["branchUpdatePatch"];
-        trace?: never;
-    };
-    "/api/v1/branches/{branch}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Activar sucursal */
-        post: operations["branchActivate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/branches/{branch}/correlatives": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Listar correlativos de una sucursal */
-        get: operations["correlativeIndex"];
-        put?: never;
-        /** Crear nuevo correlativo para una sucursal */
-        post: operations["correlativeStore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/branches/{branch}/correlatives/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Crear correlativos por lote para una sucursal */
-        post: operations["correlativeCreateBatch"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/branches/{branch}/correlatives/{correlative}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Actualizar correlativo */
-        put: operations["correlativeUpdate"];
-        post?: never;
-        /** Eliminar correlativo */
-        delete: operations["correlativeDestroy"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/branches/{branch}/correlatives/{correlative}/increment": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Incrementar correlativo (uso interno del sistema) */
-        post: operations["correlativeIncrement"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Listar clientes */
-        get: operations["clientIndex"];
-        put?: never;
-        /** Crear nuevo cliente */
-        post: operations["clientStore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clients/search-by-document": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Buscar cliente por número de documento */
-        post: operations["clientSearchByDocument"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clients/{client}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener cliente específico */
-        get: operations["clientShow"];
-        /** Actualizar cliente */
-        put: operations["clientUpdate"];
-        post?: never;
-        /** Eliminar cliente (soft delete - marcar como inactivo) */
-        delete: operations["clientDestroy"];
-        options?: never;
-        head?: never;
-        /** Actualizar cliente */
-        patch: operations["clientUpdatePatch"];
-        trace?: never;
-    };
-    "/api/v1/clients/{client}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Activar cliente */
-        post: operations["clientActivate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Listar todas las empresas */
+        /** Listar platform */
         get: operations["companyIndex"];
         put?: never;
-        /** Crear nueva empresa */
+        /** Crear platform */
         post: operations["companyStore"];
         delete?: never;
         options?: never;
@@ -492,130 +245,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/companies/{company_id}/config": {
+    "/api/v1/platform/companies/{company}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Obtener configuración completa de una empresa */
-        get: operations["companyConfigShow"];
+        /** Obtener platform */
+        get: operations["companyShowGet"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company_id}/config/cache": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Limpiar cache de configuración */
-        delete: operations["companyConfigClearCache"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company_id}/config/migrate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Migrar empresa al nuevo sistema de configuraciones */
-        post: operations["companyConfigMigrateCompany"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company_id}/config/reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resetear configuración a valores por defecto */
-        post: operations["companyConfigResetToDefaults"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company_id}/config/validate/services": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Validar estado de configuraciones de servicios SUNAT */
-        get: operations["companyConfigValidateServices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company_id}/config/{section}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener configuración de una sección específica */
-        get: operations["companyConfigGetSection"];
-        /** Actualizar configuración de una sección específica */
-        put: operations["companyConfigUpdateSection"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener empresa específica */
-        get: operations["companyShow"];
-        /** Actualizar empresa */
-        put: operations["companyUpdate"];
-        post?: never;
-        /** Eliminar empresa (soft delete) */
-        delete: operations["companyDestroy"];
-        options?: never;
-        head?: never;
-        /** Actualizar empresa */
+        /** Actualizar platform */
         patch: operations["companyUpdatePatch"];
         trace?: never;
     };
-    "/api/v1/companies/{company}/activate": {
+    "/api/v1/platform/companies/{company}/activate": {
         parameters: {
             query?: never;
             header?: never;
@@ -624,7 +272,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Activar empresa */
+        /** Activate platform */
         post: operations["companyActivate"];
         delete?: never;
         options?: never;
@@ -632,41 +280,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/companies/{company}/branches": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener sucursales de una empresa específica */
-        get: operations["branchGetByCompany"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company}/clients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener clientes de una empresa específica */
-        get: operations["clientGetByCompany"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/companies/{company}/toggle-production": {
+    "/api/v1/platform/companies/{company}/deactivate": {
         parameters: {
             query?: never;
             header?: never;
@@ -675,298 +289,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cambiar modo de producción */
-        post: operations["companyToggleProductionMode"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/config/defaults": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener configuraciones por defecto */
-        get: operations["companyConfigGetDefaults"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/config/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener resumen de configuración para múltiples empresas */
-        get: operations["companyConfigGetSummary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/consulta-cpe/boleta/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Consultar estado de una boleta específica */
-        post: operations["consultaCpeConsultarBoleta"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/consulta-cpe/estadisticas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener estadísticas de consultas por empresa */
-        get: operations["consultaCpeEstadisticasConsultas"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/consulta-cpe/factura/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Consultar estado de una factura específica */
-        post: operations["consultaCpeConsultarFactura"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/consulta-cpe/masivo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Consulta masiva de documentos por empresa */
-        post: operations["consultaCpeConsultarDocumentosMasivo"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/correlatives/document-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener tipos de documentos disponibles */
-        get: operations["correlativeGetDocumentTypes"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Listar invoices */
-        get: operations["invoiceIndex"];
-        put?: never;
-        /** Crear invoices */
-        post: operations["invoiceStore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener invoices */
-        get: operations["invoiceShow"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices/{id}/download-cdr": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Download cdr invoices */
-        get: operations["invoiceDownloadCdr"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices/{id}/download-pdf": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Download pdf invoices */
-        get: operations["invoiceDownloadPdf"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices/{id}/download-xml": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Download xml invoices */
-        get: operations["invoiceDownloadXml"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices/{id}/generate-pdf": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate pdf invoices */
-        post: operations["invoiceGeneratePdf"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/invoices/{id}/send-sunat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send to sunat invoices */
-        post: operations["invoiceSendToSunat"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pdf/formats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener formatos disponibles para PDF */
-        get: operations["pdfGetAvailableFormats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/setup/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Setup completo del sistema */
-        post: operations["setupSetup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/setup/configure-sunat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Configuración del entorno SUNAT */
-        post: operations["setupConfigureSunat"];
+        /** Deactivate platform */
+        post: operations["companyDeactivate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1058,6 +382,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar users */
+        get: operations["userIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** {user} se resuelve solo entre los miembros de la empresa (AppServiceProvider). */
+        patch: operations["userUpdate"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1070,7 +428,45 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    authInitialize: {
+    auditLogIndex: {
+        parameters: {
+            query?: {
+                action?: string;
+                actor_id?: number;
+                from?: string;
+                to?: string;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    passwordResetForgot: {
         parameters: {
             query?: never;
             header?: never;
@@ -1080,11 +476,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    name: string;
-                    /**
-                     * Format: email
-                     * @description Debe ser único en `users`.
-                     */
+                    /** Format: email */
                     email: string;
                 };
             };
@@ -1132,182 +524,6 @@ export interface operations {
         responses: {
             /** @description Operación exitosa */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setupMigrate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setupSeed: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    class?: string | null;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setupStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    authSystemInfo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    authCreateUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    /**
-                     * Format: email
-                     * @description Debe ser único en `users`.
-                     */
-                    email: string;
-                    /** @description Debe existir en `roles,name`. */
-                    role_name: string;
-                    /** @description Debe existir en `companies,id`. */
-                    company_id?: number | null;
-                    /** @enum {string} */
-                    user_type: "system" | "user" | "api_client";
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1400,46 +616,7 @@ export interface operations {
             };
         };
     };
-    boletaIndex: {
-        parameters: {
-            query?: {
-                company_id?: string | null;
-                branch_id?: string | null;
-                estado_sunat?: "PENDIENTE" | "PROCESANDO" | "ACEPTADO" | "RECHAZADO" | null;
-                fecha_desde?: string | null;
-                fecha_hasta?: string | null;
-                per_page?: number | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaStore: {
+    passwordResetReset: {
         parameters: {
             query?: never;
             header?: never;
@@ -1449,354 +626,88 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id: string;
-                    /** @description Debe existir en `branches,id`. */
-                    branch_id: string;
-                    serie: string;
-                    /** Format: date */
-                    fecha_emision: string;
-                    ubl_version?: string | null;
-                    tipo_operacion?: string | null;
-                    moneda?: string | null;
-                    /** @enum {string} */
-                    metodo_envio: "individual" | "resumen_diario";
-                    forma_pago_tipo?: string | null;
-                    forma_pago_cuotas?: Record<string, never>[] | null;
-                    client: Record<string, never>[];
-                    detalles: {
-                        codigo: string;
-                        descripcion: string;
-                        unidad: string;
-                        cantidad: number;
-                        mto_valor_unitario: number;
-                        mto_valor_gratuito?: number | null;
-                        porcentaje_igv: number;
-                        porcentaje_ivap?: number | null;
-                        tip_afe_igv: string;
-                        isc?: number | null;
-                        icbper?: number | null;
-                        factor_icbper?: number | null;
-                    }[];
-                    leyendas: {
-                        code: string;
-                        value: string;
-                    }[] | null;
-                    datos_adicionales?: Record<string, never>[] | null;
-                    usuario_creacion?: string | null;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaShow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaDownloadCdr: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaDownloadPdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaDownloadXml: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaGeneratePdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    boletaSendToSunat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    branchIndex: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    branchStore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id: number;
-                    codigo: string;
-                    nombre: string;
-                    direccion: string;
-                    ubigeo: string;
-                    distrito: string;
-                    provincia: string;
-                    departamento: string;
-                    telefono?: string | null;
+                    token: string;
                     /** Format: email */
-                    email?: string | null;
-                    contacto_nombre?: string | null;
-                    series_factura?: Record<string, never>[] | null;
-                    series_boleta?: Record<string, never>[] | null;
-                    series_nota_credito?: Record<string, never>[] | null;
-                    series_nota_debito?: Record<string, never>[] | null;
-                    series_guia_remision?: Record<string, never>[] | null;
-                    activo?: boolean;
+                    email: string;
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    companyShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    companyUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    nombre_comercial?: string | null;
+                    /** Format: email */
+                    email: string;
+                    phone?: string | null;
+                    ruc?: string;
+                    razon_social?: string;
+                    person_type?: string;
+                    tax_regime?: string;
+                    active?: string;
                 };
             };
         };
@@ -1831,12 +742,137 @@ export interface operations {
             };
         };
     };
-    branchShow: {
+    companyUpdateLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: binary */
+                    logo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    invitationIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    invitationStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    role: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    invitationDestroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                branch: number;
+                invitation: number;
             };
             cookie?: never;
         };
@@ -1865,726 +901,94 @@ export interface operations {
             };
         };
     };
-    branchUpdate: {
+    invitationResend: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                branch: number;
+                invitation: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    invitationAcceptanceShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    invitationAcceptanceAccept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
                 "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id?: number;
-                    codigo?: string;
-                    nombre?: string;
-                    direccion?: string;
-                    ubigeo?: string;
-                    distrito?: string;
-                    provincia?: string;
-                    departamento?: string;
-                    telefono?: string | null;
-                    /** Format: email */
-                    email?: string | null;
-                    contacto_nombre?: string | null;
-                    series_factura?: Record<string, never>[] | null;
-                    series_boleta?: Record<string, never>[] | null;
-                    series_nota_credito?: Record<string, never>[] | null;
-                    series_nota_debito?: Record<string, never>[] | null;
-                    series_guia_remision?: Record<string, never>[] | null;
-                    activo?: boolean;
+                    name: string;
+                    password: string;
                 };
             };
         };
         responses: {
             /** @description Operación exitosa */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    branchDestroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    branchUpdatePatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id?: number;
-                    codigo?: string;
-                    nombre?: string;
-                    direccion?: string;
-                    ubigeo?: string;
-                    distrito?: string;
-                    provincia?: string;
-                    departamento?: string;
-                    telefono?: string | null;
-                    /** Format: email */
-                    email?: string | null;
-                    contacto_nombre?: string | null;
-                    series_factura?: Record<string, never>[] | null;
-                    series_boleta?: Record<string, never>[] | null;
-                    series_nota_credito?: Record<string, never>[] | null;
-                    series_nota_debito?: Record<string, never>[] | null;
-                    series_guia_remision?: Record<string, never>[] | null;
-                    activo?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    branchActivate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeIndex: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeStore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeCreateBatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-                correlative: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeDestroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-                correlative: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeIncrement: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branch: number;
-                correlative: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientIndex: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientStore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientSearchByDocument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientShow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientDestroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientUpdatePatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientActivate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2652,398 +1056,18 @@ export interface operations {
                     ruc: string;
                     razon_social: string;
                     nombre_comercial?: string | null;
-                    direccion: string;
-                    ubigeo: string;
-                    distrito: string;
-                    provincia: string;
-                    departamento: string;
-                    telefono?: string | null;
+                    tax_regime: string;
                     /** Format: email */
                     email: string;
-                    /** Format: uri */
-                    web?: string | null;
-                    usuario_sol: string;
-                    clave_sol: string;
-                    /** Format: binary */
-                    certificado_pem?: string | null;
-                    certificado_password?: string | null;
-                    /** Format: uri */
-                    endpoint_beta?: string | null;
-                    /** Format: uri */
-                    endpoint_produccion?: string | null;
-                    /** @enum {string|null} */
-                    modo_produccion?: "true" | "false" | "1" | "0" | null;
-                    /** Format: binary */
-                    logo_path?: string | null;
-                    activo?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigShow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigClearCache: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigMigrateCompany: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigResetToDefaults: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigValidateServices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigGetSection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-                section: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigUpdateSection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company_id: number;
-                section: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyShow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    ruc: string;
-                    razon_social: string;
-                    nombre_comercial?: string | null;
-                    direccion: string;
+                    phone?: string | null;
+                    address: string;
+                    /** @description Debe existir en `ubi_distritos,id`. */
                     ubigeo: string;
-                    distrito: string;
-                    provincia: string;
-                    departamento: string;
-                    telefono?: string | null;
-                    /** Format: email */
-                    email: string;
-                    /** Format: uri */
-                    web?: string | null;
-                    usuario_sol: string;
-                    clave_sol: string;
-                    /** Format: binary */
-                    certificado_pem?: string | null;
-                    certificado_password?: string | null;
-                    /** Format: uri */
-                    endpoint_beta?: string | null;
-                    /** Format: uri */
-                    endpoint_produccion?: string | null;
-                    /** @enum {string|null} */
-                    modo_produccion?: "true" | "false" | "1" | "0" | null;
-                    /** Format: binary */
-                    logo_path?: string | null;
-                    activo?: boolean;
+                    /**
+                     * Format: email
+                     * @description Debe ser único en `users,email`.
+                     */
+                    admin_email: string;
                 };
             };
         };
@@ -3078,7 +1102,7 @@ export interface operations {
             };
         };
     };
-    companyDestroy: {
+    companyShowGet: {
         parameters: {
             query?: never;
             header?: never;
@@ -3127,30 +1151,10 @@ export interface operations {
                     ruc: string;
                     razon_social: string;
                     nombre_comercial?: string | null;
-                    direccion: string;
-                    ubigeo: string;
-                    distrito: string;
-                    provincia: string;
-                    departamento: string;
-                    telefono?: string | null;
+                    tax_regime: string;
                     /** Format: email */
                     email: string;
-                    /** Format: uri */
-                    web?: string | null;
-                    usuario_sol: string;
-                    clave_sol: string;
-                    /** Format: binary */
-                    certificado_pem?: string | null;
-                    certificado_password?: string | null;
-                    /** Format: uri */
-                    endpoint_beta?: string | null;
-                    /** Format: uri */
-                    endpoint_produccion?: string | null;
-                    /** @enum {string|null} */
-                    modo_produccion?: "true" | "false" | "1" | "0" | null;
-                    /** Format: binary */
-                    logo_path?: string | null;
-                    activo?: boolean;
+                    phone?: string | null;
                 };
             };
         };
@@ -3226,7 +1230,7 @@ export interface operations {
             };
         };
     };
-    branchGetByCompany: {
+    companyDeactivate: {
         parameters: {
             query?: never;
             header?: never;
@@ -3236,840 +1240,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clientGetByCompany: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyToggleProductionMode: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                company: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigGetDefaults: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    companyConfigGetSummary: {
-        parameters: {
-            query?: {
-                company_ids?: Record<string, never>[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    consultaCpeConsultarBoleta: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    consultaCpeEstadisticasConsultas: {
-        parameters: {
-            query: {
-                company_id: string;
-                fecha_desde?: string | null;
-                fecha_hasta?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    consultaCpeConsultarFactura: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    consultaCpeConsultarDocumentosMasivo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    correlativeGetDocumentTypes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceIndex: {
-        parameters: {
-            query?: {
-                company_id?: string | null;
-                branch_id?: string | null;
-                estado_sunat?: "PENDIENTE" | "PROCESANDO" | "ACEPTADO" | "RECHAZADO" | null;
-                fecha_desde?: string | null;
-                fecha_hasta?: string | null;
-                per_page?: number | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceStore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id: string;
-                    /** @description Debe existir en `branches,id`. */
-                    branch_id: string;
-                    serie: string;
-                    /** Format: date */
-                    fecha_emision: string;
-                    /**
-                     * Format: date
-                     * @description Debe ser posterior a `fecha_emision`.
-                     */
-                    fecha_vencimiento?: string | null;
-                    /** @enum {string} */
-                    moneda: "PEN" | "USD";
-                    tipo_operacion?: string | null;
-                    /** @enum {string} */
-                    forma_pago_tipo: "Contado" | "Credito";
-                    forma_pago_cuotas?: {
-                        /** @description Condicional: `required_with:forma_pago_cuotas`. */
-                        moneda?: string;
-                        /** @description Condicional: `required_with:forma_pago_cuotas`. */
-                        monto?: number;
-                        /**
-                         * Format: date
-                         * @description Condicional: `required_with:forma_pago_cuotas`.
-                         */
-                        fecha_pago?: string;
-                    }[] | null;
-                    client: {
-                        /** @enum {string} */
-                        tipo_documento: "1" | "4" | "6" | "0";
-                        numero_documento: string;
-                        razon_social: string;
-                        nombre_comercial?: string | null;
-                        direccion?: string | null;
-                        ubigeo?: string | null;
-                        distrito?: string | null;
-                        provincia?: string | null;
-                        departamento?: string | null;
-                        telefono?: string | null;
-                        /** Format: email */
-                        email?: string | null;
-                    };
-                    detalles: {
-                        codigo: string;
-                        descripcion: string;
-                        unidad: string;
-                        cantidad: number;
-                        mto_valor_unitario: number;
-                        porcentaje_igv?: number | null;
-                        porcentaje_ivap?: number | null;
-                        mto_valor_gratuito?: number | null;
-                        /** @enum {string|null} */
-                        tip_afe_igv?: "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "20" | "21" | "30" | "31" | "32" | "33" | "34" | "35" | "36" | "40" | null;
-                        codigo_producto_sunat?: string | null;
-                    }[];
-                    detraccion?: Record<string, never>[] | null;
-                    percepcion?: Record<string, never>[] | null;
-                    retencion?: Record<string, never>[] | null;
-                    guias?: Record<string, never>[] | null;
-                    documentos_relacionados?: Record<string, never>[] | null;
-                    datos_adicionales?: Record<string, never>[] | null;
-                    usuario_creacion?: string | null;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceShow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceDownloadCdr: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceDownloadPdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceDownloadXml: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceGeneratePdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    invoiceSendToSunat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    pdfGetAvailableFormats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setupSetup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    environment: "beta" | "produccion";
-                    company: Record<string, never>[];
-                    /** Format: binary */
-                    certificado_pem?: string | null;
-                    certificado_password?: string | null;
-                    /** Format: binary */
-                    logo_path?: string | null;
-                    /** @enum {string|null} */
-                    modo_produccion?: "true" | "false" | "1" | "0" | null;
-                    /** @enum {string|null} */
-                    activo?: "true" | "false" | "1" | "0" | null;
-                };
-            };
-        };
-        responses: {
-            /** @description Operación exitosa */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No autenticado */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error de validación */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error interno */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setupConfigureSunat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Debe existir en `companies,id`. */
-                    company_id: number;
-                    /** @enum {string} */
-                    environment: "beta" | "produccion";
-                    /** Format: binary */
-                    certificate_file?: string | null;
-                    certificate_password?: string | null;
-                    force_update?: boolean;
-                };
-            };
-        };
         responses: {
             /** @description Operación exitosa */
             200: {
@@ -4244,7 +1414,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -4259,6 +1429,86 @@ export interface operations {
             };
             /** @description No autenticado */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    userIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    userUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    role?: string;
+                    active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

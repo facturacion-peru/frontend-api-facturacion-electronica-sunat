@@ -8,7 +8,7 @@ import { getToken, clearToken } from './token-storage'
  * Cliente HTTP tipado contra la API de facturación.
  *
  * Los tipos salen de `schema.d.ts`, generado desde el `openapi.json` que publica
- * Laravel (`npm run api:types`). Eso obliga a que las rutas, los parámetros y
+ * Laravel (`pnpm api:types`). Eso obliga a que las rutas, los parámetros y
  * los cuerpos de petición se comprueben en tiempo de compilación: si la API
  * cambia un campo, el build falla aquí antes que en producción.
  */
