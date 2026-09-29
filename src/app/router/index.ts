@@ -13,13 +13,12 @@ import { sunatRoutes } from '@/features/sunat/routes'
 /**
  * Router de la aplicación. Cada feature declara sus rutas en su propio
  * `routes.ts` y aquí solo se montan dentro del layout que corresponde.
+ *
+ * Los dos layouts cuelgan de «/» con la misma prioridad, así que gana el
+ * primero declarado: AppLayout va antes para que «/» sea el Inicio y no un
+ * AuthLayout vacío (se veía al recargar en «/»).
  */
 const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    component: () => import('@/app/layouts/AuthLayout.vue'),
-    children: authRoutes,
-  },
   {
     path: '/',
     component: () => import('@/app/layouts/AppLayout.vue'),
@@ -33,6 +32,11 @@ const routes: RouteRecordRaw[] = [
       ...salesRoutes,
       ...sunatRoutes,
     ],
+  },
+  {
+    path: '/',
+    component: () => import('@/app/layouts/AuthLayout.vue'),
+    children: authRoutes,
   },
   {
     path: '/plataforma',
