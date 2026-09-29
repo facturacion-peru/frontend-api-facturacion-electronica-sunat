@@ -11,6 +11,7 @@ import EmptyState from '@/shared/ui/EmptyState.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { formatDateTime, formatMoney, today } from '@/shared/utils/format'
 import { salesApi } from '../api'
+import SalesTabs from '../components/SalesTabs.vue'
 import { paymentLabels, type Ticket, type TicketFilters, type TicketTotals } from '../types'
 
 const filters = reactive<TicketFilters>({ from: today(), to: today(), status: '', payment_method: '', page: 1 })
@@ -54,6 +55,7 @@ onMounted(load)
     <h1 class="text-xl font-semibold">Ventas</h1>
     <RouterLink :to="{ name: 'new-sale' }"><BaseButton tabindex="-1">Nueva venta</BaseButton></RouterLink>
   </div>
+  <SalesTabs />
 
   <form class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4 lg:grid-cols-5" @submit.prevent="apply">
     <FormField label="Desde" for="sales-from"><BaseInput id="sales-from" v-model="filters.from" type="date" /></FormField>

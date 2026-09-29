@@ -6,8 +6,10 @@ import type { CompanyRole } from '@/core/auth/types'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import MainNav from '../MainNav.vue'
 
-async function mountAs(role: CompanyRole) {
+async function mountAs(role: CompanyRole, path = '/') {
   return mountWithRouter(MainNav, {
+    path,
+    pattern: '/:rest(.*)*',
     beforeMount: () => {
       useSessionStore().session = {
         user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false,
@@ -43,6 +45,7 @@ describe('MainNav', () => {
     expect(wrapper.find('#nav-more').text()).toContain('Mi empresa')
     expect(wrapper.find('#nav-more').text()).toContain('SUNAT')
     expect(wrapper.find('#nav-more').text()).toContain('Series')
+    expect(wrapper.find('#nav-more').text()).toContain('Clientes')
   })
 
   it('Escape cierra el menú y devuelve el foco al botón', async () => {
@@ -55,5 +58,12 @@ describe('MainNav', () => {
 
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(toggle.element)
+  })
+
+  it('marca «Ventas» también en las pantallas de comprobantes y detalles', async () => {
+    const { wrapper } = await mountAs('seller', '/ventas/comprobantes/5')
+
+    const current = wrapper.findAll('a').filter((a) => a.attributes('aria-current') === 'page').map((a) => a.text())
+    expect(current).toEqual(['Ventas'])
   })
 })

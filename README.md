@@ -144,7 +144,7 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-Features actuales (specs 001 a 004):
+Features actuales (specs 001 a 005):
 
 | Feature | Pantallas |
 |---|---|
@@ -152,7 +152,7 @@ Features actuales (specs 001 a 004):
 | `company` | Mi empresa: datos legales de solo lectura, contacto y logo |
 | `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar |
 | `audit` | Auditoría con filtros |
-| `sales` | Venta rápida (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos), ticket de 80 mm imprimible o como PDF, anulación y listado con totales por medio de pago |
+| `sales` | Venta rápida que emite ticket, boleta o factura (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos, selector de cliente con alta rápida y de serie); ticket de 80 mm imprimible, anulación y listado con totales; «Ventas» con pestañas Tickets y Comprobantes; detalle del comprobante con el resultado de SUNAT, descargas (PDF A4/80 mm, XML, CDR) y «Reintentar»; clientes para el administrador |
 | `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
 | `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
 
@@ -160,8 +160,9 @@ Piezas compartidas:
 
 - `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge, estado vacío y `EnvironmentBadge` («PRUEBAS — sin valor legal», siempre visible en beta).
 - `shared/composables/useApiForm`: envío y errores 422 por campo.
+- `core/api/download`: descarga de archivos de la API con el token (un enlace directo no lleva `Authorization`).
 - `shared/utils/format`: soles, cantidades sin ceros sobrantes y fechas en español del Perú. Solo formatean: los importes y las cantidades llegan de la API como cadenas decimales exactas y nunca se calculan en el frontend.
-- Navegación (`app/layouts/MainNav.vue`): Inicio, Vender, Ventas y Productos; la gestión del administrador (incluidas SUNAT y Series) va en «Más».
+- Navegación (`app/layouts/MainNav.vue`): Inicio, Vender, Ventas y Productos; la gestión del administrador (incluidas Clientes, SUNAT y Series) va en «Más». Un enlace se marca activo por prefijo de ruta, para que «Ventas» siga marcada en comprobantes y detalles.
 - Impresión: `main.css` tiene una regla `@media print` que imprime solo `.print-area` en papel de 80 mm.
 - `shared/testing/mountWithRouter`: solo para pruebas; `beforeMount` permite fijar la sesión antes de montar.
 

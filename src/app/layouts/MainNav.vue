@@ -22,6 +22,7 @@ const primary = [
 
 const more = [
   { to: '/inventario/alertas', label: 'Alertas' },
+  { to: '/clientes', label: 'Clientes' },
   { to: '/usuarios', label: 'Usuarios' },
   { to: '/auditoria', label: 'Auditoría' },
   { to: '/empresa', label: 'Mi empresa' },
@@ -32,6 +33,14 @@ const more = [
 const open = ref(false)
 const container = useTemplateRef<HTMLElement>('container')
 const toggle = useTemplateRef<HTMLButtonElement>('toggle')
+/**
+ * Activa por prefijo de ruta: «Ventas» sigue marcada en /ventas/comprobantes
+ * y en los detalles, que son rutas hermanas y no anidadas.
+ */
+function isActive(item: { to: string; exact: boolean }): boolean {
+  return item.exact ? route.path === item.to : route.path === item.to || route.path.startsWith(`${item.to}/`)
+}
+
 const moreActive = computed(() => more.some((item) => route.path.startsWith(item.to)))
 
 onClickOutside(container, () => {
@@ -58,9 +67,9 @@ async function close() {
       <li v-for="item in primary" :key="item.to">
         <RouterLink
           :to="item.to"
-          class="inline-flex min-h-11 items-center border-b-2 border-transparent px-2.5 text-sm whitespace-nowrap text-ink-muted sm:px-3"
-          :active-class="item.exact ? '' : '!border-brand-600 !text-brand-700 font-medium'"
-          :exact-active-class="item.exact ? '!border-brand-600 !text-brand-700 font-medium' : ''"
+          class="inline-flex min-h-11 items-center border-b-2 px-2.5 text-sm whitespace-nowrap sm:px-3"
+          :class="isActive(item) ? 'border-brand-600 font-medium text-brand-700' : 'border-transparent text-ink-muted'"
+          :aria-current="isActive(item) ? 'page' : undefined"
         >
           {{ item.label }}
         </RouterLink>

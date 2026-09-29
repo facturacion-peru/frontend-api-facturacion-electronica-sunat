@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
@@ -8,14 +8,18 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import EnvironmentBadge from '@/shared/ui/EnvironmentBadge.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
-import { salesApi, type SellableProduct } from '../api'
+import { salesApi, salesDocumentsApi, type SellableProduct } from '../api'
+import CustomerPicker from '../components/CustomerPicker.vue'
 import { lineAmount, sumAmounts } from '../pricing'
-import { paymentLabels, type PaymentMethod } from '../types'
+import { ANONYMOUS_RECEIPT_LIMIT, paymentLabels, type Customer, type IssuingAvailability, type PaymentMethod, type SaleKind } from '../types'
 
 /**
  * Venta rápida (HU-1, CE-001): buscar, tocar para agregar, cobrar. Los
  * importes son una vista previa; el ticket guarda los del servidor.
+ * Desde aquí también se emite boleta o factura (spec 005, A-33): mismo
+ * carrito, con cliente y serie.
  */
 interface CartLine {
   product: SellableProduct
@@ -36,10 +40,58 @@ const customerDocument = ref('')
 const submitting = ref(false)
 const error = ref<string | null>(null)
 
+const kind = ref<SaleKind>('ticket')
+const availability = ref<IssuingAvailability | null>(null)
+const availabilityError = ref(false)
+const documentCustomer = ref<Customer | null>(null)
+const seriesId = ref<number | null>(null)
+
 // Se conserva entre reintentos de la misma venta para no duplicarla (RF-008).
 let idempotencyKey = crypto.randomUUID()
 
 const total = computed(() => sumAmounts(cart.value.map((l) => lineAmount(l.quantity || '0', l.product.sale_price, l.discount))))
+
+const kinds: { value: SaleKind; label: string }[] = [
+  { value: 'ticket', label: 'Ticket' },
+  { value: '03', label: 'Boleta' },
+  { value: '01', label: 'Factura' },
+]
+
+const kindSeries = computed(() => availability.value?.series.filter((s) => s.document_type === kind.value) ?? [])
+
+/** Por qué no se puede emitir boleta o factura, o null si se puede. */
+function blockedReason(value: SaleKind): string | null {
+  if (value === 'ticket') return null
+  if (availabilityError.value) return 'No se pudo consultar la emisión SUNAT.'
+  if (!availability.value) return 'Consultando la emisión SUNAT…'
+  if (!availability.value.can_issue) return `Emisión SUNAT: ${availability.value.status_label}.`
+  if (!availability.value.series.some((s) => s.document_type === value)) return 'No hay una serie activa. Pide al administrador que la cree.'
+
+  return null
+}
+
+/** Boleta de más de S/ 700 sin comprador identificado (A-22 ⚖️); la API lo hace cumplir. */
+const needsReceiptCustomer = computed(
+  () => kind.value === '03' && !documentCustomer.value && Number(total.value) > Number(ANONYMOUS_RECEIPT_LIMIT),
+)
+const needsInvoiceCustomer = computed(() => kind.value === '01' && documentCustomer.value?.document_type !== '6')
+const chargeLabel = computed(() => ({ ticket: 'Cobrar', '03': 'Emitir boleta', '01': 'Emitir factura' })[kind.value])
+
+onMounted(async () => {
+  try {
+    availability.value = await salesDocumentsApi.availability()
+  } catch {
+    availabilityError.value = true
+  }
+})
+
+watch(kind, () => {
+  // Otra operación: otra clave de idempotencia, y la serie por defecto del tipo.
+  idempotencyKey = crypto.randomUUID()
+  seriesId.value = kindSeries.value[0]?.id ?? null
+  if (kind.value === '01' && documentCustomer.value?.document_type !== '6') documentCustomer.value = null
+  error.value = null
+})
 
 const runSearch = useDebounceFn(async () => {
   results.value = search.value.trim() ? await salesApi.searchProducts(search.value.trim()).catch(() => []) : []
@@ -76,6 +128,20 @@ async function charge() {
   submitting.value = true
 
   try {
+    if (kind.value !== 'ticket') {
+      const document = await salesDocumentsApi.issue({
+        idempotency_key: idempotencyKey,
+        document_type: kind.value,
+        series_id: seriesId.value,
+        customer_id: documentCustomer.value?.id ?? null,
+        payment_method: paymentMethod.value,
+        lines: cart.value.map((l) => ({ product_id: l.product.id, quantity: l.quantity, ...(l.discount && { discount: l.discount }) })),
+      })
+      idempotencyKey = crypto.randomUUID()
+      await router.push({ name: 'sales-document-detail', params: { id: document.id }, query: { nueva: '1' } })
+      return
+    }
+
     const ticket = await salesApi.issue({
       idempotency_key: idempotencyKey,
       payment_method: paymentMethod.value,
@@ -119,7 +185,27 @@ function showErrors(e: ApiError) {
 </script>
 
 <template>
-  <h1 class="text-xl font-semibold">Vender</h1>
+  <div class="flex flex-wrap items-center gap-3">
+    <h1 class="text-xl font-semibold">Vender</h1>
+    <EnvironmentBadge v-if="kind !== 'ticket'" />
+  </div>
+
+  <fieldset class="mt-3">
+    <legend class="sr-only">Qué emitir</legend>
+    <div class="grid grid-cols-3 gap-2" data-test="sale-kind">
+      <label
+        v-for="k in kinds"
+        :key="k.value"
+        class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-surface px-2 text-sm font-medium has-checked:border-brand-600 has-checked:bg-brand-50 has-disabled:cursor-not-allowed has-disabled:opacity-50"
+      >
+        <input v-model="kind" type="radio" name="sale-kind" class="sr-only" :value="k.value" :disabled="blockedReason(k.value) !== null" />
+        {{ k.label }}
+      </label>
+    </div>
+    <p v-if="blockedReason('03')" class="mt-1 text-xs text-ink-muted" data-test="kind-blocked">
+      Boleta y factura: {{ blockedReason('03') }}
+    </p>
+  </fieldset>
 
   <div class="mt-4">
     <label for="sale-search" class="sr-only">Buscar producto</label>
@@ -193,10 +279,32 @@ function showErrors(e: ApiError) {
       </div>
     </fieldset>
 
-    <button type="button" class="mt-3 min-h-11 text-sm font-medium text-brand-700" :aria-expanded="showCustomer" aria-controls="sale-customer" @click="showCustomer = !showCustomer">
+    <div v-if="kind !== 'ticket'" class="mt-4 space-y-3">
+      <FormField v-if="kindSeries.length > 1" label="Serie" for="sale-series">
+        <select id="sale-series" v-model="seriesId" class="block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm">
+          <option v-for="s in kindSeries" :key="s.id" :value="s.id">{{ s.code }}</option>
+        </select>
+      </FormField>
+      <div>
+        <p class="text-sm font-medium">{{ kind === '01' ? 'Cliente (con RUC)' : 'Cliente (opcional hasta S/ 700)' }}</p>
+        <CustomerPicker v-model="documentCustomer" class="mt-1" :require-ruc="kind === '01'" />
+      </div>
+      <BaseAlert v-if="needsReceiptCustomer" variant="warning" data-test="receipt-limit">
+        Las boletas de más de S/ 700 requieren el documento del comprador.
+      </BaseAlert>
+    </div>
+
+    <button
+      v-if="kind === 'ticket'"
+      type="button"
+      class="mt-3 min-h-11 text-sm font-medium text-brand-700"
+      :aria-expanded="showCustomer"
+      aria-controls="sale-customer"
+      @click="showCustomer = !showCustomer"
+    >
       {{ showCustomer ? 'Quitar datos del cliente' : 'Agregar cliente (opcional)' }}
     </button>
-    <div v-show="showCustomer" id="sale-customer" class="grid gap-3 sm:grid-cols-2">
+    <div v-show="kind === 'ticket' && showCustomer" id="sale-customer" class="grid gap-3 sm:grid-cols-2">
       <FormField label="Nombre del cliente" for="customer-name">
         <BaseInput id="customer-name" v-model="customerName" autocomplete="off" />
       </FormField>
@@ -212,7 +320,7 @@ function showErrors(e: ApiError) {
         <span class="block text-xs text-ink-muted">Total</span>
         <span class="text-xl font-semibold" data-test="sale-total">{{ formatMoney(total) }}</span>
       </p>
-      <BaseButton :loading="submitting" @click="charge">Cobrar</BaseButton>
+      <BaseButton :loading="submitting" :disabled="needsReceiptCustomer || needsInvoiceCustomer" @click="charge">{{ chargeLabel }}</BaseButton>
     </div>
   </template>
 </template>
