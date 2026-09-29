@@ -41,6 +41,8 @@ describe('MainNav', () => {
     expect(toggle.attributes('aria-expanded')).toBe('true')
     expect(wrapper.find('#nav-more').text()).toContain('Usuarios')
     expect(wrapper.find('#nav-more').text()).toContain('Mi empresa')
+    expect(wrapper.find('#nav-more').text()).toContain('SUNAT')
+    expect(wrapper.find('#nav-more').text()).toContain('Series')
   })
 
   it('Escape cierra el menú y devuelve el foco al botón', async () => {
