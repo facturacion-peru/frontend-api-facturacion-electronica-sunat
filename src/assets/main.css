@@ -29,3 +29,36 @@
     outline-offset: 2px;
   }
 }
+
+/*
+ * Impresión de tickets (spec 003, A-18): solo se imprime `.print-area`, en
+ * papel de 80 mm. «Guardar como PDF» del navegador usa lo mismo.
+ */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 3mm;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 74mm;
+    border: 0;
+    box-shadow: none;
+  }
+}
