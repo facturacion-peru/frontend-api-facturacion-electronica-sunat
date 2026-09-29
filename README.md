@@ -144,7 +144,7 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-Features actuales (specs 001 a 003):
+Features actuales (specs 001 a 004):
 
 | Feature | Pantallas |
 |---|---|
@@ -153,14 +153,15 @@ Features actuales (specs 001 a 003):
 | `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar |
 | `audit` | Auditoría con filtros |
 | `sales` | Venta rápida (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos), ticket de 80 mm imprimible o como PDF, anulación y listado con totales por medio de pago |
+| `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
 | `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
 
 Piezas compartidas:
 
-- `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge y estado vacío.
+- `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge, estado vacío y `EnvironmentBadge` («PRUEBAS — sin valor legal», siempre visible en beta).
 - `shared/composables/useApiForm`: envío y errores 422 por campo.
 - `shared/utils/format`: soles, cantidades sin ceros sobrantes y fechas en español del Perú. Solo formatean: los importes y las cantidades llegan de la API como cadenas decimales exactas y nunca se calculan en el frontend.
-- Navegación (`app/layouts/MainNav.vue`): Inicio, Vender, Ventas y Productos; la gestión del administrador va en «Más».
+- Navegación (`app/layouts/MainNav.vue`): Inicio, Vender, Ventas y Productos; la gestión del administrador (incluidas SUNAT y Series) va en «Más».
 - Impresión: `main.css` tiene una regla `@media print` que imprime solo `.print-area` en papel de 80 mm.
 - `shared/testing/mountWithRouter`: solo para pruebas; `beforeMount` permite fijar la sesión antes de montar.
 
