@@ -22,6 +22,7 @@ const primary = [
 
 const more = [
   { to: '/inventario/alertas', label: 'Alertas' },
+  { to: '/clientes', label: 'Clientes' },
   { to: '/usuarios', label: 'Usuarios' },
   { to: '/auditoria', label: 'Auditoría' },
   { to: '/empresa', label: 'Mi empresa' },

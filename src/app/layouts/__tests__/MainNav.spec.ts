@@ -43,6 +43,7 @@ describe('MainNav', () => {
     expect(wrapper.find('#nav-more').text()).toContain('Mi empresa')
     expect(wrapper.find('#nav-more').text()).toContain('SUNAT')
     expect(wrapper.find('#nav-more').text()).toContain('Series')
+    expect(wrapper.find('#nav-more').text()).toContain('Clientes')
   })
 
   it('Escape cierra el menú y devuelve el foco al botón', async () => {
