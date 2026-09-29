@@ -25,6 +25,8 @@ const more = [
   { to: '/usuarios', label: 'Usuarios' },
   { to: '/auditoria', label: 'Auditoría' },
   { to: '/empresa', label: 'Mi empresa' },
+  { to: '/sunat', label: 'SUNAT' },
+  { to: '/series', label: 'Series' },
 ]
 
 const open = ref(false)

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import SunatStatusCard from '@/features/sunat/components/SunatStatusCard.vue'
 
 const session = useSessionStore()
 const firstName = computed(() => session.session?.user.name.split(' ')[0] ?? '')
@@ -11,6 +12,8 @@ const company = computed(() => session.session?.company?.nombre_comercial ?? ses
 <template>
   <h1 class="text-xl font-semibold">Hola, {{ firstName }}</h1>
   <p class="mt-1 text-ink-muted">Estás trabajando en {{ company }}.</p>
+
+  <SunatStatusCard class="mt-6" />
 
   <div v-if="session.isCompanyAdmin" class="mt-6 grid gap-3 sm:grid-cols-3">
     <RouterLink to="/usuarios" class="rounded-xl border border-line bg-surface p-4 hover:border-brand-600">
@@ -26,5 +29,4 @@ const company = computed(() => session.session?.company?.nombre_comercial ?? ses
       <p class="text-sm text-ink-muted">Quién hizo qué y cuándo.</p>
     </RouterLink>
   </div>
-  <p v-else class="mt-6 text-sm text-ink-muted">Las ventas y los comprobantes llegarán en las próximas versiones.</p>
 </template>
