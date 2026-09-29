@@ -14,7 +14,13 @@ const namedStubs: RouteRecordRaw[] = [
   'company',
   'users',
   'audit',
-].map((name) => ({ path: `/__${name}`, name, component: Stub }))
+  'products',
+  'product-create',
+  'product-detail',
+  'product-edit',
+  'stock-entry',
+  'inventory-alerts',
+].map((name) => ({ path: `/__${name}/:id?`, name, component: Stub }))
 
 /**
  * Monta una vista con Pinia y un router en memoria ubicado en `path`.
