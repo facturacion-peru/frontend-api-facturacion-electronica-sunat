@@ -16,7 +16,7 @@ const CompanyView = (await import('../views/CompanyView.vue')).default
 
 const company: CompanyDetail = {
   id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: 'Bodega Ana',
-  person_type: 'juridica', tax_regime: 'rmt', email: 'contacto@bodega.pe', phone: null, logo_url: null, active: true,
+  person_type: 'juridica', tax_regime: 'rmt', email: 'contacto@bodega.pe', phone: null, logo_url: null, active: true, expiry_warning_days: 30,
   fiscal_address: { address: 'Av. Uno 1', ubigeo: '150101', district: 'Lima / Lima / Lima' }, created_at: null,
 }
 
@@ -48,8 +48,21 @@ describe('CompanyView', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(companyApi.update).toHaveBeenCalledWith({ nombre_comercial: 'Bodega Ana', email: 'contacto@bodega.pe', phone: '987654321' })
+    expect(companyApi.update).toHaveBeenCalledWith({
+      nombre_comercial: 'Bodega Ana', email: 'contacto@bodega.pe', phone: '987654321', expiry_warning_days: 30,
+    })
     expect(wrapper.text()).toContain('Cambios guardados.')
+  })
+
+  it('permite cambiar los días de aviso de vencimiento', async () => {
+    vi.mocked(companyApi.update).mockResolvedValue({ ...company, expiry_warning_days: 45 })
+    const { wrapper } = await mountWithRouter(CompanyView)
+
+    await wrapper.find('#expiry_warning_days').setValue('45')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(companyApi.update).toHaveBeenCalledWith(expect.objectContaining({ expiry_warning_days: 45 }))
   })
 
   it('muestra los errores por campo', async () => {

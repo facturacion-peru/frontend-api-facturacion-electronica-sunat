@@ -14,14 +14,28 @@ const namedStubs: RouteRecordRaw[] = [
   'company',
   'users',
   'audit',
-].map((name) => ({ path: `/__${name}`, name, component: Stub }))
+  'products',
+  'product-create',
+  'product-detail',
+  'product-edit',
+  'stock-entry',
+  'inventory-alerts',
+].map((name) => ({ path: `/__${name}/:id?`, name, component: Stub }))
+
+interface MountOptions {
+  path?: string
+  pattern?: string
+  /** Se ejecuta con Pinia ya activa y antes de montar (p. ej. fijar la sesión). */
+  beforeMount?: () => void
+}
 
 /**
  * Monta una vista con Pinia y un router en memoria ubicado en `path`.
  * Utilidad solo para pruebas.
  */
-export async function mountWithRouter(view: Component, { path = '/', pattern = '/' } = {}) {
+export async function mountWithRouter(view: Component, { path = '/', pattern = '/', beforeMount }: MountOptions = {}) {
   setActivePinia(createPinia())
+  beforeMount?.()
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: pattern, component: view }, ...namedStubs],

@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalogs/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inventory catalogs */
+        get: operations["catalogInventory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/company": {
         parameters: {
             query?: never;
@@ -135,6 +152,23 @@ export interface paths {
         put?: never;
         /** Update logo company */
         post: operations["companyUpdateLogo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar inventory */
+        get: operations["alertIndex"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -227,6 +261,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lots/{lot}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adjust lots */
+        post: operations["stockAdjust"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/movements/{movement}/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reverse movements */
+        post: operations["stockReverse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/companies": {
         parameters: {
             query?: never;
@@ -291,6 +359,93 @@ export interface paths {
         put?: never;
         /** Deactivate platform */
         post: operations["companyDeactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Por defecto solo activos. El administrador puede pedir status=inactive */
+        get: operations["productIndex"];
+        put?: never;
+        /** Crear products */
+        post: operations["productStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener products */
+        get: operations["productShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Desactivar con stock se permite, pero se avisa (caso límite de la spec). */
+        patch: operations["productUpdate"];
+        trace?: never;
+    };
+    "/api/v1/products/{product}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Store entry products */
+        post: operations["stockStoreEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product}/lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lotes en orden de salida (FEFO/FIFO); por defecto solo los que tienen saldo. */
+        get: operations["stockLots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial del producto, del más reciente al más antiguo (HU-5.1). */
+        get: operations["stockMovements"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -436,6 +591,7 @@ export interface operations {
                 from?: string;
                 to?: string;
                 per_page?: number;
+                page?: number;
             };
             header?: never;
             path?: never;
@@ -657,6 +813,38 @@ export interface operations {
             };
         };
     };
+    catalogInventory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     companyShow: {
         parameters: {
             query?: never;
@@ -701,8 +889,9 @@ export interface operations {
                 "application/json": {
                     nombre_comercial?: string | null;
                     /** Format: email */
-                    email: string;
+                    email?: string;
                     phone?: string | null;
+                    expiry_warning_days?: number;
                     ruc?: string;
                     razon_social?: string;
                     person_type?: string;
@@ -774,6 +963,38 @@ export interface operations {
             };
             /** @description Error de validación */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    alertIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1010,6 +1231,104 @@ export interface operations {
             };
         };
     };
+    stockAdjust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lot: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: decimal */
+                    quantity: string;
+                    reason: string;
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stockReverse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movement: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     companyIndex: {
         parameters: {
             query?: never;
@@ -1148,12 +1467,12 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    ruc: string;
-                    razon_social: string;
+                    ruc?: string;
+                    razon_social?: string;
                     nombre_comercial?: string | null;
-                    tax_regime: string;
+                    tax_regime?: string;
                     /** Format: email */
-                    email: string;
+                    email?: string;
                     phone?: string | null;
                 };
             };
@@ -1257,6 +1576,311 @@ export interface operations {
             };
             /** @description Error de validación */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    productIndex: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                type?: "good" | "service";
+                status?: "active" | "inactive" | "all";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    productStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                    name: string;
+                    type: string;
+                    unit: string;
+                    /** Format: decimal */
+                    sale_price: string;
+                    igv_affectation: string;
+                    /** Format: decimal */
+                    min_stock?: string | null;
+                    tracks_expiry?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    productShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    productUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code?: string;
+                    name?: string;
+                    type?: string;
+                    unit?: string;
+                    /** Format: decimal */
+                    sale_price?: string;
+                    igv_affectation?: string;
+                    /** Format: decimal */
+                    min_stock?: string | null;
+                    tracks_expiry?: boolean;
+                    active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stockStoreEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: decimal */
+                    quantity: string;
+                    /** Format: date */
+                    received_at?: string | null;
+                    lot_number?: string | null;
+                    expires_at?: string;
+                    /** Format: decimal */
+                    unit_cost?: string | null;
+                    reference?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stockLots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stockMovements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

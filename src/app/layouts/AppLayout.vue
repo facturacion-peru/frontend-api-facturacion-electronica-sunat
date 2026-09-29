@@ -17,6 +17,8 @@ interface NavItem {
 
 const items: NavItem[] = [
   { to: '/', label: 'Inicio' },
+  { to: '/productos', label: 'Productos' },
+  { to: '/inventario/alertas', label: 'Alertas', roles: ['company_admin'] },
   { to: '/empresa', label: 'Mi empresa', roles: ['company_admin'] },
   { to: '/usuarios', label: 'Usuarios', roles: ['company_admin'] },
   { to: '/auditoria', label: 'Auditoría', roles: ['company_admin'] },

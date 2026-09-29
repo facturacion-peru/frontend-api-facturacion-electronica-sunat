@@ -7,7 +7,7 @@ defineOptions({ inheritAttrs: false })
 
 defineProps<{ invalid?: boolean }>()
 
-const model = defineModel<string | null>({ default: '' })
+const model = defineModel<string | number | null>({ default: '' })
 </script>
 
 <template>

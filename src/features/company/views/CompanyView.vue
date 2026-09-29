@@ -12,7 +12,7 @@ import { personTypeLabels, taxRegimeLabels, type CompanyContactForm, type Compan
 
 const company = ref<CompanyDetail | null>(null)
 const loadError = ref<string | null>(null)
-const form = ref<CompanyContactForm>({ nombre_comercial: null, email: '', phone: null })
+const form = ref<CompanyContactForm>({ nombre_comercial: null, email: '', phone: null, expiry_warning_days: 30 })
 const saved = ref(false)
 const { submitting, generalError, fieldError, submit } = useApiForm()
 
@@ -22,7 +22,12 @@ const logoFile = ref<File | null>(null)
 
 function fill(data: CompanyDetail) {
   company.value = data
-  form.value = { nombre_comercial: data.nombre_comercial, email: data.email, phone: data.phone }
+  form.value = {
+    nombre_comercial: data.nombre_comercial,
+    email: data.email,
+    phone: data.phone,
+    expiry_warning_days: data.expiry_warning_days,
+  }
 }
 
 onMounted(async () => {
@@ -96,6 +101,25 @@ onBeforeUnmount(() => {
           </FormField>
           <FormField v-slot="{ describedBy, invalid }" label="Teléfono" for="phone" :error="fieldError('phone')">
             <BaseInput id="phone" v-model="form.phone" type="tel" inputmode="tel" :invalid="invalid" :aria-describedby="describedBy" />
+          </FormField>
+
+          <FormField
+            v-slot="{ describedBy, invalid }"
+            label="Aviso de vencimiento (días)"
+            for="expiry_warning_days"
+            hint="Con cuántos días de anticipación avisar de los lotes por vencer."
+            :error="fieldError('expiry_warning_days')"
+          >
+            <BaseInput
+              id="expiry_warning_days"
+              v-model.number="form.expiry_warning_days"
+              type="number"
+              min="1"
+              max="365"
+              inputmode="numeric"
+              :invalid="invalid"
+              :aria-describedby="describedBy"
+            />
           </FormField>
 
           <BaseButton type="submit" :loading="submitting">Guardar cambios</BaseButton>

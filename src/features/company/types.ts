@@ -10,6 +10,7 @@ export interface CompanyDetail {
   phone: string | null
   logo_url: string | null
   active: boolean
+  expiry_warning_days: number
   fiscal_address: { address: string; ubigeo: string; district: string | null } | null
   created_at: string | null
 }
@@ -18,6 +19,7 @@ export interface CompanyContactForm {
   nombre_comercial: string | null
   email: string
   phone: string | null
+  expiry_warning_days: number
 }
 
 export const personTypeLabels: Record<CompanyDetail['person_type'], string> = {
