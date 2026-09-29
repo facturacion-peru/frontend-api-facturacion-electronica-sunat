@@ -3,30 +3,11 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useSessionStore } from '@/core/auth/session-store'
-import type { CompanyRole } from '@/core/auth/types'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
+import MainNav from './MainNav.vue'
 
 const session = useSessionStore()
 const router = useRouter()
-
-interface NavItem {
-  to: string
-  label: string
-  roles?: CompanyRole[]
-}
-
-const items: NavItem[] = [
-  { to: '/', label: 'Inicio' },
-  { to: '/productos', label: 'Productos' },
-  { to: '/inventario/alertas', label: 'Alertas', roles: ['company_admin'] },
-  { to: '/empresa', label: 'Mi empresa', roles: ['company_admin'] },
-  { to: '/usuarios', label: 'Usuarios', roles: ['company_admin'] },
-  { to: '/auditoria', label: 'Auditoría', roles: ['company_admin'] },
-]
-
-const visibleItems = computed(() =>
-  items.filter((item) => !item.roles || (session.role !== null && item.roles.includes(session.role))),
-)
 
 const companyName = computed(
   () => session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social ?? '',
@@ -58,19 +39,7 @@ async function logout() {
           Cerrar sesión
         </button>
       </div>
-      <nav aria-label="Principal" class="mx-auto max-w-5xl overflow-x-auto px-2">
-        <ul class="flex gap-1">
-          <li v-for="item in visibleItems" :key="item.to">
-            <RouterLink
-              :to="item.to"
-              class="inline-flex min-h-11 items-center border-b-2 border-transparent px-3 text-sm whitespace-nowrap text-ink-muted"
-              exact-active-class="!border-brand-600 !text-brand-700 font-medium"
-            >
-              {{ item.label }}
-            </RouterLink>
-          </li>
-        </ul>
-      </nav>
+      <MainNav />
     </header>
     <main class="mx-auto max-w-5xl px-4 py-6">
       <RouterView />
