@@ -23,6 +23,7 @@ const namedStubs: RouteRecordRaw[] = [
   'new-sale',
   'tickets',
   'ticket-detail',
+  'sales-documents',
   'sales-document-detail',
   'customers',
   'sunat',
