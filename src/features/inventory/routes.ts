@@ -26,4 +26,10 @@ export const inventoryRoutes: RouteRecordRaw[] = [
     component: () => import('./views/ProductFormView.vue'),
     meta: { roles: ['company_admin'], title: 'Editar producto' },
   },
+  {
+    path: 'inventario/alertas',
+    name: 'inventory-alerts',
+    component: () => import('./views/AlertsView.vue'),
+    meta: { roles: ['company_admin'], title: 'Alertas de inventario' },
+  },
 ]
