@@ -9,6 +9,8 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly fieldErrors: Record<string, string[]> = {},
+    /** Datos extra del error (p. ej. `available` y `product_id` si falta stock). */
+    public readonly meta: Record<string, unknown> = {},
   ) {
     super(message)
     this.name = 'ApiError'
@@ -44,8 +46,8 @@ export async function unwrap<T>(request: Promise<FetchResult>): Promise<T> {
   }
 
   if (!result.response.ok) {
-    const body = (result.error ?? {}) as Partial<ErrorResponse>
-    throw new ApiError(result.response.status, body.message ?? 'Ocurrió un error inesperado.', body.errors ?? {})
+    const body = (result.error ?? {}) as Partial<ErrorResponse> & { meta?: Record<string, unknown> }
+    throw new ApiError(result.response.status, body.message ?? 'Ocurrió un error inesperado.', body.errors ?? {}, body.meta ?? {})
   }
 
   return result.data as T

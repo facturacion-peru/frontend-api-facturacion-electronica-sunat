@@ -7,6 +7,7 @@ import { companyRoutes } from '@/features/company/routes'
 import { usersRoutes } from '@/features/users/routes'
 import { auditRoutes } from '@/features/audit/routes'
 import { inventoryRoutes } from '@/features/inventory/routes'
+import { salesRoutes } from '@/features/sales/routes'
 
 /**
  * Router de la aplicación. Cada feature declara sus rutas en su propio
@@ -28,6 +29,7 @@ const routes: RouteRecordRaw[] = [
       ...usersRoutes,
       ...auditRoutes,
       ...inventoryRoutes,
+      ...salesRoutes,
     ],
   },
   {
