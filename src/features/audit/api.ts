@@ -14,7 +14,7 @@ export const auditApi = {
             ...(filters.from && { from: filters.from }),
             ...(filters.to && { to: filters.to }),
             page: filters.page,
-          } as never,
+          },
         },
       }),
     ),
