@@ -144,7 +144,7 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-Features actuales (spec 001):
+Features actuales (specs 001 y 002):
 
 | Feature | Pantallas |
 |---|---|
@@ -152,8 +152,14 @@ Features actuales (spec 001):
 | `company` | Mi empresa: datos legales de solo lectura, contacto y logo |
 | `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar |
 | `audit` | Auditoría con filtros |
+| `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
 
-Piezas compartidas: `shared/ui` (botón, campo, `FormField`, alerta, diálogo accesible, badge y estado vacío), `shared/composables/useApiForm` (envío y errores 422 por campo) y `shared/testing/mountWithRouter` (solo para pruebas).
+Piezas compartidas:
+
+- `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge y estado vacío.
+- `shared/composables/useApiForm`: envío y errores 422 por campo.
+- `shared/utils/format`: soles, cantidades sin ceros sobrantes y fechas en español del Perú. Solo formatean: los importes y las cantidades llegan de la API como cadenas decimales exactas y nunca se calculan en el frontend.
+- `shared/testing/mountWithRouter`: solo para pruebas; `beforeMount` permite fijar la sesión antes de montar.
 
 Las respuestas de la API se tipan a mano en el `types.ts` de cada feature, porque el OpenAPI aún no documenta respuestas. Cada tipo indica el `JsonResource` de Laravel que refleja; su forma la protegen las pruebas de contrato de la API.
 
