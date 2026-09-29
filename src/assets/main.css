@@ -40,6 +40,11 @@
     margin: 3mm;
   }
 
+  html,
+  body {
+    background: #fff;
+  }
+
   body * {
     visibility: hidden;
   }
