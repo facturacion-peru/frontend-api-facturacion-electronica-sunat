@@ -13,7 +13,7 @@ import FormField from '@/shared/ui/FormField.vue'
 import { formatDateTime, formatMoney } from '@/shared/utils/format'
 import { salesDocumentsApi } from '../api'
 import SalesTabs from '../components/SalesTabs.vue'
-import { documentStatusVariant, type SalesDocument, type SalesDocumentFilters, type SalesDocumentStatus } from '../types'
+import { correctionVariant, documentStatusVariant, type SalesDocument, type SalesDocumentFilters, type SalesDocumentStatus } from '../types'
 
 /** Comprobantes de la empresa, todos visibles para todos (A-32, HU-6). */
 const filters = reactive<SalesDocumentFilters>({ from: '', to: '', document_type: '', status: '', customer: '', page: 1 })
@@ -84,6 +84,7 @@ onMounted(load)
         <option value="">Todos</option>
         <option value="03">Boletas</option>
         <option value="01">Facturas</option>
+        <option value="07">Notas de crédito</option>
       </select>
     </FormField>
     <FormField label="Estado" for="docs-status">
@@ -111,6 +112,9 @@ onMounted(load)
             <span class="flex flex-wrap items-center gap-2 font-medium">
               {{ doc.display_number }}
               <BaseBadge :variant="documentStatusVariant[doc.status]">{{ doc.status_label }}</BaseBadge>
+              <BaseBadge v-if="doc.correction_status !== 'none'" :variant="correctionVariant[doc.correction_status]" data-test="row-correction">
+                {{ doc.correction_status_label }}
+              </BaseBadge>
             </span>
             <span class="block truncate text-sm text-ink-muted">
               {{ formatDateTime(doc.issued_at) }} · {{ doc.customer.name }} · {{ doc.seller?.name }}

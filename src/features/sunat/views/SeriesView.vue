@@ -10,7 +10,7 @@ import BaseInput from '@/shared/ui/BaseInput.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { seriesApi } from '../api'
-import { documentTypePrefix, type DocumentType, type Series, type SeriesForm } from '../types'
+import { documentTypePrefix, suggestedSeries, type DocumentType, type Series, type SeriesForm } from '../types'
 
 /**
  * Series de facturas y boletas (HU-3). El correlativo no se edita: solo se
@@ -27,18 +27,18 @@ const { submitting, generalError, fieldError, submit } = useApiForm()
 const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 const groups = computed(() =>
-  (['01', '03'] as DocumentType[]).map((type) => ({
+  (['01', '03', '07'] as DocumentType[]).map((type) => ({
     type,
-    title: type === '01' ? 'Facturas' : 'Boletas',
+    title: { '01': 'Facturas', '03': 'Boletas', '07': 'Notas de crédito' }[type],
     items: series.value.filter((s) => s.document_type === type),
   })),
 )
 
-// Al cambiar el tipo, la serie propuesta cambia de letra (F001 ↔ B001).
+// Al cambiar el tipo se propone su serie (F001, B001; BC01 para notas de boletas).
 watch(
   () => form.value.document_type,
   (type) => {
-    form.value.code = `${documentTypePrefix[type]}${form.value.code.slice(1)}`
+    form.value.code = suggestedSeries[type]
   },
 )
 
@@ -119,13 +119,14 @@ async function toggle(item: Series) {
           <select id="document_type" v-model="form.document_type" :class="selectClass">
             <option value="03">Boleta</option>
             <option value="01">Factura</option>
+            <option value="07">Nota de crédito</option>
           </select>
         </FormField>
         <FormField
           v-slot="{ describedBy, invalid }"
           label="Serie"
           for="code"
-          :hint="`4 caracteres: ${documentTypePrefix[form.document_type]} y tres letras o números.`"
+          :hint="form.document_type === '07' ? '4 caracteres: F para notas de facturas (FC01) o B para notas de boletas (BC01).' : `4 caracteres: ${documentTypePrefix[form.document_type]} y tres letras o números.`"
           :error="fieldError('code')"
         >
           <BaseInput id="code" v-model="form.code" maxlength="4" class="font-mono uppercase" :invalid="invalid" :aria-describedby="describedBy" />

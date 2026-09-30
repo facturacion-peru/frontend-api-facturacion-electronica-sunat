@@ -59,6 +59,17 @@ describe('SeriesView', () => {
     expect((wrapper.find('#code').element as HTMLInputElement).value).toBe('F001')
   })
 
+  it('007 propone BC01 al elegir nota de crédito y la agrupa aparte', async () => {
+    vi.mocked(seriesApi.list).mockResolvedValue([f001, b001, { ...b001, id: 9, document_type: '07', document_type_label: 'Nota de crédito', code: 'BC01', last_number: 0, next_number: 1 }])
+    const { wrapper } = await mountWithRouter(SeriesView)
+
+    await wrapper.find('#document_type').setValue('07')
+
+    expect((wrapper.find('#code').element as HTMLInputElement).value).toBe('BC01')
+    expect(wrapper.find('[data-test="group-07"]').text()).toContain('Notas de crédito')
+    expect(wrapper.find('[data-test="group-07"]').text()).toContain('BC01')
+  })
+
   it('muestra el error de formato de la serie', async () => {
     vi.mocked(seriesApi.create).mockRejectedValue(new ApiError(422, 'x', { code: ['La serie de boleta debe ser B y tres letras o números.'] }))
     const { wrapper } = await mountWithRouter(SeriesView)

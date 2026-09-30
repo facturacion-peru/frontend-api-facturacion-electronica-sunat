@@ -69,6 +69,14 @@ describe('SalesDocumentsView', () => {
     expect(salesDocumentsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'rejected', page: 1 }))
   })
 
+  it('007 marca los comprobantes anulados o devueltos', async () => {
+    vi.mocked(salesDocumentsApi.list).mockResolvedValue(page([{ ...base, correction_status: 'voided', correction_status_label: 'Anulado' }]))
+    const { wrapper } = await mountWithRouter(SalesDocumentsView)
+
+    expect(wrapper.find('[data-test="row-correction"]').text()).toBe('Anulado')
+    expect(wrapper.find('#docs-type').text()).toContain('Notas de crédito')
+  })
+
   it('filtra por tipo y cliente', async () => {
     vi.mocked(salesDocumentsApi.list).mockResolvedValue(page([]))
     const { wrapper } = await mountWithRouter(SalesDocumentsView)

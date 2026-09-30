@@ -1,19 +1,32 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import BaseDialog from '@/shared/ui/BaseDialog.vue'
+import BaseInput from '@/shared/ui/BaseInput.vue'
 import EnvironmentBadge from '@/shared/ui/EnvironmentBadge.vue'
+import FormField from '@/shared/ui/FormField.vue'
 import { formatDateTime, formatMoney, formatQuantity } from '@/shared/utils/format'
+import { useSessionStore } from '@/core/auth/session-store'
 import { salesDocumentsApi } from '../api'
-import { customerDocumentLabels, documentStatusVariant, paymentLabels, type SalesDocument } from '../types'
+import CreditNoteDialog from '../components/CreditNoteDialog.vue'
+import { correctionVariant, customerDocumentLabels, documentStatusVariant, paymentLabels, type SalesDocument } from '../types'
 
 /** Detalle del comprobante: estado de SUNAT, descargas y «Reintentar» (HU-1.3, HU-4.3). */
 const route = useRoute()
+const router = useRouter()
+const session = useSessionStore()
 const document = ref<SalesDocument | null>(null)
+const creditMode = ref<'return' | 'void'>('return')
+const creditOpen = ref(false)
+const discardOpen = ref(false)
+const discardReason = ref('')
+const discarding = ref(false)
+const isNote = computed(() => document.value?.document_type === '07')
 const loadError = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const retrying = ref(false)
@@ -32,6 +45,8 @@ const result = computed(() => {
       return { variant: 'success' as const, text: 'SUNAT aceptó el comprobante con observaciones.' }
     case 'rejected':
       return { variant: 'error' as const, text: 'SUNAT rechazó el comprobante. Revisa el motivo; no se reintenta.' }
+    case 'discarded':
+      return { variant: 'info' as const, text: `Descartado: ${d.discard_reason}. Su stock se repuso y su número quedó usado.` }
     default:
       return {
         variant: 'warning' as const,
@@ -75,7 +90,41 @@ async function download(file: 'a4' | '80mm' | 'xml' | 'cdr') {
   }
 }
 
+function openCredit(mode: 'return' | 'void') {
+  creditMode.value = mode
+  creditOpen.value = true
+}
+
+/** Tras emitir la nota se abre su detalle, con el resultado de SUNAT. */
+async function onCreditNote(note: SalesDocument) {
+  await router.push({ name: 'sales-document-detail', params: { id: note.id }, query: { nueva: '1' } })
+}
+
+async function discard() {
+  if (!document.value) return
+  discarding.value = true
+  actionError.value = null
+  try {
+    document.value = await salesDocumentsApi.discard(document.value.id, discardReason.value)
+    discardOpen.value = false
+  } catch (e) {
+    if (!(e instanceof ApiError)) throw e
+    actionError.value = Object.values(e.fieldErrors)[0]?.[0] ?? e.message
+    discardOpen.value = false
+  } finally {
+    discarding.value = false
+  }
+}
+
 onMounted(load)
+// La misma vista sirve para el comprobante y sus notas: recarga al cambiar de id.
+watch(
+  () => route.params.id,
+  () => {
+    justIssued.value = route.query.nueva === '1'
+    load()
+  },
+)
 </script>
 
 <template>
@@ -88,7 +137,18 @@ onMounted(load)
       <h1 class="text-xl font-semibold">{{ document.document_type_label }} {{ document.display_number }}</h1>
       <EnvironmentBadge :environment="document.environment" />
       <BaseBadge :variant="documentStatusVariant[document.status]" data-test="status">{{ document.status_label }}</BaseBadge>
+      <BaseBadge v-if="document.correction_status !== 'none'" :variant="correctionVariant[document.correction_status]" data-test="correction">
+        {{ document.correction_status_label }}
+      </BaseBadge>
     </div>
+
+    <p v-if="isNote && document.reference" class="mt-2 text-sm" data-test="reference">
+      Modifica
+      <RouterLink :to="{ name: 'sales-document-detail', params: { id: document.reference.id } }" class="font-medium text-brand-700">
+        {{ document.reference.display_number }}
+      </RouterLink>
+      · {{ document.note_reason_label }}: {{ document.note_reason }}
+    </p>
 
     <BaseAlert v-if="result && (justIssued || document.status !== 'accepted')" :variant="result.variant" class="mt-4" data-test="result">
       <p>{{ result.text }}</p>
@@ -108,6 +168,14 @@ onMounted(load)
       <BaseButton variant="secondary" @click="download('80mm')">PDF 80 mm</BaseButton>
       <BaseButton variant="secondary" @click="download('xml')">XML</BaseButton>
       <BaseButton v-if="document.has_cdr" variant="secondary" @click="download('cdr')">CDR</BaseButton>
+    </div>
+
+    <div v-if="document.can_credit" class="mt-2 flex flex-wrap gap-2" data-test="credit-actions">
+      <BaseButton variant="secondary" @click="openCredit('return')">Registrar devolución</BaseButton>
+      <BaseButton variant="danger" @click="openCredit('void')">Anular</BaseButton>
+    </div>
+    <div v-if="document.status === 'rejected' && session.isCompanyAdmin" class="mt-2">
+      <BaseButton variant="secondary" @click="discardOpen = true">Descartar</BaseButton>
     </div>
 
     <section class="mt-4 grid gap-3 rounded-xl border border-line bg-surface p-4 text-sm sm:grid-cols-2" aria-label="Datos del comprobante">
@@ -134,6 +202,9 @@ onMounted(load)
             <template v-if="Number(line.discount) > 0"> · desc. {{ formatMoney(line.discount) }}</template>
             <template v-if="affectationLabels[line.igv_affectation]"> · {{ affectationLabels[line.igv_affectation] }}</template>
           </span>
+          <span v-if="line.remaining !== null && Number(line.remaining) < Number(line.quantity)" class="block text-xs text-amber-800">
+            Quedan {{ formatQuantity(line.remaining) }} por devolver
+          </span>
         </p>
         <p class="font-medium">{{ formatMoney(line.amount) }}</p>
       </li>
@@ -147,6 +218,21 @@ onMounted(load)
       <div class="flex justify-between border-t border-line pt-2 text-base font-semibold"><dt>Total</dt><dd>{{ formatMoney(document.total) }}</dd></div>
     </dl>
 
+    <section v-if="document.credit_notes?.length" class="mt-4 rounded-xl border border-line bg-surface p-4 text-sm" aria-labelledby="notes-title">
+      <h2 id="notes-title" class="font-medium">Notas de crédito</h2>
+      <ul class="mt-2 divide-y divide-line" data-test="credit-notes">
+        <li v-for="note in document.credit_notes" :key="note.id" class="flex items-center justify-between gap-3 py-2">
+          <RouterLink :to="{ name: 'sales-document-detail', params: { id: note.id } }" class="min-w-0 text-brand-700">
+            <span class="font-medium">{{ note.display_number }}</span> · {{ note.note_reason_label }}
+          </RouterLink>
+          <span class="flex items-center gap-2">
+            <BaseBadge :variant="documentStatusVariant[note.status]">{{ note.status_label }}</BaseBadge>
+            <span>{{ formatMoney(note.total) }}</span>
+          </span>
+        </li>
+      </ul>
+    </section>
+
     <details v-if="document.submissions?.length" class="mt-4 rounded-xl border border-line bg-surface p-4 text-sm">
       <summary class="min-h-11 cursor-pointer font-medium">Envíos a SUNAT ({{ document.submissions.length }})</summary>
       <ul class="mt-2 space-y-1 text-ink-muted" data-test="submissions">
@@ -155,5 +241,19 @@ onMounted(load)
         </li>
       </ul>
     </details>
+    <CreditNoteDialog v-model:open="creditOpen" :document="document" :mode="creditMode" @created="onCreditNote" />
+
+    <BaseDialog v-model:open="discardOpen" title="Descartar comprobante rechazado">
+      <form id="discard-form" class="space-y-4" novalidate @submit.prevent="discard">
+        <p class="text-sm">Queda como descartado, su stock se repone y su número no se reutiliza. Luego emite un comprobante nuevo con los datos corregidos.</p>
+        <FormField label="Motivo" for="discard-reason">
+          <BaseInput id="discard-reason" v-model="discardReason" />
+        </FormField>
+      </form>
+      <template #actions>
+        <BaseButton variant="secondary" @click="discardOpen = false">Cancelar</BaseButton>
+        <BaseButton type="submit" form="discard-form" :loading="discarding">Descartar</BaseButton>
+      </template>
+    </BaseDialog>
   </template>
 </template>
