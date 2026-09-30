@@ -330,7 +330,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/companies": {
+    "/api/v1/platform/audit-logs": {
         parameters: {
             query?: never;
             header?: never;
@@ -338,6 +338,23 @@ export interface paths {
             cookie?: never;
         };
         /** Listar platform */
+        get: operations["platformAuditIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/companies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** HU-1.1/1.2: metadatos y contadores, con búsqueda y filtros. */
         get: operations["companyIndex"];
         put?: never;
         /** Crear platform */
@@ -383,6 +400,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/platform/companies/{company}/admin-invitation/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** HU-2.3: nuevo enlace para el administrador; el anterior deja de valer. */
+        post: operations["companyResendAdminInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/companies/{company}/deactivate": {
         parameters: {
             query?: never;
@@ -394,6 +428,57 @@ export interface paths {
         put?: never;
         /** Deactivate platform */
         post: operations["companyDeactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/sales-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar platform */
+        get: operations["emissionSupportIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/sales-documents/{platformDocument}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry platform */
+        post: operations["emissionSupportRetry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/ubigeos/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search ubigeo platform */
+        get: operations["ubigeoSearchUbigeoGet"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1774,9 +1859,50 @@ export interface operations {
             };
         };
     };
+    platformAuditIndex: {
+        parameters: {
+            query?: {
+                action?: string;
+                company_id?: number;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     companyIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                search?: string | null;
+                status?: "active" | "inactive";
+                issues?: boolean;
+                page?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1919,6 +2045,12 @@ export interface operations {
                     /** Format: email */
                     email?: string;
                     phone?: string | null;
+                    fiscal_address?: {
+                        /** @description Condicional: `required_with:fiscal_address`. */
+                        address?: string;
+                        /** @description Condicional: `required_with:fiscal_address`. */
+                        ubigeo?: string;
+                    };
                 };
             };
         };
@@ -1994,7 +2126,7 @@ export interface operations {
             };
         };
     };
-    companyDeactivate: {
+    companyResendAdminInvitation: {
         parameters: {
             query?: never;
             header?: never;
@@ -2021,6 +2153,166 @@ export interface operations {
             };
             /** @description Error de validación */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    companyDeactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    emissionSupportIndex: {
+        parameters: {
+            query?: {
+                status?: "pending" | "rejected";
+                company_id?: number;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    emissionSupportRetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platformDocument: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ubigeoSearchUbigeoGet: {
+        parameters: {
+            query: {
+                q: string;
+                region_id?: string | null;
+                provincia_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
