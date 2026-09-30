@@ -9,6 +9,7 @@ import { auditRoutes } from '@/features/audit/routes'
 import { inventoryRoutes } from '@/features/inventory/routes'
 import { salesRoutes } from '@/features/sales/routes'
 import { sunatRoutes } from '@/features/sunat/routes'
+import { platformRoutes } from '@/features/platform/routes'
 
 /**
  * Router de la aplicación. Cada feature declara sus rutas en su propio
@@ -40,9 +41,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/plataforma',
-    name: 'platform-admin',
-    component: () => import('@/app/views/PlatformAdminView.vue'),
-    meta: { requiresAuth: true },
+    component: () => import('@/features/platform/components/PlatformLayout.vue'),
+    meta: { requiresAuth: true, platform: true },
+    children: platformRoutes,
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

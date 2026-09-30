@@ -11,6 +11,8 @@ declare module 'vue-router' {
     guestOnly?: boolean
     /** Accesible con o sin sesión (aceptar invitación, restablecer). */
     public?: boolean
+    /** Panel de la plataforma (spec 006): solo su administrador. */
+    platform?: boolean
     /** Roles permitidos; si falta, cualquier usuario de empresa. */
     roles?: CompanyRole[]
     /** Título de la pestaña. */
@@ -38,12 +40,12 @@ export async function authGuard(to: RouteLocationNormalized): Promise<true | Rou
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  // El administrador de la plataforma usa su propio panel (A-08).
+  // El administrador de la plataforma solo usa su panel (A-08, A-35).
   if (session.session?.platform_admin) {
-    return to.name === 'platform-admin' ? true : { name: 'platform-admin' }
+    return to.meta.platform ? true : { name: 'platform-companies' }
   }
 
-  if (to.name === 'platform-admin') return { name: 'home' }
+  if (to.meta.platform) return { name: 'home' }
 
   if (to.meta.roles && !to.meta.roles.includes(session.role!)) {
     return { name: 'home' }

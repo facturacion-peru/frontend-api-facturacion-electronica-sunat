@@ -2,7 +2,7 @@
 
 Cliente web para la [API de Facturación Electrónica SUNAT Perú](../Api-de-facturacion-electronica-sunat-Peru), construido con Vue 3 y TypeScript.
 
-Esta es la aplicación de **todos los usuarios de una empresa**, incluido su administrador: ventas, tickets, comprobantes, productos, inventario, usuarios, series y configuración SUNAT de la propia empresa. Solo el panel de la plataforma (gestión de todas las empresas del SaaS) vive aparte, en el proyecto Laravel. Ver [`docs/aclaraciones.md`](../docs/aclaraciones.md#a-08), A-08.
+Esta es la aplicación de **todos los usuarios de una empresa**, incluido su administrador: ventas, tickets, comprobantes, productos, inventario, usuarios, series y configuración SUNAT de la propia empresa. También aloja el panel del administrador de la plataforma, en un área separada (`/plataforma`, spec 006, A-35). Ver [`docs/aclaraciones.md`](../docs/aclaraciones.md#a-08), A-08.
 
 Está pensada para empaquetarse también como APK con Capacitor, compartiendo el mismo código que la versión web.
 
@@ -144,7 +144,7 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-Features actuales (specs 001 a 005):
+Features actuales (specs 001 a 006):
 
 | Feature | Pantallas |
 |---|---|
@@ -154,6 +154,7 @@ Features actuales (specs 001 a 005):
 | `audit` | Auditoría con filtros |
 | `sales` | Venta rápida que emite ticket, boleta o factura (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos, selector de cliente con alta rápida y de serie); ticket de 80 mm imprimible, anulación y listado con totales; «Ventas» con pestañas Tickets y Comprobantes; detalle del comprobante con el resultado de SUNAT, descargas (PDF A4/80 mm, XML, CDR) y «Reintentar»; clientes para el administrador |
 | `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
+| `platform` | Panel del administrador de la plataforma en `/plataforma`, con su propio layout: empresas (estado SUNAT, filtros, alta, ficha, corrección de datos legales, suspensión con motivo, reenvío de invitación), soporte de la emisión y auditoría. Solo metadatos (A-37). Se carga en diferido; al empaquetar el APK se puede excluir |
 | `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
 
 Piezas compartidas:
