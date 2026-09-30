@@ -66,11 +66,14 @@ export const paymentLabels: Record<PaymentMethod, string> = {
 
 /* ── Comprobantes electrónicos (spec 005) ─────────────────────────────── */
 
-export type DocumentType = '01' | '03'
-export type SalesDocumentStatus = 'pending' | 'sent' | 'accepted' | 'observed' | 'rejected'
+export type DocumentType = '01' | '03' | '07'
+export type SalesDocumentStatus = 'pending' | 'sent' | 'accepted' | 'observed' | 'rejected' | 'discarded'
+export type CorrectionStatus = 'none' | 'partially_returned' | 'fully_returned' | 'voided'
+/** Motivos de nota de crédito (catálogo 09, A-39 ⚖️). */
+export type CreditNoteReason = '01' | '06' | '07'
 export type CustomerDocumentType = '1' | '4' | '6'
 /** Qué se emite desde «Vender» (A-33). */
-export type SaleKind = 'ticket' | DocumentType
+export type SaleKind = 'ticket' | '01' | '03'
 
 /** Refleja App\Http\Resources\CustomerResource. */
 export interface Customer {
@@ -101,6 +104,8 @@ export interface SalesDocumentLine {
   base_amount: string
   igv: string
   amount: string
+  /** Lo que queda por devolver (solo facturas y boletas, spec 007). */
+  remaining: string | null
 }
 
 export interface SunatSubmission {
@@ -143,8 +148,27 @@ export interface SalesDocument {
   attempts: number
   next_attempt_at: string | null
   can_retry: boolean
+  // Spec 007
+  correction_status: CorrectionStatus
+  correction_status_label: string
+  can_credit: boolean
+  note_reason_code: CreditNoteReason | null
+  note_reason_label: string | null
+  note_reason: string | null
+  restock: boolean | null
+  discard_reason: string | null
+  reference?: { id: number; document_type: DocumentType; display_number: string } | null
+  credit_notes?: { id: number; display_number: string; note_reason_label: string; status: SalesDocumentStatus; status_label: string; total: string; issued_at: string }[]
   lines?: SalesDocumentLine[]
   submissions?: SunatSubmission[]
+}
+
+export interface NewCreditNotePayload {
+  idempotency_key: string
+  reason_code: CreditNoteReason
+  reason: string
+  restock?: boolean
+  lines?: { line_position: number; quantity: string }[]
 }
 
 export interface SalesDocumentFilters {
@@ -158,7 +182,7 @@ export interface SalesDocumentFilters {
 
 export interface NewSalesDocumentPayload {
   idempotency_key: string
-  document_type: DocumentType
+  document_type: '01' | '03'
   series_id?: number | null
   customer_id?: number | null
   payment_method: PaymentMethod
@@ -178,6 +202,14 @@ export const documentStatusVariant: Record<SalesDocumentStatus, 'neutral' | 'suc
   accepted: 'success',
   observed: 'success',
   rejected: 'danger',
+  discarded: 'neutral',
+}
+
+export const correctionVariant: Record<CorrectionStatus, 'neutral' | 'warning' | 'danger'> = {
+  none: 'neutral',
+  partially_returned: 'warning',
+  fully_returned: 'danger',
+  voided: 'danger',
 }
 
 export const customerDocumentLabels: Record<string, string> = { '0': 'Sin documento', '1': 'DNI', '4': 'Carné de extranjería', '6': 'RUC' }

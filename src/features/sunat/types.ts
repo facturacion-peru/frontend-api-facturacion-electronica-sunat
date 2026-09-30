@@ -45,7 +45,7 @@ export interface SunatSettings {
   last_validation_error: string | null
 }
 
-export type DocumentType = '01' | '03'
+export type DocumentType = '01' | '03' | '07'
 
 /** Refleja App\Http\Resources\SeriesResource. */
 export interface Series {
@@ -65,7 +65,10 @@ export interface SeriesForm {
   last_number: number
 }
 
-export const documentTypePrefix: Record<DocumentType, string> = { '01': 'F', '03': 'B' }
+export const documentTypePrefix: Record<DocumentType, string> = { '01': 'F', '03': 'B', '07': 'F o B' }
+
+/** Serie que se propone al elegir el tipo (spec 007: las notas llevan la letra del comprobante). */
+export const suggestedSeries: Record<DocumentType, string> = { '01': 'F001', '03': 'B001', '07': 'BC01' }
 
 export const statusVariant: Record<SunatStatus, 'neutral' | 'success' | 'warning' | 'danger'> = {
   not_configured: 'neutral',

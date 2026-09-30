@@ -624,6 +624,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sales-documents/{salesDocument}/credit-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Spec 007: nota de crédito sobre este comprobante. 201 si se creó; 200 si la clave ya existía. */
+        post: operations["salesDocumentStoreCreditNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-documents/{salesDocument}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Spec 007, HU-3: el administrador descarta un comprobante rechazado. */
+        post: operations["salesDocumentDiscard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales-documents/{salesDocument}/pdf": {
         parameters: {
             query?: never;
@@ -2781,6 +2815,110 @@ export interface operations {
             };
             /** @description No autenticado */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    salesDocumentStoreCreditNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salesDocument: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    idempotency_key: string;
+                    reason_code: string;
+                    reason: string;
+                    restock?: boolean;
+                    series_id?: number | null;
+                    /** @description Condicional: `required_if:reason_code,07`. */
+                    lines?: {
+                        line_position: number;
+                        /** Format: decimal */
+                        quantity: string;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    salesDocumentDiscard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salesDocument: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
