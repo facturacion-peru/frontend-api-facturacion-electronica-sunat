@@ -26,6 +26,11 @@ const namedStubs: RouteRecordRaw[] = [
   'sales-documents',
   'sales-document-detail',
   'customers',
+  'platform-companies',
+  'platform-company',
+  'platform-company-create',
+  'platform-support',
+  'platform-audit',
   'sunat',
   'series',
 ].map((name) => ({ path: `/__${name}/:id?`, name, component: Stub }))

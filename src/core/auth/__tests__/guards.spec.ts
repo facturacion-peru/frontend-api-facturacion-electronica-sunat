@@ -30,7 +30,7 @@ function makeRouter(): Router {
       { path: '/', name: 'home', component: Stub, meta: { requiresAuth: true } },
       { path: '/login', name: 'login', component: Stub, meta: { guestOnly: true } },
       { path: '/usuarios', name: 'users', component: Stub, meta: { requiresAuth: true, roles: ['company_admin'] } },
-      { path: '/plataforma', name: 'platform-admin', component: Stub, meta: { requiresAuth: true } },
+      { path: '/plataforma', name: 'platform-companies', component: Stub, meta: { requiresAuth: true, platform: true } },
       { path: '/invitacion/:token', name: 'accept-invitation', component: Stub, meta: { public: true } },
     ],
   })
@@ -96,14 +96,26 @@ describe('authGuard', () => {
     expect(router.currentRoute.value.name).toBe('users')
   })
 
-  it('lleva al administrador de la plataforma a su aviso (A-08)', async () => {
+  it('lleva al administrador de la plataforma a su panel y no lo deja en la app de empresa (A-35)', async () => {
     setToken('1|abc')
     vi.mocked(authApi.me).mockResolvedValue({ ...seller, platform_admin: true, company: null, role: null })
     const router = makeRouter()
 
     await router.push('/')
+    expect(router.currentRoute.value.name).toBe('platform-companies')
 
-    expect(router.currentRoute.value.name).toBe('platform-admin')
+    await router.push('/usuarios')
+    expect(router.currentRoute.value.name).toBe('platform-companies')
+  })
+
+  it('un usuario de empresa no entra al panel de la plataforma', async () => {
+    setToken('1|abc')
+    vi.mocked(authApi.me).mockResolvedValue({ ...seller, role: 'company_admin' })
+    const router = makeRouter()
+
+    await router.push('/plataforma')
+
+    expect(router.currentRoute.value.name).toBe('home')
   })
 
   it('las rutas públicas no exigen sesión', async () => {
