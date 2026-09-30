@@ -144,7 +144,7 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-Features actuales (specs 001 a 006):
+Features actuales (specs 001 a 007):
 
 | Feature | Pantallas |
 |---|---|
@@ -152,7 +152,7 @@ Features actuales (specs 001 a 006):
 | `company` | Mi empresa: datos legales de solo lectura, contacto y logo |
 | `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar |
 | `audit` | Auditoría con filtros |
-| `sales` | Venta rápida que emite ticket, boleta o factura (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos, selector de cliente con alta rápida y de serie); ticket de 80 mm imprimible, anulación y listado con totales; «Ventas» con pestañas Tickets y Comprobantes; detalle del comprobante con el resultado de SUNAT, descargas (PDF A4/80 mm, XML, CDR) y «Reintentar»; clientes para el administrador |
+| `sales` | Venta rápida que emite ticket, boleta o factura (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos, selector de cliente con alta rápida y de serie); ticket de 80 mm imprimible, anulación y listado con totales; «Ventas» con pestañas Tickets y Comprobantes; detalle del comprobante con el resultado de SUNAT, descargas (PDF A4/80 mm, XML, CDR) y «Reintentar»; devoluciones y anulaciones con nota de crédito, notas y saldo por línea, y descarte de rechazados (administrador); clientes para el administrador |
 | `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
 | `platform` | Panel del administrador de la plataforma en `/plataforma`, con su propio layout: empresas (estado SUNAT, filtros, alta, ficha, corrección de datos legales, suspensión con motivo, reenvío de invitación), soporte de la emisión y auditoría. Solo metadatos (A-37). Se carga en diferido; al empaquetar el APK se puede excluir |
 | `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
