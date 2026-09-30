@@ -22,9 +22,11 @@ const base: SalesDocument = {
   op_gravadas: '43.90', op_exoneradas: '13.50', op_inafectas: '0.00', igv: '7.90', discount_total: '0.00', total: '65.30',
   status: 'accepted', status_label: 'Aceptado', sunat_code: '0', sunat_message: 'La Boleta numero B001-151, ha sido aceptada', sunat_notes: [],
   hash: 'abc=', has_cdr: true, attempts: 1, next_attempt_at: null, can_retry: false,
+  correction_status: 'none', correction_status_label: 'Vigente', can_credit: true, note_reason_code: null, note_reason_label: null,
+  note_reason: null, restock: null, discard_reason: null, reference: null, credit_notes: [],
   lines: [
-    { position: 1, product_code: 'ARZ', product_name: 'Arroz 5 kg', unit: 'NIU', igv_affectation: '10', quantity: '2.000', unit_price: '25.90', discount: '0.00', base_amount: '43.90', igv: '7.90', amount: '51.80' },
-    { position: 2, product_code: 'LEC', product_name: 'Leche', unit: 'NIU', igv_affectation: '20', quantity: '3.000', unit_price: '4.50', discount: '0.00', base_amount: '13.50', igv: '0.00', amount: '13.50' },
+    { position: 1, product_code: 'ARZ', product_name: 'Arroz 5 kg', unit: 'NIU', igv_affectation: '10', quantity: '2.000', unit_price: '25.90', discount: '0.00', base_amount: '43.90', igv: '7.90', amount: '51.80', remaining: '2.000' },
+    { position: 2, product_code: 'LEC', product_name: 'Leche', unit: 'NIU', igv_affectation: '20', quantity: '3.000', unit_price: '4.50', discount: '0.00', base_amount: '13.50', igv: '0.00', amount: '13.50', remaining: '3.000' },
   ],
   submissions: [{ trigger: 'issue', started_at: '2026-09-29T15:00:01+00:00', duration_ms: 210, result: 'accepted', code: '0', message: 'aceptada' }],
 }

@@ -6,6 +6,7 @@ import type {
   Customer,
   CustomerForm,
   IssuingAvailability,
+  NewCreditNotePayload,
   NewSalesDocumentPayload,
   NewTicketPayload,
   SalesDocument,
@@ -83,6 +84,18 @@ export const salesDocumentsApi = {
 
   get: (id: number) =>
     unwrapData<SalesDocument>(apiClient.GET('/api/v1/sales-documents/{salesDocument}', { params: { path: { salesDocument: id } } })),
+
+  /** Spec 007: nota de crédito (anulación o devolución) sobre un comprobante. */
+  creditNote: async (id: number, body: NewCreditNotePayload) =>
+    (
+      await unwrap<{ data: SalesDocument }>(
+        apiClient.POST('/api/v1/sales-documents/{salesDocument}/credit-notes', { params: { path: { salesDocument: id } }, body }),
+      )
+    ).data,
+
+  /** Spec 007: el administrador descarta un comprobante rechazado. */
+  discard: (id: number, reason: string) =>
+    unwrapData<SalesDocument>(apiClient.POST('/api/v1/sales-documents/{salesDocument}/discard', { params: { path: { salesDocument: id } }, body: { reason } })),
 
   retry: (id: number) =>
     unwrapData<SalesDocument>(apiClient.POST('/api/v1/sales-documents/{salesDocument}/retry', { params: { path: { salesDocument: id } } })),
