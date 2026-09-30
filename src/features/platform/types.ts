@@ -118,4 +118,5 @@ export const auditActionLabels: Record<string, string> = {
   'invitation.resent': 'Invitación reenviada',
   'invitation.created': 'Invitación enviada',
   'sales_document.retry_requested': 'Reintento de envío',
+  'sales_document.status_changed': 'Respuesta de SUNAT',
 }
