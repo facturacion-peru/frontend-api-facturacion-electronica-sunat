@@ -1,0 +1,110 @@
+# CI y despliegue del frontend (spec 009, plan «CI/CD»).
+#
+# - CI en cada push y pull request: instalación con el lockfile congelado y las
+#   protecciones de pnpm-workspace.yaml intactas, tipos, lint, pruebas y build.
+# - En cada cambio de main que pase la CI: build con las variables del
+#   ambiente → staging → producción (con aprobación manual en el ambiente
+#   «production» de GitHub). La API de cada ambiente se despliega antes: su
+#   release.sh es el que publica la web.
+#
+# Solo pnpm (AGENTS.md): nunca npm, npx ni yarn.
+# El despliegue queda apagado hasta que exista el servidor: se enciende con la
+# variable de repositorio DEPLOY_ENABLED=true (PREPARACION.md de la API).
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  VITE_APP_NAME: Facturación Electrónica SUNAT
+
+jobs:
+  ci:
+    name: Tipos, lint, pruebas y build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm type-check
+      - name: Lint (sin cambios pendientes)
+        run: |
+          pnpm lint
+          git diff --exit-code
+      - run: pnpm test:unit --run
+      - run: pnpm build-only
+      - run: bash -n deploy/ship.sh
+
+  deploy-staging:
+    name: Desplegar a staging
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment:
+      name: staging
+      url: ${{ vars.HEALTH_URL }}
+    concurrency: deploy-web-staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build del ambiente
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_PILOT_MODE: ${{ vars.VITE_PILOT_MODE }}
+        run: pnpm build-only && tar -czf "$RUNNER_TEMP/web.tar.gz" -C dist .
+      - name: Subir y publicar
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HEALTH_URL: ${{ vars.HEALTH_URL }}
+        run: bash deploy/ship.sh staging web "$RUNNER_TEMP/web.tar.gz"
+
+  deploy-production:
+    name: Desplegar a producción
+    needs: deploy-staging
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: ${{ vars.HEALTH_URL }}
+    concurrency: deploy-web-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build del ambiente
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_PILOT_MODE: ${{ vars.VITE_PILOT_MODE }}
+        run: pnpm build-only && tar -czf "$RUNNER_TEMP/web.tar.gz" -C dist .
+      - name: Subir y publicar
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HEALTH_URL: ${{ vars.HEALTH_URL }}
+        run: bash deploy/ship.sh production web "$RUNNER_TEMP/web.tar.gz"
