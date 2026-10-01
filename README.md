@@ -1,10 +1,18 @@
 # Frontend — Facturación Electrónica SUNAT
 
-Cliente web para la [API de Facturación Electrónica SUNAT Perú](../Api-de-facturacion-electronica-sunat-Peru), construido con Vue 3 y TypeScript.
+Cliente web para la [API de Facturación Electrónica SUNAT Perú](https://github.com/facturacion-peru/Api-de-facturacion-electronica-sunat-Peru), construido con Vue 3 y TypeScript.
 
-Esta es la aplicación de **todos los usuarios de una empresa**, incluido su administrador: ventas, tickets, comprobantes, productos, inventario, usuarios, series y configuración SUNAT de la propia empresa. También aloja el panel del administrador de la plataforma, en un área separada (`/plataforma`, spec 006, A-35). Ver [`docs/aclaraciones.md`](../docs/aclaraciones.md#a-08), A-08.
+Esta es la aplicación de **todos los usuarios de una empresa**, incluido su administrador: ventas, tickets, comprobantes, productos, inventario, usuarios, series y configuración SUNAT de la propia empresa. También aloja el panel del administrador de la plataforma, en un área separada (`/plataforma`, spec 006, A-35). Ver [`docs/aclaraciones.md`](https://github.com/facturacion-peru/sdd-docs/blob/main/docs/aclaraciones.md#a-08), A-08.
 
 Está pensada para empaquetarse también como APK con Capacitor, compartiendo el mismo código que la versión web.
+
+## Repositorios del proyecto
+
+| Repositorio | Qué contiene |
+|---|---|
+| [sdd-docs](https://github.com/facturacion-peru/sdd-docs) | Documentación: visión, constitución, specs y aclaraciones. Explica cómo clonar los tres juntos |
+| [Api-de-facturacion-electronica-sunat-Peru](https://github.com/facturacion-peru/Api-de-facturacion-electronica-sunat-Peru) | API REST (Laravel), emisión SUNAT, despliegue y operación |
+| [frontend-api-facturacion-electronica-sunat](https://github.com/facturacion-peru/frontend-api-facturacion-electronica-sunat) | Aplicación web (Vue) de las empresas y de la plataforma |
 
 ## Stack
 
