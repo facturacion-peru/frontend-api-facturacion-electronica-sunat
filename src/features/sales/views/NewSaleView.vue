@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useMediaQuery } from '@vueuse/core'
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
@@ -10,6 +9,7 @@ import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
 import { salesApi, salesDocumentsApi, type SellableProduct } from '../api'
 import ProductCatalog from '../components/ProductCatalog.vue'
+import SaleDoneDialog, { type SaleDone } from '../components/SaleDoneDialog.vue'
 import SaleCart from '../components/SaleCart.vue'
 import { useSaleDraftStore } from '../stores/sale-draft'
 import { ANONYMOUS_RECEIPT_LIMIT, type IssuingAvailability, type SaleKind } from '../types'
@@ -17,13 +17,13 @@ import { ANONYMOUS_RECEIPT_LIMIT, type IssuingAvailability, type SaleKind } from
 /**
  * Venta rápida (spec 003 HU-1, spec 012): tocar productos del catálogo y
  * cobrar. Desde aquí también se emite boleta o factura (spec 005, A-33).
+ * Tras cobrar, la venta se confirma en un modal sin salir de la pantalla.
  *
  * La venta en curso vive en el store `sale-draft` y se conserva al salir y
  * volver (A-58). En pantallas anchas, catálogo y carrito en dos columnas; en
  * el celular, una barra fija abre el carrito como hoja (A-56). Los importes
  * son una vista previa: el servidor guarda los suyos.
  */
-const router = useRouter()
 const draft = useSaleDraftStore()
 // Antes de pintar: el carrito y sus hijos ya ven la venta restaurada.
 draft.load()
@@ -34,6 +34,26 @@ const error = ref<string | null>(null)
 const removedNotice = ref<string | null>(null)
 const cartOpen = ref(false)
 const confirmClear = ref(false)
+/** Venta recién registrada: se confirma en un modal sin salir de «Vender» (v1.4). */
+const done = ref<SaleDone | null>(null)
+const doneOpen = ref(false)
+
+// Cerrar la confirmación de cualquier forma deja lista la siguiente venta.
+watch(doneOpen, async (isOpen) => {
+  if (isOpen) return
+  await nextTick()
+  document.getElementById('sale-search')?.focus()
+})
+
+const catalog = useTemplateRef<InstanceType<typeof ProductCatalog>>('catalog')
+
+function finish(sale: SaleDone) {
+  draft.clear()
+  catalog.value?.reload()
+  cartOpen.value = false
+  done.value = sale
+  doneOpen.value = true
+}
 
 const availability = ref<IssuingAvailability | null>(null)
 const availabilityError = ref(false)
@@ -128,8 +148,7 @@ async function charge() {
         payment_method: draft.paymentMethod,
         lines,
       })
-      draft.clear()
-      await router.push({ name: 'sales-document-detail', params: { id: document.id }, query: { nueva: '1' } })
+      finish({ kind: 'document', document })
       return
     }
 
@@ -140,8 +159,7 @@ async function charge() {
       ...(draft.customerDocument && { customer_document: draft.customerDocument }),
       lines,
     })
-    draft.clear()
-    await router.push({ name: 'ticket-detail', params: { id: ticket.id }, query: { nueva: '1' } })
+    finish({ kind: 'ticket', ticket })
   } catch (e) {
     if (!(e instanceof ApiError)) throw e
     // Un 422 no creó nada: la venta corregida es otra operación con otra clave.
@@ -197,7 +215,7 @@ const cartProps = computed(() => ({
 
     <div class="mt-4 grid grid-cols-1 gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_24rem] 2xl:grid-cols-[minmax(0,1fr)_26rem]">
       <div class="lg:-mx-2 lg:min-h-0 lg:overflow-y-auto lg:px-2">
-        <ProductCatalog :in-cart="inCart" @add="add" />
+        <ProductCatalog ref="catalog" :in-cart="inCart" @add="add" />
       </div>
 
       <aside v-if="isDesktop" class="min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-xs">
@@ -225,6 +243,8 @@ const cartProps = computed(() => ({
     <BaseDialog v-if="!isDesktop" v-model:open="cartOpen" title="Tu venta">
       <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" />
     </BaseDialog>
+
+    <SaleDoneDialog v-model:open="doneOpen" :sale="done" />
 
     <BaseDialog v-model:open="confirmClear" title="¿Vaciar el carrito?">
       <p class="text-sm text-ink-muted">

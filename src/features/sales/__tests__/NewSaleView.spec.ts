@@ -12,7 +12,7 @@ type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
 vi.mock('../api', () => ({
   salesApi: { listProducts: vi.fn<AsyncFn>(), getProduct: vi.fn<AsyncFn>(), issue: vi.fn<AsyncFn>() },
-  salesDocumentsApi: { availability: vi.fn<AsyncFn>(), issue: vi.fn<AsyncFn>() },
+  salesDocumentsApi: { availability: vi.fn<AsyncFn>(), issue: vi.fn<AsyncFn>(), download: vi.fn<AsyncFn>() },
   customersApi: { search: vi.fn<AsyncFn>(), create: vi.fn<AsyncFn>() },
 }))
 
@@ -23,7 +23,21 @@ const galletas: SellableProduct = { id: 1, code: 'GAL-1', name: 'Galletas', type
 const azucar: SellableProduct = { id: 2, code: 'AZU-1', name: 'Azúcar', type: 'good', unit: 'KGM', sale_price: '4.20', available_stock: '5.000' }
 const agotado: SellableProduct = { id: 3, code: 'AGO-1', name: 'Agotado', type: 'good', unit: 'NIU', sale_price: '1.00', available_stock: '0.000' }
 
-const ticket = { id: 9, display_number: 'T-000009' } as Ticket
+const ticket: Ticket = {
+  id: 9, number: 9, display_number: 'T-000009', status: 'issued', legal_notice: 'Documento interno — no es comprobante de pago',
+  seller: { id: 2, name: 'Luis' }, customer_name: null, customer_label: 'Cliente varios', customer_document: null,
+  payment_method: 'yape_plin', subtotal: '2.99', discount_total: '0.00', total: '2.99', issued_at: '2026-10-03T15:00:00Z',
+  voided_at: null, void_reason: null,
+  lines: [{ product_id: 1, product_code: 'GAL-1', product_name: 'Galletas', unit: 'NIU', quantity: '1.000', unit_price: '2.99', gross_amount: '2.99', discount: '0.00', amount: '2.99' }],
+}
+
+/** Comprobante emitido, como lo devuelve la API (solo lo que usa la confirmación). */
+const boleta = (over: Partial<SalesDocument> = {}) =>
+  ({ id: 31, document_type: '03', display_number: 'B001-00000151', total: '2.99', status: 'accepted', next_attempt_at: null, discard_reason: null, ...over }) as SalesDocument
+
+/** El modal se monta en <body> (Teleport). */
+const dialog = () => document.body.querySelector('[role="dialog"]') as HTMLElement | null
+const dialogButton = (label: string) => Array.from(dialog()!.querySelectorAll('button')).find((b) => b.textContent?.trim() === label) as HTMLButtonElement
 
 const available: IssuingAvailability = {
   can_issue: true,
@@ -220,14 +234,14 @@ describe('NewSaleView', () => {
     expect(document.body.querySelectorAll('[role="dialog"] [data-test="cart-line"]')).toHaveLength(2)
   })
 
-  it('cobra y va al ticket', async () => {
+  it('v1.4 cobra, se queda en «Vender» y confirma en un modal con número y total', async () => {
     vi.mocked(salesApi.issue).mockResolvedValue(ticket)
     const { wrapper, router } = await mountSale()
     const push = vi.spyOn(router, 'push')
 
     await addProducts(wrapper, ['Galletas'])
     await wrapper.find('input[value="yape_plin"]').setValue(true)
-    await wrapper.findAll('button').find((b) => b.text() === 'Cobrar')!.trigger('click')
+    await chargeButton(wrapper).trigger('click')
     await flushPromises()
 
     expect(salesApi.issue).toHaveBeenCalledWith(expect.objectContaining({
@@ -235,8 +249,47 @@ describe('NewSaleView', () => {
       lines: [{ product_id: 1, quantity: '1' }],
       idempotency_key: expect.stringMatching(/^[0-9a-f-]{36}$/),
     }))
-    expect(push).toHaveBeenCalledWith({ name: 'ticket-detail', params: { id: 9 }, query: { nueva: '1' } })
+    expect(push).not.toHaveBeenCalled()
+    expect(dialog()!.textContent).toContain('Venta registrada')
+    expect(dialog()!.textContent).toContain('T-000009')
+    expect(dialog()!.textContent).toMatch(/2\.99/)
+    expect(wrapper.findAll('[data-test="cart-line"]')).toHaveLength(0)
     expect(localStorage.getItem('sunat.sale-draft.1.1')).toBeNull()
+    // El catálogo se recarga: el disponible ya descuenta lo vendido.
+    expect(salesApi.listProducts).toHaveBeenCalledTimes(2)
+  })
+
+  it('v1.4 «Nueva venta» cierra el modal y deja el foco en la búsqueda', async () => {
+    vi.mocked(salesApi.issue).mockResolvedValue(ticket)
+    const { wrapper } = await mountSale()
+    await addProducts(wrapper, ['Galletas'])
+    await chargeButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(document.activeElement).toBe(dialogButton('Nueva venta'))
+    dialogButton('Nueva venta').click()
+    await flushPromises()
+
+    expect(dialog()).toBeNull()
+    expect(document.activeElement?.id).toBe('sale-search')
+  })
+
+  it('v1.4 imprime el ticket y lleva al detalle si se pide', async () => {
+    vi.mocked(salesApi.issue).mockResolvedValue(ticket)
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+    const { wrapper, router } = await mountSale()
+    await addProducts(wrapper, ['Galletas'])
+    await chargeButton(wrapper).trigger('click')
+    await flushPromises()
+
+    dialogButton('Imprimir').click()
+    await flushPromises()
+    expect(print).toHaveBeenCalled()
+
+    dialogButton('Ver detalle').click()
+    await flushPromises()
+    expect(router.currentRoute.value.name).toBe('ticket-detail')
+    expect(router.currentRoute.value.params.id).toBe('9')
   })
 
   it('reintenta con la misma clave si la conexión falla, también tras salir y volver', async () => {
@@ -289,20 +342,37 @@ describe('NewSaleView', () => {
       await input.setValue(true)
     }
 
-    it('emite una boleta a Cliente varios y va al comprobante', async () => {
-      vi.mocked(salesDocumentsApi.issue).mockResolvedValue({ id: 31, display_number: 'B001-00000151' } as SalesDocument)
+    it('emite una boleta a Cliente varios y la confirma con el resultado de SUNAT', async () => {
+      vi.mocked(salesDocumentsApi.issue).mockResolvedValue(boleta())
       const { wrapper, router } = await mountSale()
       await addProducts(wrapper, ['Galletas'])
 
       await choose(wrapper, 'Boleta')
       expect(wrapper.find('[data-test="environment-badge"]').exists()).toBe(true)
-      await wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta')!.trigger('click')
+      await chargeButton(wrapper, 'Emitir boleta').trigger('click')
       await flushPromises()
 
       expect(salesDocumentsApi.issue).toHaveBeenCalledWith(expect.objectContaining({
         document_type: '03', series_id: 11, customer_id: null, payment_method: 'cash', lines: [{ product_id: 1, quantity: '1' }],
       }))
-      expect(router.currentRoute.value.name).toBe('sales-document-detail')
+      expect(router.currentRoute.value.name).not.toBe('sales-document-detail')
+      expect(dialog()!.textContent).toContain('B001-00000151')
+      expect(dialog()!.textContent).toContain('SUNAT aceptó el comprobante.')
+
+      dialogButton('Imprimir').click()
+      await flushPromises()
+      expect(salesDocumentsApi.download).toHaveBeenCalledWith(expect.objectContaining({ id: 31 }), '80mm')
+    })
+
+    it('v1.4 destaca si SUNAT no respondió o rechazó el comprobante', async () => {
+      vi.mocked(salesDocumentsApi.issue).mockResolvedValue(boleta({ status: 'pending', next_attempt_at: '2026-10-03T15:01:00Z' }))
+      const { wrapper } = await mountSale()
+      await addProducts(wrapper, ['Galletas'])
+      await choose(wrapper, 'Boleta')
+      await chargeButton(wrapper, 'Emitir boleta').trigger('click')
+      await flushPromises()
+
+      expect(dialog()!.querySelector('[role="status"], [role="alert"]')!.textContent).toContain('SUNAT no respondió')
     })
 
     it('la factura exige un cliente con RUC', async () => {

@@ -47,6 +47,9 @@ const runSearch = useDebounceFn(() => load(true), 250)
 
 onMounted(() => load(true))
 
+/** Tras una venta, la vista recarga el catálogo para que el disponible descuente lo vendido. */
+defineExpose({ reload: () => load(true) })
+
 function canAdd(product: SellableProduct): boolean {
   return product.type === 'service' || Number(product.available_stock ?? 0) > 0
 }

@@ -14,6 +14,7 @@ import { formatDateTime, formatMoney, formatQuantity } from '@/shared/utils/form
 import { useSessionStore } from '@/core/auth/session-store'
 import { salesDocumentsApi } from '../api'
 import CreditNoteDialog from '../components/CreditNoteDialog.vue'
+import { documentResult } from '../document-result'
 import { correctionVariant, customerDocumentLabels, documentStatusVariant, paymentLabels, type SalesDocument } from '../types'
 
 /** Detalle del comprobante: estado de SUNAT, descargas y «Reintentar» (HU-1.3, HU-4.3). */
@@ -34,28 +35,7 @@ const justIssued = ref(route.query.nueva === '1')
 
 const affectationLabels: Record<string, string> = { '10': '', '20': 'Exonerado', '30': 'Inafecto' }
 
-const result = computed(() => {
-  const d = document.value
-  if (!d) return null
-
-  switch (d.status) {
-    case 'accepted':
-      return { variant: 'success' as const, text: 'SUNAT aceptó el comprobante.' }
-    case 'observed':
-      return { variant: 'success' as const, text: 'SUNAT aceptó el comprobante con observaciones.' }
-    case 'rejected':
-      return { variant: 'error' as const, text: 'SUNAT rechazó el comprobante. Revisa el motivo; no se reintenta.' }
-    case 'discarded':
-      return { variant: 'info' as const, text: `Descartado: ${d.discard_reason}. Su stock se repuso y su número quedó usado.` }
-    default:
-      return {
-        variant: 'warning' as const,
-        text: d.next_attempt_at
-          ? `SUNAT no respondió. La venta y el número quedaron guardados; se reenviará automáticamente (próximo intento: ${formatDateTime(d.next_attempt_at)}).`
-          : 'SUNAT no respondió y se agotaron los reintentos automáticos. Usa «Reintentar».',
-      }
-  }
-})
+const result = computed(() => (document.value ? documentResult(document.value) : null))
 
 async function load() {
   try {

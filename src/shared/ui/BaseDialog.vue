@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Diálogo modal accesible: atrapa el foco, se cierra con Escape y devuelve
- * el foco al elemento que lo abrió.
+ * el foco al elemento que lo abrió (si sigue en la página). Un hijo con
+ * `data-autofocus` recibe el foco al abrir.
  */
 import { nextTick, ref, useId, watch } from 'vue'
 
@@ -23,9 +24,10 @@ watch(open, async (isOpen) => {
   if (isOpen) {
     opener = document.activeElement as HTMLElement | null
     await nextTick()
-    ;(focusables()[0] ?? panel.value)?.focus()
-  } else {
-    opener?.focus()
+    // `data-autofocus` elige el control inicial (p. ej. la acción principal).
+    ;(panel.value?.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0] ?? panel.value)?.focus()
+  } else if (opener?.isConnected) {
+    opener.focus()
   }
 })
 
