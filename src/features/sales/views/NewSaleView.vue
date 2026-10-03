@@ -1,57 +1,42 @@
 <script setup lang="ts">
-import { useDebounceFn } from '@vueuse/core'
-import { computed, onMounted, ref, watch } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
-import BaseInput from '@/shared/ui/BaseInput.vue'
-import BaseSelect from '@/shared/ui/BaseSelect.vue'
-import FormField from '@/shared/ui/FormField.vue'
-import EnvironmentBadge from '@/shared/ui/EnvironmentBadge.vue'
-import SearchInput from '@/shared/ui/SearchInput.vue'
+import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
 import { salesApi, salesDocumentsApi, type SellableProduct } from '../api'
-import CustomerPicker from '../components/CustomerPicker.vue'
-import { lineAmount, sumAmounts } from '../pricing'
-import { ANONYMOUS_RECEIPT_LIMIT, paymentLabels, type Customer, type IssuingAvailability, type PaymentMethod, type SaleKind } from '../types'
+import ProductCatalog from '../components/ProductCatalog.vue'
+import SaleCart from '../components/SaleCart.vue'
+import { useSaleDraftStore } from '../stores/sale-draft'
+import { ANONYMOUS_RECEIPT_LIMIT, type IssuingAvailability, type SaleKind } from '../types'
 
 /**
- * Venta rápida (HU-1, CE-001): buscar, tocar para agregar, cobrar. Los
- * importes son una vista previa; el ticket guarda los del servidor.
- * Desde aquí también se emite boleta o factura (spec 005, A-33): mismo
- * carrito, con cliente y serie.
+ * Venta rápida (spec 003 HU-1, spec 012): tocar productos del catálogo y
+ * cobrar. Desde aquí también se emite boleta o factura (spec 005, A-33).
+ *
+ * La venta en curso vive en el store `sale-draft` y se conserva al salir y
+ * volver (A-58). En pantallas anchas, catálogo y carrito en dos columnas; en
+ * el celular, una barra fija abre el carrito como hoja (A-56). Los importes
+ * son una vista previa: el servidor guarda los suyos.
  */
-interface CartLine {
-  product: SellableProduct
-  quantity: string
-  discount: string
-  error: string | null
-}
-
 const router = useRouter()
+const draft = useSaleDraftStore()
+// Antes de pintar: el carrito y sus hijos ya ven la venta restaurada.
+draft.load()
+const isDesktop = useMediaQuery('(min-width: 1024px)')
 
-const search = ref('')
-const results = ref<SellableProduct[]>([])
-const cart = ref<CartLine[]>([])
-const paymentMethod = ref<PaymentMethod>('cash')
-const showCustomer = ref(false)
-const customerName = ref('')
-const customerDocument = ref('')
 const submitting = ref(false)
 const error = ref<string | null>(null)
+const removedNotice = ref<string | null>(null)
+const cartOpen = ref(false)
+const confirmClear = ref(false)
 
-const kind = ref<SaleKind>('ticket')
 const availability = ref<IssuingAvailability | null>(null)
 const availabilityError = ref(false)
-const documentCustomer = ref<Customer | null>(null)
-const seriesId = ref<number | null>(null)
-
-// Se conserva entre reintentos de la misma venta para no duplicarla (RF-008).
-let idempotencyKey = crypto.randomUUID()
-
-const total = computed(() => sumAmounts(cart.value.map((l) => lineAmount(l.quantity || '0', l.product.sale_price, l.discount))))
 
 const kinds: { value: SaleKind; label: string }[] = [
   { value: 'ticket', label: 'Ticket' },
@@ -59,7 +44,9 @@ const kinds: { value: SaleKind; label: string }[] = [
   { value: '01', label: 'Factura' },
 ]
 
-const kindSeries = computed(() => availability.value?.series.filter((s) => s.document_type === kind.value) ?? [])
+const kindSeries = computed(() => availability.value?.series.filter((s) => s.document_type === draft.kind) ?? [])
+
+const inCart = computed(() => Object.fromEntries(draft.lines.map((l) => [l.product.id, l.quantity])))
 
 /** Por qué no se puede emitir boleta o factura, o null si se puede. */
 function blockedReason(value: SaleKind): string | null {
@@ -74,89 +61,91 @@ function blockedReason(value: SaleKind): string | null {
 
 /** Boleta de más de S/ 700 sin comprador identificado (A-22 ⚖️); la API lo hace cumplir. */
 const needsReceiptCustomer = computed(
-  () => kind.value === '03' && !documentCustomer.value && Number(total.value) > Number(ANONYMOUS_RECEIPT_LIMIT),
+  () => draft.kind === '03' && !draft.documentCustomer && Number(draft.total) > Number(ANONYMOUS_RECEIPT_LIMIT),
 )
-const needsInvoiceCustomer = computed(() => kind.value === '01' && documentCustomer.value?.document_type !== '6')
-const chargeLabel = computed(() => ({ ticket: 'Cobrar', '03': 'Emitir boleta', '01': 'Emitir factura' })[kind.value])
+const needsInvoiceCustomer = computed(() => draft.kind === '01' && draft.documentCustomer?.document_type !== '6')
+const chargeLabel = computed(() => ({ ticket: 'Cobrar', '03': 'Emitir boleta', '01': 'Emitir factura' })[draft.kind])
+
+/** Cambio de tipo hecho por el usuario: otra operación, otra clave y la serie por defecto. */
+function onKindChanged() {
+  draft.idempotencyKey = crypto.randomUUID()
+  draft.seriesId = kindSeries.value[0]?.id ?? null
+  if (draft.kind === '01' && draft.documentCustomer?.document_type !== '6') draft.documentCustomer = null
+  error.value = null
+}
+
+/** La venta restaurada pudo quedar con un tipo o serie que ya no sirven (casos límite de la spec 012). */
+function validateRestoredKind() {
+  if (blockedReason(draft.kind)) {
+    draft.kind = 'ticket'
+    return
+  }
+  if (draft.kind !== 'ticket' && !kindSeries.value.some((s) => s.id === draft.seriesId)) {
+    draft.seriesId = kindSeries.value[0]?.id ?? null
+  }
+}
 
 onMounted(async () => {
+  const refreshing = draft.lines.length
+    ? draft.refresh(salesApi.getProduct).then((removed) => {
+        if (removed.length) removedNotice.value = `Se quitó del carrito: ${removed.join(', ')}. Ya no está disponible para la venta.`
+      })
+    : Promise.resolve()
+
   try {
     availability.value = await salesDocumentsApi.availability()
   } catch {
     availabilityError.value = true
   }
+  validateRestoredKind()
+  await refreshing
 })
-
-watch(kind, () => {
-  // Otra operación: otra clave de idempotencia, y la serie por defecto del tipo.
-  idempotencyKey = crypto.randomUUID()
-  seriesId.value = kindSeries.value[0]?.id ?? null
-  if (kind.value === '01' && documentCustomer.value?.document_type !== '6') documentCustomer.value = null
-  error.value = null
-})
-
-const runSearch = useDebounceFn(async () => {
-  results.value = search.value.trim() ? await salesApi.searchProducts(search.value.trim()).catch(() => []) : []
-}, 250)
-
-function canAdd(product: SellableProduct): boolean {
-  return product.type === 'service' || Number(product.available_stock ?? 0) > 0
-}
 
 function add(product: SellableProduct) {
-  const existing = cart.value.find((l) => l.product.id === product.id)
-  if (existing) {
-    existing.quantity = String(Number(existing.quantity) + 1)
-  } else {
-    cart.value.push({ product, quantity: '1', discount: '', error: null })
-  }
-  search.value = ''
-  results.value = []
+  draft.add(product)
 }
 
-function step(line: CartLine, delta: number) {
-  const next = Number(line.quantity || '0') + delta
-  if (next <= 0) {
-    cart.value = cart.value.filter((l) => l !== line)
-  } else {
-    line.quantity = String(next)
-  }
-  line.error = null
+function clearCart() {
+  draft.clear()
+  confirmClear.value = false
+  cartOpen.value = false
+  error.value = null
 }
 
 async function charge() {
   error.value = null
-  cart.value.forEach((l) => (l.error = null))
+  draft.lines.forEach((l) => (l.error = null))
   submitting.value = true
+  const lines = draft.lines.map((l) => ({ product_id: l.product.id, quantity: l.quantity, ...(l.discount && { discount: l.discount }) }))
 
   try {
-    if (kind.value !== 'ticket') {
+    if (draft.kind !== 'ticket') {
       const document = await salesDocumentsApi.issue({
-        idempotency_key: idempotencyKey,
-        document_type: kind.value,
-        series_id: seriesId.value,
-        customer_id: documentCustomer.value?.id ?? null,
-        payment_method: paymentMethod.value,
-        lines: cart.value.map((l) => ({ product_id: l.product.id, quantity: l.quantity, ...(l.discount && { discount: l.discount }) })),
+        idempotency_key: draft.idempotencyKey,
+        document_type: draft.kind,
+        series_id: draft.seriesId,
+        customer_id: draft.documentCustomer?.id ?? null,
+        payment_method: draft.paymentMethod,
+        lines,
       })
-      idempotencyKey = crypto.randomUUID()
+      draft.clear()
       await router.push({ name: 'sales-document-detail', params: { id: document.id }, query: { nueva: '1' } })
       return
     }
 
     const ticket = await salesApi.issue({
-      idempotency_key: idempotencyKey,
-      payment_method: paymentMethod.value,
-      ...(customerName.value && { customer_name: customerName.value }),
-      ...(customerDocument.value && { customer_document: customerDocument.value }),
-      lines: cart.value.map((l) => ({ product_id: l.product.id, quantity: l.quantity, ...(l.discount && { discount: l.discount }) })),
+      idempotency_key: draft.idempotencyKey,
+      payment_method: draft.paymentMethod,
+      ...(draft.customerName && { customer_name: draft.customerName }),
+      ...(draft.customerDocument && { customer_document: draft.customerDocument }),
+      lines,
     })
-    idempotencyKey = crypto.randomUUID()
+    draft.clear()
     await router.push({ name: 'ticket-detail', params: { id: ticket.id }, query: { nueva: '1' } })
   } catch (e) {
     if (!(e instanceof ApiError)) throw e
     // Un 422 no creó nada: la venta corregida es otra operación con otra clave.
-    if (e.status === 422) idempotencyKey = crypto.randomUUID()
+    if (e.status === 422) draft.idempotencyKey = crypto.randomUUID()
     showErrors(e)
   } finally {
     submitting.value = false
@@ -165,7 +154,7 @@ async function charge() {
 
 function showErrors(e: ApiError) {
   const productId = e.meta.product_id as number | undefined
-  const stockLine = productId !== undefined ? cart.value.find((l) => l.product.id === productId) : undefined
+  const stockLine = productId !== undefined ? draft.lines.find((l) => l.product.id === productId) : undefined
 
   if (stockLine) {
     stockLine.error = `Solo hay ${formatQuantity(String(e.meta.available))} disponible.`
@@ -175,7 +164,7 @@ function showErrors(e: ApiError) {
   let placed = false
   for (const [field, messages] of Object.entries(e.fieldErrors)) {
     const match = field.match(/^lines\.(\d+)\./)
-    const line = match ? cart.value[Number(match[1])] : undefined
+    const line = match ? draft.lines[Number(match[1])] : undefined
     if (line) {
       line.error = messages[0] ?? null
       placed = true
@@ -184,134 +173,67 @@ function showErrors(e: ApiError) {
 
   if (!placed) error.value = Object.values(e.fieldErrors)[0]?.[0] ?? e.message
 }
+
+const kindLabel = computed(() => kinds.find((k) => k.value === draft.kind)?.label ?? '')
+
+const cartProps = computed(() => ({
+  kinds: kinds.map((k) => ({ ...k, disabled: blockedReason(k.value) !== null })),
+  blockedMessage: blockedReason('03'),
+  kindSeries: kindSeries.value,
+  needsReceiptCustomer: needsReceiptCustomer.value,
+  needsInvoiceCustomer: needsInvoiceCustomer.value,
+  chargeLabel: chargeLabel.value,
+  submitting: submitting.value,
+  error: error.value,
+}))
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-3">
-    <h1 class="text-xl font-semibold">Vender</h1>
-    <EnvironmentBadge v-if="kind !== 'ticket'" />
-  </div>
+  <!-- Escritorio: ocupa el alto que da el layout (meta.fullWidth); catálogo y carrito se desplazan por separado. -->
+  <div class="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" :class="!isDesktop && draft.count ? 'pb-24' : ''">
+    <h1 class="text-2xl font-semibold tracking-tight">Vender</h1>
 
-  <fieldset class="mt-3">
-    <legend class="sr-only">Qué emitir</legend>
-    <div class="grid grid-cols-3 gap-2" data-test="sale-kind">
-      <label
-        v-for="k in kinds"
-        :key="k.value"
-        class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-surface px-2 text-sm font-medium has-checked:border-brand-600 has-checked:bg-brand-50 has-disabled:cursor-not-allowed has-disabled:opacity-50"
-      >
-        <input v-model="kind" type="radio" name="sale-kind" class="sr-only" :value="k.value" :disabled="blockedReason(k.value) !== null" />
-        {{ k.label }}
-      </label>
-    </div>
-    <p v-if="blockedReason('03')" class="mt-1 text-xs text-ink-muted" data-test="kind-blocked">
-      Boleta y factura: {{ blockedReason('03') }}
-    </p>
-  </fieldset>
+    <BaseAlert v-if="removedNotice" variant="warning" class="mt-4">{{ removedNotice }}</BaseAlert>
 
-  <div class="mt-4">
-    <label for="sale-search" class="sr-only">Buscar producto</label>
-    <SearchInput id="sale-search" v-model="search" placeholder="Buscar producto por nombre o código" autocomplete="off" @input="runSearch" @clear="runSearch" />
-    <ul v-if="results.length" class="mt-2 divide-y divide-line rounded-xl border border-line bg-surface" data-test="search-results">
-      <li v-for="product in results" :key="product.id">
-        <button
-          type="button"
-          class="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-canvas disabled:opacity-50"
-          :disabled="!canAdd(product)"
-          @click="add(product)"
-        >
-          <span class="min-w-0">
-            <span class="block truncate font-medium">{{ product.name }}</span>
-            <span class="text-xs text-ink-muted">
-              {{ product.code }}
-              <template v-if="product.type === 'good'"> · Disp. {{ formatQuantity(product.available_stock) }}</template>
-            </span>
-          </span>
-          <span class="font-medium">{{ formatMoney(product.sale_price) }}</span>
-        </button>
-      </li>
-    </ul>
-  </div>
-
-  <p v-if="cart.length === 0" class="mt-6 text-sm text-ink-muted">Busca un producto y tócalo para agregarlo.</p>
-
-  <ul v-else class="mt-4 divide-y divide-line rounded-xl border border-line bg-surface">
-    <li v-for="line in cart" :key="line.product.id" class="space-y-2 p-4" data-test="cart-line">
-      <div class="flex items-start justify-between gap-3">
-        <p class="min-w-0 font-medium">
-          <span class="block truncate">{{ line.product.name }}</span>
-          <span class="text-xs font-normal text-ink-muted">{{ formatMoney(line.product.sale_price) }} c/u</span>
-        </p>
-        <p class="font-medium">{{ formatMoney(lineAmount(line.quantity || '0', line.product.sale_price, line.discount)) }}</p>
+    <div class="mt-4 grid grid-cols-1 gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_24rem] 2xl:grid-cols-[minmax(0,1fr)_26rem]">
+      <div class="lg:-mx-2 lg:min-h-0 lg:overflow-y-auto lg:px-2">
+        <ProductCatalog :in-cart="inCart" @add="add" />
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" class="size-11 rounded-lg border border-line text-lg" :aria-label="`Quitar uno de ${line.product.name}`" @click="step(line, -1)">−</button>
-        <label :for="`qty-${line.product.id}`" class="sr-only">Cantidad de {{ line.product.name }}</label>
-        <BaseInput :id="`qty-${line.product.id}`" v-model="line.quantity" narrow inputmode="decimal" class="text-center" />
-        <button type="button" class="size-11 rounded-lg border border-line text-lg" :aria-label="`Agregar uno de ${line.product.name}`" @click="step(line, 1)">+</button>
-        <label :for="`disc-${line.product.id}`" class="ml-auto text-xs text-ink-muted">Desc. S/</label>
-        <BaseInput :id="`disc-${line.product.id}`" v-model="line.discount" narrow inputmode="decimal" placeholder="0.00" class="text-right" />
-      </div>
-      <p v-if="line.error" class="text-xs text-danger-700" role="alert">{{ line.error }}</p>
-    </li>
-  </ul>
 
-  <template v-if="cart.length">
-    <fieldset class="mt-4">
-      <legend class="text-sm font-medium">Medio de pago</legend>
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <label
-          v-for="(label, value) in paymentLabels"
-          :key="value"
-          class="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm has-checked:border-brand-600 has-checked:bg-brand-50"
-        >
-          <input v-model="paymentMethod" type="radio" name="payment-method" :value="value" /> {{ label }}
-        </label>
-      </div>
-    </fieldset>
-
-    <div v-if="kind !== 'ticket'" class="mt-4 space-y-3">
-      <FormField v-if="kindSeries.length > 1" label="Serie" for="sale-series">
-        <BaseSelect id="sale-series" v-model="seriesId">
-          <option v-for="s in kindSeries" :key="s.id" :value="s.id">{{ s.code }}</option>
-        </BaseSelect>
-      </FormField>
-      <div>
-        <p class="text-sm font-medium">{{ kind === '01' ? 'Cliente (con RUC)' : 'Cliente (opcional hasta S/ 700)' }}</p>
-        <CustomerPicker v-model="documentCustomer" class="mt-1" :require-ruc="kind === '01'" />
-      </div>
-      <BaseAlert v-if="needsReceiptCustomer" variant="warning" data-test="receipt-limit">
-        Las boletas de más de S/ 700 requieren el documento del comprador.
-      </BaseAlert>
+      <aside v-if="isDesktop" class="min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-xs">
+        <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" />
+      </aside>
     </div>
 
-    <button
-      v-if="kind === 'ticket'"
-      type="button"
-      class="mt-3 min-h-11 text-sm font-medium text-brand-700"
-      :aria-expanded="showCustomer"
-      aria-controls="sale-customer"
-      @click="showCustomer = !showCustomer"
+    <!-- Celular: barra fija con cantidad y total; abre el carrito como hoja. -->
+    <div
+      v-if="!isDesktop && draft.count"
+      data-test="cart-bar"
+      class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.06)] backdrop-blur"
     >
-      {{ showCustomer ? 'Quitar datos del cliente' : 'Agregar cliente (opcional)' }}
-    </button>
-    <div v-show="kind === 'ticket' && showCustomer" id="sale-customer" class="grid gap-3 sm:grid-cols-2">
-      <FormField label="Nombre del cliente" for="customer-name">
-        <BaseInput id="customer-name" v-model="customerName" autocomplete="off" />
-      </FormField>
-      <FormField label="Documento (opcional)" for="customer-document">
-        <BaseInput id="customer-document" v-model="customerDocument" inputmode="numeric" autocomplete="off" />
-      </FormField>
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-3">
+        <p class="min-w-0">
+          <span class="block text-xs text-ink-muted">
+            {{ kindLabel }} · {{ draft.count === 1 ? '1 producto' : `${draft.count} productos` }}
+          </span>
+          <span class="text-lg font-semibold">{{ formatMoney(draft.total) }}</span>
+        </p>
+        <BaseButton class="min-h-12 px-6 text-base" @click="cartOpen = true">Ver carrito</BaseButton>
+      </div>
     </div>
 
-    <BaseAlert v-if="error" variant="error" class="mt-4">{{ error }}</BaseAlert>
+    <BaseDialog v-if="!isDesktop" v-model:open="cartOpen" title="Tu venta">
+      <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" />
+    </BaseDialog>
 
-    <div class="sticky bottom-0 mt-4 flex items-center justify-between gap-3 border-t border-line bg-canvas py-3">
-      <p>
-        <span class="block text-xs text-ink-muted">Total</span>
-        <span class="text-xl font-semibold" data-test="sale-total">{{ formatMoney(total) }}</span>
+    <BaseDialog v-model:open="confirmClear" title="¿Vaciar el carrito?">
+      <p class="text-sm text-ink-muted">
+        Se quitarán {{ draft.count === 1 ? '1 producto' : `${draft.count} productos` }} de la venta en curso.
       </p>
-      <BaseButton :loading="submitting" :disabled="needsReceiptCustomer || needsInvoiceCustomer" @click="charge">{{ chargeLabel }}</BaseButton>
-    </div>
-  </template>
+      <template #actions>
+        <BaseButton variant="secondary" @click="confirmClear = false">Cancelar</BaseButton>
+        <BaseButton variant="danger" @click="clearCart">Vaciar carrito</BaseButton>
+      </template>
+    </BaseDialog>
+  </div>
 </template>

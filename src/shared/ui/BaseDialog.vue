@@ -64,7 +64,7 @@ function onKeydown(event: KeyboardEvent) {
         aria-modal="true"
         :aria-labelledby="titleId"
         tabindex="-1"
-        class="relative w-full max-w-lg rounded-t-2xl bg-surface p-5 shadow-xl sm:rounded-2xl"
+        class="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-xl sm:rounded-2xl"
         @keydown="onKeydown"
       >
         <h2 :id="titleId" class="text-lg font-semibold text-ink">{{ title }}</h2>

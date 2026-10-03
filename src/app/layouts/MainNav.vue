@@ -8,6 +8,9 @@ import { useSessionStore } from '@/core/auth/session-store'
  * primero; la gestión del administrador, en su propio grupo. En la barra
  * lateral hay altura para todo, así que ya no hace falta el menú «Más».
  */
+/** `collapsed`: barra contraída a íconos en escritorio (spec 010 v1.4); en el celular no aplica. */
+defineProps<{ collapsed?: boolean }>()
+
 const session = useSessionStore()
 const route = useRoute()
 
@@ -49,37 +52,46 @@ function isActive(item: Item): boolean {
 </script>
 
 <template>
-  <nav aria-label="Principal" class="space-y-6">
+  <nav aria-label="Principal" class="space-y-6" :class="collapsed && 'lg:space-y-3'">
     <ul class="space-y-1">
       <li v-for="item in primary" :key="item.to">
         <RouterLink
           :to="item.to"
           class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition"
-          :class="isActive(item) ? 'bg-brand-50 text-brand-700' : 'text-ink-muted hover:bg-subtle hover:text-ink'"
+          :class="[isActive(item) ? 'bg-brand-50 text-brand-700' : 'text-ink-muted hover:bg-subtle hover:text-ink', collapsed && 'lg:min-h-10 lg:justify-center lg:px-0']"
           :aria-current="isActive(item) ? 'page' : undefined"
+          :title="collapsed ? item.label : undefined"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="size-5 shrink-0">
             <path :d="item.icon" />
           </svg>
-          {{ item.label }}
+          <span :class="collapsed && 'lg:sr-only'">{{ item.label }}</span>
         </RouterLink>
       </li>
     </ul>
 
     <div v-if="session.isCompanyAdmin">
-      <p id="nav-admin" class="px-3 pb-2 text-xs font-semibold tracking-wide text-ink-muted uppercase">Gestión</p>
+      <p
+        id="nav-admin"
+        class="px-3 pb-2 text-xs font-semibold tracking-wide text-ink-muted uppercase"
+        :class="collapsed && 'lg:sr-only'"
+      >
+        Gestión
+      </p>
+      <hr v-if="collapsed" class="mb-3 hidden border-line lg:block" aria-hidden="true" />
       <ul aria-labelledby="nav-admin" class="space-y-1">
         <li v-for="item in admin" :key="item.to">
           <RouterLink
             :to="item.to"
             class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition"
-            :class="isActive(item) ? 'bg-brand-50 text-brand-700' : 'text-ink-muted hover:bg-subtle hover:text-ink'"
+            :class="[isActive(item) ? 'bg-brand-50 text-brand-700' : 'text-ink-muted hover:bg-subtle hover:text-ink', collapsed && 'lg:min-h-10 lg:justify-center lg:px-0']"
             :aria-current="isActive(item) ? 'page' : undefined"
+            :title="collapsed ? item.label : undefined"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="size-5 shrink-0">
               <path :d="item.icon" />
             </svg>
-            {{ item.label }}
+            <span :class="collapsed && 'lg:sr-only'">{{ item.label }}</span>
           </RouterLink>
         </li>
       </ul>
