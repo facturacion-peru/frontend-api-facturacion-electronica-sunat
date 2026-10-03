@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
 
 import { useSessionStore } from '@/core/auth/session-store'
 import type { CompanyRole } from '@/core/auth/types'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import MainNav from '../MainNav.vue'
 
+/*
+ * Navegación de la barra lateral (spec 010, HU-6). Sustituye al menú «Más»
+ * de la spec 002: en la barra lateral hay altura para todas las entradas.
+ */
 async function mountAs(role: CompanyRole, path = '/') {
   return mountWithRouter(MainNav, {
     path,
@@ -28,36 +31,16 @@ describe('MainNav', () => {
     const { wrapper } = await mountAs('seller')
 
     expect(wrapper.findAll('a').map((a) => a.text())).toEqual(['Inicio', 'Vender', 'Ventas', 'Productos'])
-    expect(wrapper.find('[aria-controls="nav-more"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Gestión')
   })
 
-  it('el administrador abre «Más» con la gestión de la empresa', async () => {
+  it('el administrador ve además el grupo «Gestión», sin menús escondidos', async () => {
     const { wrapper } = await mountAs('company_admin')
-    const toggle = wrapper.find('[aria-controls="nav-more"]')
+    const group = wrapper.get('[aria-labelledby="nav-admin"]')
 
-    expect(toggle.attributes('aria-expanded')).toBe('false')
-    expect(wrapper.find('#nav-more').isVisible()).toBe(false)
-
-    await toggle.trigger('click')
-
-    expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.find('#nav-more').text()).toContain('Usuarios')
-    expect(wrapper.find('#nav-more').text()).toContain('Mi empresa')
-    expect(wrapper.find('#nav-more').text()).toContain('SUNAT')
-    expect(wrapper.find('#nav-more').text()).toContain('Series')
-    expect(wrapper.find('#nav-more').text()).toContain('Clientes')
-  })
-
-  it('Escape cierra el menú y devuelve el foco al botón', async () => {
-    const { wrapper } = await mountAs('company_admin')
-    const toggle = wrapper.find('[aria-controls="nav-more"]')
-
-    await toggle.trigger('click')
-    await wrapper.find('#nav-more a').trigger('keydown', { key: 'Escape' })
-    await flushPromises()
-
-    expect(toggle.attributes('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(toggle.element)
+    expect(wrapper.get('#nav-admin').text()).toBe('Gestión')
+    expect(group.findAll('a').map((a) => a.text())).toEqual(['Alertas', 'Clientes', 'Usuarios', 'Auditoría', 'Mi empresa', 'SUNAT', 'Series'])
+    expect(group.isVisible()).toBe(true)
   })
 
   it('marca «Ventas» también en las pantallas de comprobantes y detalles', async () => {
@@ -65,5 +48,12 @@ describe('MainNav', () => {
 
     const current = wrapper.findAll('a').filter((a) => a.attributes('aria-current') === 'page').map((a) => a.text())
     expect(current).toEqual(['Ventas'])
+  })
+
+  it('marca la entrada de gestión activa', async () => {
+    const { wrapper } = await mountAs('company_admin', '/series')
+
+    const current = wrapper.findAll('a').filter((a) => a.attributes('aria-current') === 'page').map((a) => a.text())
+    expect(current).toEqual(['Series'])
   })
 })

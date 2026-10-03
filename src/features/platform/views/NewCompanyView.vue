@@ -6,6 +6,7 @@ import { useApiForm } from '@/shared/composables/useApiForm'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { platformApi } from '../api'
 import UbigeoPicker from '../components/UbigeoPicker.vue'
@@ -17,7 +18,6 @@ const form = ref<NewCompanyForm>({
   ruc: '', razon_social: '', nombre_comercial: null, tax_regime: 'rmt', email: '', phone: null, address: '', ubigeo: '', admin_email: '',
 })
 const { submitting, generalError, fieldError, submit } = useApiForm()
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function onSubmit() {
   let createdId: number | null = null
@@ -39,9 +39,9 @@ async function onSubmit() {
       <BaseInput id="ruc" v-model="form.ruc" inputmode="numeric" maxlength="11" :invalid="invalid" :aria-describedby="describedBy" />
     </FormField>
     <FormField label="Régimen tributario" for="tax_regime" :error="fieldError('tax_regime')">
-      <select id="tax_regime" v-model="form.tax_regime" :class="selectClass">
+      <BaseSelect id="tax_regime" v-model="form.tax_regime">
         <option v-for="(label, value) in taxRegimeLabels" :key="value" :value="value">{{ label }}</option>
-      </select>
+      </BaseSelect>
     </FormField>
     <FormField v-slot="{ describedBy, invalid }" label="Razón social" for="razon_social" :error="fieldError('razon_social')">
       <BaseInput id="razon_social" v-model="form.razon_social" :invalid="invalid" :aria-describedby="describedBy" />

@@ -7,6 +7,7 @@ import type { CompanyRole } from '@/core/auth/types'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import { usersApi } from '../api'
 import InviteUserDialog from '../components/InviteUserDialog.vue'
@@ -101,15 +102,14 @@ onMounted(load)
         </div>
         <div class="flex items-center gap-2">
           <label :for="`role-${user.id}`" class="sr-only">Rol de {{ user.name }}</label>
-          <select
+          <BaseSelect
             :id="`role-${user.id}`"
-            class="min-h-11 rounded-lg border border-line bg-surface px-3 text-sm"
-            :value="user.role"
+            :model-value="user.role"
             :disabled="busyId !== null"
-            @change="changeRole(user, ($event.target as HTMLSelectElement).value as CompanyRole)"
+            @update:model-value="changeRole(user, $event as CompanyRole)"
           >
             <option v-for="(label, value) in roleLabels" :key="value" :value="value">{{ label }}</option>
-          </select>
+          </BaseSelect>
           <BaseButton
             :variant="user.active ? 'secondary' : 'primary'"
             :loading="busyId === `active-${user.id}`"

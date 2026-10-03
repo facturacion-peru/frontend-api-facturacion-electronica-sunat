@@ -13,14 +13,14 @@ const props = withDefaults(
 )
 
 const variants = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700',
-  secondary: 'border border-line bg-surface text-ink hover:bg-canvas',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
+  primary: 'bg-brand-600 text-white shadow-sm hover:bg-brand-800',
+  secondary: 'border border-line bg-surface text-ink shadow-xs hover:bg-subtle',
+  danger: 'bg-danger-600 text-white shadow-sm hover:brightness-110',
   ghost: 'text-brand-700 hover:bg-brand-50',
 }
 
 const classes = computed(() => [
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition',
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition active:translate-y-px',
   'disabled:cursor-not-allowed disabled:opacity-60',
   variants[props.variant],
   props.block && 'w-full',

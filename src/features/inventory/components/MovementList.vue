@@ -23,7 +23,7 @@ function canReverse(movement: Movement): boolean {
       <div class="min-w-0 flex-1">
         <p class="flex flex-wrap items-center gap-2">
           <span class="font-medium">{{ movementLabels[movement.type] }}</span>
-          <span :class="movement.quantity.startsWith('-') ? 'text-red-700' : 'text-green-700'" class="font-medium">
+          <span :class="movement.quantity.startsWith('-') ? 'text-danger-700' : 'text-success-700'" class="font-medium">
             {{ movement.quantity.startsWith('-') ? '' : '+' }}{{ formatQuantity(movement.quantity) }}
           </span>
           <BaseBadge v-if="movement.reversed" variant="neutral">Revertido</BaseBadge>

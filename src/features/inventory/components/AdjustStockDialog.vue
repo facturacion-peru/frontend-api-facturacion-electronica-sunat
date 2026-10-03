@@ -6,6 +6,7 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { formatQuantity } from '@/shared/utils/format'
 import { inventoryApi } from '../api'
@@ -80,9 +81,9 @@ async function onSubmit() {
       </FormField>
 
       <FormField label="Motivo" for="adjust-reason" :error="fieldError('reason')">
-        <select id="adjust-reason" v-model="reason" class="block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm">
+        <BaseSelect id="adjust-reason" v-model="reason">
           <option v-for="item in catalogs?.adjustment_reasons ?? []" :key="item.code" :value="item.code">{{ item.label }}</option>
-        </select>
+        </BaseSelect>
       </FormField>
 
       <FormField v-slot="{ describedBy }" label="Nota (opcional)" for="adjust-note" :error="fieldError('note')">

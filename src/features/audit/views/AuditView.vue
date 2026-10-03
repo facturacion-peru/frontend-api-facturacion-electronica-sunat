@@ -6,6 +6,7 @@ import type { PaginationMeta } from '@/core/api/types'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { auditApi } from '../api'
@@ -19,7 +20,6 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 const dateFormat = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   loading.value = true
@@ -65,16 +65,16 @@ onMounted(async () => {
 
   <form class="mt-4 grid gap-3 rounded-xl border border-line bg-surface p-4 sm:grid-cols-2 lg:grid-cols-5" @submit.prevent="applyFilters">
     <FormField label="Acción" for="filter-action">
-      <select id="filter-action" v-model="filters.action" :class="selectClass">
+      <BaseSelect id="filter-action" v-model="filters.action">
         <option value="">Todas</option>
         <option v-for="(label, value) in actionLabels" :key="value" :value="value">{{ label }}</option>
-      </select>
+      </BaseSelect>
     </FormField>
     <FormField label="Usuario" for="filter-actor">
-      <select id="filter-actor" v-model="filters.actor_id" :class="selectClass">
+      <BaseSelect id="filter-actor" v-model="filters.actor_id">
         <option value="">Todos</option>
         <option v-for="user in users" :key="user.id" :value="String(user.id)">{{ user.name }}</option>
-      </select>
+      </BaseSelect>
     </FormField>
     <FormField label="Desde" for="filter-from">
       <BaseInput id="filter-from" v-model="filters.from" type="date" />

@@ -7,6 +7,7 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { formatDateTime, formatMoney, today } from '@/shared/utils/format'
@@ -20,7 +21,6 @@ const meta = ref<PaginationMeta | null>(null)
 const totals = ref<TicketTotals | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   loading.value = true
@@ -61,17 +61,17 @@ onMounted(load)
     <FormField label="Desde" for="sales-from"><BaseInput id="sales-from" v-model="filters.from" type="date" /></FormField>
     <FormField label="Hasta" for="sales-to"><BaseInput id="sales-to" v-model="filters.to" type="date" /></FormField>
     <FormField label="Estado" for="sales-status">
-      <select id="sales-status" v-model="filters.status" :class="selectClass">
+      <BaseSelect id="sales-status" v-model="filters.status">
         <option value="">Todos</option>
         <option value="issued">Emitidos</option>
         <option value="voided">Anulados</option>
-      </select>
+      </BaseSelect>
     </FormField>
     <FormField label="Medio de pago" for="sales-method">
-      <select id="sales-method" v-model="filters.payment_method" :class="selectClass">
+      <BaseSelect id="sales-method" v-model="filters.payment_method">
         <option value="">Todos</option>
         <option v-for="(label, value) in paymentLabels" :key="value" :value="value">{{ label }}</option>
-      </select>
+      </BaseSelect>
     </FormField>
     <div class="col-span-2 flex items-end lg:col-span-1"><BaseButton type="submit" block :loading="loading">Filtrar</BaseButton></div>
   </form>

@@ -144,7 +144,7 @@ onBeforeUnmount(() => {
             </BaseButton>
           </div>
         </div>
-        <p v-if="logoForm.fieldError('logo') || logoForm.generalError.value" class="mt-2 text-xs text-red-600" role="alert">
+        <p v-if="logoForm.fieldError('logo') || logoForm.generalError.value" class="mt-2 text-xs text-danger-700" role="alert">
           {{ logoForm.fieldError('logo') ?? logoForm.generalError.value }}
         </p>
       </section>

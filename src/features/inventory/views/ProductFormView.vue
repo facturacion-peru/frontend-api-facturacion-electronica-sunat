@@ -7,6 +7,7 @@ import { useApiForm } from '@/shared/composables/useApiForm'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { inventoryApi } from '../api'
 import { useInventoryCatalogs } from '../composables/useInventoryCatalogs'
@@ -33,7 +34,6 @@ const form = ref<ProductPayload>({
 })
 
 const isGood = computed(() => form.value.type === 'good')
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 // Un servicio no tiene stock: sin mínimo ni vencimiento, y unidad «servicio» por defecto.
 watch(
@@ -111,7 +111,7 @@ async function onSubmit() {
           {{ option.label }}
         </label>
       </div>
-      <p v-if="fieldError('type')" class="mt-1 text-xs text-red-600">{{ fieldError('type') }}</p>
+      <p v-if="fieldError('type')" class="mt-1 text-xs text-danger-700">{{ fieldError('type') }}</p>
     </fieldset>
 
     <div class="grid gap-4 sm:grid-cols-[10rem_1fr]">
@@ -135,16 +135,16 @@ async function onSubmit() {
         />
       </FormField>
       <FormField label="Unidad de medida" for="unit" :error="fieldError('unit')">
-        <select id="unit" v-model="form.unit" :class="selectClass">
+        <BaseSelect id="unit" v-model="form.unit">
           <option v-for="unit in catalogs?.units ?? []" :key="unit.code" :value="unit.code">{{ unit.label }}</option>
-        </select>
+        </BaseSelect>
       </FormField>
     </div>
 
     <FormField label="Afectación al IGV" for="igv_affectation" :error="fieldError('igv_affectation')">
-      <select id="igv_affectation" v-model="form.igv_affectation" :class="selectClass">
+      <BaseSelect id="igv_affectation" v-model="form.igv_affectation">
         <option v-for="item in catalogs?.igv_affectations ?? []" :key="item.code" :value="item.code">{{ item.label }}</option>
-      </select>
+      </BaseSelect>
     </FormField>
 
     <template v-if="isGood">
@@ -168,7 +168,7 @@ async function onSubmit() {
         <input id="tracks_expiry" v-model="form.tracks_expiry" type="checkbox" />
         Controla fecha de vencimiento
       </label>
-      <p v-if="fieldError('tracks_expiry')" class="text-xs text-red-600">{{ fieldError('tracks_expiry') }}</p>
+      <p v-if="fieldError('tracks_expiry')" class="text-xs text-danger-700">{{ fieldError('tracks_expiry') }}</p>
     </template>
 
     <label v-if="isEdit" class="flex min-h-11 items-center gap-2 text-sm">

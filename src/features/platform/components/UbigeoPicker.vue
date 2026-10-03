@@ -2,7 +2,7 @@
 import { useDebounceFn } from '@vueuse/core'
 import { ref } from 'vue'
 
-import BaseInput from '@/shared/ui/BaseInput.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { platformApi } from '../api'
 import type { Ubigeo } from '../types'
 
@@ -29,15 +29,15 @@ function pick(u: Ubigeo) {
 
 <template>
   <div>
-    <BaseInput
+    <SearchInput
       :id="id"
       v-model="search"
-      type="search"
       placeholder="Escribe el distrito"
       autocomplete="off"
       :invalid="invalid"
       :aria-describedby="describedBy"
       @input="runSearch"
+      @clear="runSearch"
     />
     <ul v-if="results.length" class="mt-1 max-h-60 divide-y divide-line overflow-y-auto rounded-xl border border-line bg-surface" :data-test="`${id}-results`">
       <li v-for="u in results" :key="u.id">

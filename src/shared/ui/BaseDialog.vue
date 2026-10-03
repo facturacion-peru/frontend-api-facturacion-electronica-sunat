@@ -57,7 +57,7 @@ function onKeydown(event: KeyboardEvent) {
 <template>
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div class="absolute inset-0 bg-slate-900/50" aria-hidden="true" @click="open = false" />
+      <div class="absolute inset-0 bg-black/60" aria-hidden="true" @click="open = false" />
       <div
         ref="panel"
         role="dialog"

@@ -7,8 +7,10 @@ import { ApiError } from '@/core/api/errors'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import EnvironmentBadge from '@/shared/ui/EnvironmentBadge.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
 import { salesApi, salesDocumentsApi, type SellableProduct } from '../api'
 import CustomerPicker from '../components/CustomerPicker.vue'
@@ -209,7 +211,7 @@ function showErrors(e: ApiError) {
 
   <div class="mt-4">
     <label for="sale-search" class="sr-only">Buscar producto</label>
-    <BaseInput id="sale-search" v-model="search" type="search" placeholder="Buscar producto por nombre o código" autocomplete="off" @input="runSearch" />
+    <SearchInput id="sale-search" v-model="search" placeholder="Buscar producto por nombre o código" autocomplete="off" @input="runSearch" @clear="runSearch" />
     <ul v-if="results.length" class="mt-2 divide-y divide-line rounded-xl border border-line bg-surface" data-test="search-results">
       <li v-for="product in results" :key="product.id">
         <button
@@ -245,23 +247,12 @@ function showErrors(e: ApiError) {
       <div class="flex flex-wrap items-center gap-2">
         <button type="button" class="size-11 rounded-lg border border-line text-lg" :aria-label="`Quitar uno de ${line.product.name}`" @click="step(line, -1)">−</button>
         <label :for="`qty-${line.product.id}`" class="sr-only">Cantidad de {{ line.product.name }}</label>
-        <input
-          :id="`qty-${line.product.id}`"
-          v-model="line.quantity"
-          inputmode="decimal"
-          class="min-h-11 w-20 rounded-lg border border-line bg-surface px-2 text-center text-base"
-        />
+        <BaseInput :id="`qty-${line.product.id}`" v-model="line.quantity" narrow inputmode="decimal" class="text-center" />
         <button type="button" class="size-11 rounded-lg border border-line text-lg" :aria-label="`Agregar uno de ${line.product.name}`" @click="step(line, 1)">+</button>
         <label :for="`disc-${line.product.id}`" class="ml-auto text-xs text-ink-muted">Desc. S/</label>
-        <input
-          :id="`disc-${line.product.id}`"
-          v-model="line.discount"
-          inputmode="decimal"
-          placeholder="0.00"
-          class="min-h-11 w-20 rounded-lg border border-line bg-surface px-2 text-right text-base"
-        />
+        <BaseInput :id="`disc-${line.product.id}`" v-model="line.discount" narrow inputmode="decimal" placeholder="0.00" class="text-right" />
       </div>
-      <p v-if="line.error" class="text-xs text-red-600" role="alert">{{ line.error }}</p>
+      <p v-if="line.error" class="text-xs text-danger-700" role="alert">{{ line.error }}</p>
     </li>
   </ul>
 
@@ -281,9 +272,9 @@ function showErrors(e: ApiError) {
 
     <div v-if="kind !== 'ticket'" class="mt-4 space-y-3">
       <FormField v-if="kindSeries.length > 1" label="Serie" for="sale-series">
-        <select id="sale-series" v-model="seriesId" class="block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm">
+        <BaseSelect id="sale-series" v-model="seriesId">
           <option v-for="s in kindSeries" :key="s.id" :value="s.id">{{ s.code }}</option>
-        </select>
+        </BaseSelect>
       </FormField>
       <div>
         <p class="text-sm font-medium">{{ kind === '01' ? 'Cliente (con RUC)' : 'Cliente (opcional hasta S/ 700)' }}</p>

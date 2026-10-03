@@ -7,6 +7,7 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { seriesApi } from '../api'
@@ -24,7 +25,6 @@ const busyId = ref<number | null>(null)
 const form = ref<SeriesForm>({ document_type: '03', code: 'B001', last_number: 0 })
 const { submitting, generalError, fieldError, submit } = useApiForm()
 
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 const groups = computed(() =>
   (['01', '03', '07'] as DocumentType[]).map((type) => ({
@@ -116,11 +116,11 @@ async function toggle(item: Series) {
       <form class="mt-4 space-y-4" novalidate @submit.prevent="onSubmit">
         <BaseAlert v-if="generalError" variant="error">{{ generalError }}</BaseAlert>
         <FormField label="Tipo de comprobante" for="document_type" :error="fieldError('document_type')">
-          <select id="document_type" v-model="form.document_type" :class="selectClass">
+          <BaseSelect id="document_type" v-model="form.document_type">
             <option value="03">Boleta</option>
             <option value="01">Factura</option>
             <option value="07">Nota de crédito</option>
-          </select>
+          </BaseSelect>
         </FormField>
         <FormField
           v-slot="{ describedBy, invalid }"

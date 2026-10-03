@@ -24,6 +24,6 @@ const describedBy = computed(
     <label :for="props.for" class="block text-sm font-medium text-ink">{{ label }}</label>
     <slot :described-by="describedBy" :invalid="Boolean(error)" />
     <p v-if="hint && !error" :id="hintId" class="text-xs text-ink-muted">{{ hint }}</p>
-    <p v-if="error" :id="errorId" class="text-xs text-red-600">{{ error }}</p>
+    <p v-if="error" :id="errorId" class="text-xs text-danger-700">{{ error }}</p>
   </div>
 </template>

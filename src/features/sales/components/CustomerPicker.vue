@@ -7,8 +7,10 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import PilotNotice from '@/shared/ui/PilotNotice.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { customersApi } from '../api'
 import type { Customer, CustomerDocumentType, CustomerForm } from '../types'
 
@@ -26,7 +28,6 @@ const emptyForm = (): CustomerForm => ({ document_type: props.requireRuc ? '6' :
 const form = ref<CustomerForm>(emptyForm())
 const { submitting, generalError, fieldError, submit } = useApiForm()
 
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 const documentOptions = computed<{ value: CustomerDocumentType; label: string }[]>(() =>
   props.requireRuc
     ? [{ value: '6', label: 'RUC' }]
@@ -80,13 +81,13 @@ async function save() {
 
     <template v-else>
       <label for="customer-search" class="sr-only">Buscar cliente</label>
-      <BaseInput
+      <SearchInput
         id="customer-search"
         v-model="search"
-        type="search"
         :placeholder="requireRuc ? 'Buscar cliente por RUC o razón social' : 'Buscar cliente por documento o nombre'"
         autocomplete="off"
         @input="runSearch"
+        @clear="runSearch"
       />
       <ul v-if="results.length" class="mt-2 divide-y divide-line rounded-xl border border-line bg-surface" data-test="customer-results">
         <li v-for="c in results" :key="c.id">
@@ -112,9 +113,9 @@ async function save() {
         <PilotNotice compact />
         <BaseAlert v-if="generalError" variant="error">{{ generalError }}</BaseAlert>
         <FormField label="Tipo de documento" for="new-customer-type" :error="fieldError('document_type')">
-          <select id="new-customer-type" v-model="form.document_type" :class="selectClass">
+          <BaseSelect id="new-customer-type" v-model="form.document_type">
             <option v-for="o in documentOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-          </select>
+          </BaseSelect>
         </FormField>
         <FormField v-slot="{ describedBy, invalid }" label="Número de documento" for="new-customer-number" :error="fieldError('document_number')">
           <BaseInput id="new-customer-number" v-model="form.document_number" inputmode="numeric" autocomplete="off" :invalid="invalid" :aria-describedby="describedBy" />

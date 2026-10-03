@@ -104,7 +104,7 @@ async function validate() {
       </div>
       <p class="mt-1 text-sm text-ink-muted">Ambiente: {{ settings.environment_label }}</p>
 
-      <p v-if="settings.last_validation_error" class="mt-3 text-sm text-red-700" data-test="status-reason">
+      <p v-if="settings.last_validation_error" class="mt-3 text-sm text-danger-700" data-test="status-reason">
         {{ settings.last_validation_error }}
       </p>
       <ul v-if="status.missing.length" class="mt-3 list-disc space-y-1 pl-5 text-sm" data-test="missing">
@@ -119,7 +119,7 @@ async function validate() {
       </BaseAlert>
       <ul
         v-if="validateForm.fieldErrors.value.configuration"
-        class="mt-3 list-disc space-y-1 pl-5 text-sm text-red-700"
+        class="mt-3 list-disc space-y-1 pl-5 text-sm text-danger-700"
         role="alert"
         data-test="validate-errors"
       >

@@ -4,10 +4,10 @@ withDefaults(defineProps<{ variant?: 'neutral' | 'success' | 'warning' | 'danger
 })
 
 const styles = {
-  neutral: 'bg-slate-100 text-slate-700',
-  success: 'bg-green-100 text-green-800',
-  warning: 'bg-amber-100 text-amber-900',
-  danger: 'bg-red-100 text-red-800',
+  neutral: 'bg-subtle text-ink-muted',
+  success: 'bg-success-100 text-success-800',
+  warning: 'bg-warning-100 text-warning-900',
+  danger: 'bg-danger-100 text-danger-800',
   info: 'bg-brand-100 text-brand-700',
 }
 </script>

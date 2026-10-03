@@ -14,3 +14,10 @@ blockExoticSubdeps: true
 # Fallar si una versión nueva tiene menos garantías de confianza
 # (p. ej. pierde provenance) que las anteriores.
 trustPolicy: no-downgrade
+
+# Excepciones puntuales a trustPolicy, revisadas una por una (nunca rangos).
+# - semver@6.3.1: backport oficial de npm (2023-07-10, CVE-2022-25883) publicado
+#   después de 7.5.x sin provenance; mismo integrity que el lockfile. Revisado
+#   el 2026-10-03 (spec 010, T011). Llega por vite-plugin-vue-devtools → @babel/core.
+trustPolicyExclude:
+  - semver@6.3.1

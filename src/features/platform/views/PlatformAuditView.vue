@@ -5,6 +5,7 @@ import { ApiError } from '@/core/api/errors'
 import type { PaginationMeta } from '@/core/api/types'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import { formatDateTime } from '@/shared/utils/format'
 import { platformApi } from '../api'
@@ -15,7 +16,6 @@ const filters = reactive({ action: '', page: 1 })
 const entries = ref<PlatformAuditEntry[]>([])
 const meta = ref<PaginationMeta | null>(null)
 const error = ref<string | null>(null)
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   try {
@@ -53,10 +53,10 @@ onMounted(load)
 
   <div class="mt-4 w-64">
     <label for="audit-action" class="text-sm font-medium">Acción</label>
-    <select id="audit-action" v-model="filters.action" :class="selectClass" @change="apply">
+    <BaseSelect id="audit-action" v-model="filters.action" @change="apply">
       <option value="">Todas</option>
       <option v-for="(label, value) in auditActionLabels" :key="value" :value="value">{{ label }}</option>
-    </select>
+    </BaseSelect>
   </div>
 
   <BaseAlert v-if="error" variant="error" class="mt-4">{{ error }}</BaseAlert>

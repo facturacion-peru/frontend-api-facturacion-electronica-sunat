@@ -202,7 +202,7 @@ watch(
             <template v-if="Number(line.discount) > 0"> · desc. {{ formatMoney(line.discount) }}</template>
             <template v-if="affectationLabels[line.igv_affectation]"> · {{ affectationLabels[line.igv_affectation] }}</template>
           </span>
-          <span v-if="line.remaining !== null && Number(line.remaining) < Number(line.quantity)" class="block text-xs text-amber-800">
+          <span v-if="line.remaining !== null && Number(line.remaining) < Number(line.quantity)" class="block text-xs text-warning-800">
             Quedan {{ formatQuantity(line.remaining) }} por devolver
           </span>
         </p>
