@@ -1,6 +1,7 @@
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { clearToken } from '@/core/api/token-storage'
 import { useSessionStore } from '@/core/auth/session-store'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import AppLayout from '../AppLayout.vue'
@@ -84,5 +85,41 @@ describe('AppLayout', () => {
 
     expect(logout).toHaveBeenCalled()
     expect(router.currentRoute.value.name).toBe('login')
+  })
+
+  it('012 RF-003 cerrar sesión borra la venta en curso del dispositivo; vencer la sesión no', async () => {
+    const draftKey = 'sunat.sale-draft.1.1'
+    localStorage.setItem(draftKey, '{"v":1}')
+
+    clearToken() // lo que pasa con un 401
+    expect(localStorage.getItem(draftKey)).not.toBeNull()
+
+    const { sidebar } = await mountLayout()
+    vi.spyOn(useSessionStore(), 'logout').mockResolvedValue()
+    await sidebar.findAll('button').find((b) => b.text().includes('Cerrar sesión'))!.trigger('click')
+    await flushPromises()
+
+    expect(localStorage.getItem(draftKey)).toBeNull()
+  })
+
+  it('010 v1.4 la barra se contrae a íconos, conserva los nombres accesibles y se recuerda', async () => {
+    localStorage.removeItem('sunat.sidebar.collapsed')
+    const { wrapper, sidebar } = await mountLayout()
+    const collapse = () => wrapper.get('[data-test="sidebar-collapse"]')
+
+    expect(collapse().attributes('aria-label')).toBe('Contraer menú')
+    await collapse().trigger('click')
+
+    expect(collapse().attributes('aria-label')).toBe('Expandir menú')
+    expect(collapse().attributes('aria-pressed')).toBe('true')
+    expect(sidebar.attributes('data-collapsed')).toBe('true')
+    const inicio = sidebar.findAll('nav a').find((a) => a.text().includes('Inicio'))!
+    expect(inicio.attributes('title')).toBe('Inicio')
+    expect(inicio.get('span').classes()).toContain('lg:sr-only')
+
+    wrapper.unmount()
+    const again = await mountLayout()
+    expect(again.sidebar.attributes('data-collapsed')).toBe('true')
+    localStorage.removeItem('sunat.sidebar.collapsed')
   })
 })

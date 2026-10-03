@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Diálogo modal accesible: atrapa el foco, se cierra con Escape y devuelve
- * el foco al elemento que lo abrió.
+ * el foco al elemento que lo abrió (si sigue en la página). Un hijo con
+ * `data-autofocus` recibe el foco al abrir.
  */
 import { nextTick, ref, useId, watch } from 'vue'
 
@@ -23,9 +24,10 @@ watch(open, async (isOpen) => {
   if (isOpen) {
     opener = document.activeElement as HTMLElement | null
     await nextTick()
-    ;(focusables()[0] ?? panel.value)?.focus()
-  } else {
-    opener?.focus()
+    // `data-autofocus` elige el control inicial (p. ej. la acción principal).
+    ;(panel.value?.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0] ?? panel.value)?.focus()
+  } else if (opener?.isConnected) {
+    opener.focus()
   }
 })
 
@@ -64,7 +66,7 @@ function onKeydown(event: KeyboardEvent) {
         aria-modal="true"
         :aria-labelledby="titleId"
         tabindex="-1"
-        class="relative w-full max-w-lg rounded-t-2xl bg-surface p-5 shadow-xl sm:rounded-2xl"
+        class="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-xl sm:rounded-2xl"
         @keydown="onKeydown"
       >
         <h2 :id="titleId" class="text-lg font-semibold text-ink">{{ title }}</h2>

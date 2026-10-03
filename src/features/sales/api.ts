@@ -28,12 +28,17 @@ export interface SellableProduct {
 }
 
 export const salesApi = {
-  searchProducts: async (search: string) =>
-    (
-      await unwrap<PaginatedResponse<SellableProduct>>(
-        apiClient.GET('/api/v1/products', { params: { query: { search, status: 'active' } } }),
-      )
-    ).data,
+  /** Catálogo de «Vender» (spec 012, A-57): productos activos, paginados, filtrados por `search`. */
+  listProducts: ({ search = '', page = 1 }: { search?: string; page?: number } = {}) =>
+    unwrap<PaginatedResponse<SellableProduct>>(
+      apiClient.GET('/api/v1/products', {
+        params: { query: { status: 'active', page, ...(search.trim() && { search: search.trim() }) } },
+      }),
+    ),
+
+  /** Para refrescar precio y disponible de la venta guardada (spec 012, RF-002). */
+  getProduct: (id: number) =>
+    unwrapData<SellableProduct & { active: boolean }>(apiClient.GET('/api/v1/products/{product}', { params: { path: { product: id } } })),
 
   issue: async (body: NewTicketPayload) => {
     const response = await unwrap<{ data: Ticket }>(apiClient.POST('/api/v1/tickets', { body }))

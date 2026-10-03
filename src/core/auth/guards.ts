@@ -17,6 +17,8 @@ declare module 'vue-router' {
     roles?: CompanyRole[]
     /** Título de la pestaña. */
     title?: string
+    /** Usa todo el ancho y, en escritorio, todo el alto de la ventana (spec 010 v1.4; «Vender»). */
+    fullWidth?: boolean
   }
 }
 

@@ -4,6 +4,7 @@ import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { useSaleDraftStore } from '@/features/sales/stores/sale-draft'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import LogoApp from '@/shared/ui/LogoApp.vue'
 import ThemeToggle from '@/shared/ui/ThemeToggle.vue'
@@ -11,8 +12,9 @@ import MainNav from './MainNav.vue'
 
 /**
  * Layout de la aplicación de empresa (spec 010, HU-6). Desde `lg` la
- * navegación vive en una barra lateral fija y el contenido aprovecha toda la
- * altura. En el celular, una barra superior mínima abre la misma barra
+ * navegación vive en una barra lateral fija, contraíble a íconos (v1.4), y
+ * el contenido aprovecha toda la altura; las rutas con `meta.fullWidth`
+ * («Vender») usan también todo el ancho. En el celular, una barra superior mínima abre la misma barra
  * lateral como panel: inerte mientras está cerrado, se cierra con Escape, con
  * el velo o al navegar, y devuelve el foco al botón de menú.
  */
@@ -27,6 +29,26 @@ const roleLabel = computed(() => (session.role === 'company_admin' ? 'Administra
 
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 const open = ref(false)
+const fullWidth = computed(() => Boolean(route.meta.fullWidth))
+
+/** Barra contraída a íconos en escritorio (spec 010 v1.4), recordado en el dispositivo. */
+const COLLAPSED_KEY = 'sunat.sidebar.collapsed'
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+const collapsed = ref(readCollapsed())
+watch(collapsed, (value) => {
+  try {
+    if (value) localStorage.setItem(COLLAPSED_KEY, '1')
+    else localStorage.removeItem(COLLAPSED_KEY)
+  } catch {
+    // Sin almacenamiento dura hasta recargar.
+  }
+})
 const toggle = useTemplateRef<HTMLButtonElement>('toggle')
 const sidebar = useTemplateRef<HTMLElement>('sidebar')
 const scrollLock = useScrollLock(typeof document === 'undefined' ? null : document.body)
@@ -59,6 +81,9 @@ watch(
 )
 
 async function logout() {
+  // La venta en curso es del usuario: se borra al salir (spec 012, RF-003),
+  // antes de perder la sesión que da su clave. Un 401 no pasa por aquí.
+  useSaleDraftStore().clear()
   await session.logout()
   await router.push({ name: 'login' })
 }
@@ -101,12 +126,13 @@ async function logout() {
       tabindex="-1"
       aria-label="Navegación"
       :inert="(!isDesktop && !open) || undefined"
-      class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-line bg-surface transition-transform duration-200 focus:outline-none lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:w-64 lg:max-w-none lg:translate-x-0"
-      :class="open ? 'translate-x-0 shadow-xl' : '-translate-x-full'"
+      :data-collapsed="collapsed || undefined"
+      class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 flex-col border-r border-line bg-surface transition-[translate,width] duration-200 focus:outline-none lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:max-w-none lg:translate-x-0"
+      :class="[open ? 'translate-x-0 shadow-xl' : '-translate-x-full', collapsed ? 'lg:w-18' : 'lg:w-64']"
     >
-      <div class="flex items-center gap-3 border-b border-line px-4 py-4">
+      <div class="flex items-center gap-3 border-b border-line px-4 py-4" :class="collapsed && 'lg:flex-col lg:gap-2 lg:px-0'">
         <RouterLink to="/" class="shrink-0 rounded-xl"><LogoApp :size="40" /></RouterLink>
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1" :class="collapsed && 'lg:hidden'">
           <p class="truncate font-semibold text-ink">{{ companyName }}</p>
           <p class="truncate text-xs text-ink-muted">Facturación electrónica</p>
         </div>
@@ -120,27 +146,42 @@ async function logout() {
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>
+        <button
+          type="button"
+          data-test="sidebar-collapse"
+          class="hidden size-11 shrink-0 items-center justify-center rounded-lg text-ink-muted transition hover:bg-subtle hover:text-ink lg:inline-flex"
+          :aria-label="collapsed ? 'Expandir menú' : 'Contraer menú'"
+          :title="collapsed ? 'Expandir menú' : 'Contraer menú'"
+          :aria-pressed="collapsed"
+          @click="collapsed = !collapsed"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="size-5">
+            <path d="M4 4h16v16H4zM9 4v16" />
+            <path :d="collapsed ? 'M13 10l2 2-2 2' : 'M15 10l-2 2 2 2'" />
+          </svg>
+        </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto px-3 py-4">
-        <MainNav />
+      <div class="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
+        <MainNav :collapsed="collapsed" />
       </div>
 
-      <div class="flex items-center gap-1 border-t border-line px-3 py-3">
+      <div class="flex items-center gap-1 border-t border-line px-3 py-3" :class="collapsed && 'lg:flex-col lg:px-0'">
         <span
           class="ml-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700"
+          :class="collapsed && 'lg:hidden'"
           aria-hidden="true"
         >
           {{ session.session?.user.name.charAt(0) }}
         </span>
-        <div class="ml-2 min-w-0 flex-1">
+        <div class="ml-2 min-w-0 flex-1" :class="collapsed && 'lg:hidden'">
           <p class="truncate text-sm font-medium text-ink">{{ session.session?.user.name }}</p>
           <BaseBadge variant="info">{{ roleLabel }}</BaseBadge>
         </div>
         <ThemeToggle class="text-ink-muted hover:text-ink" />
         <button
           type="button"
-          title="Cerrar sesión"
+          :title="`Cerrar sesión (${session.session?.user.name ?? ''})`"
           class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-ink-muted transition hover:bg-subtle hover:text-ink"
           @click="logout"
         >
@@ -154,7 +195,11 @@ async function logout() {
     </aside>
 
     <main class="min-w-0 flex-1">
-      <div class="mx-auto max-w-5xl px-4 py-6 lg:px-8 lg:py-8">
+      <!-- «Vender» y otras pantallas de trabajo usan todo el ancho y, en escritorio, todo el alto. -->
+      <div v-if="fullWidth" class="px-4 py-4 lg:flex lg:h-dvh lg:flex-col lg:px-6 lg:py-5">
+        <RouterView />
+      </div>
+      <div v-else class="mx-auto max-w-5xl px-4 py-6 lg:px-8 lg:py-8">
         <RouterView />
       </div>
     </main>
