@@ -8,6 +8,7 @@ import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import PilotNotice from '@/shared/ui/PilotNotice.vue'
 import { customersApi } from '../api'
 import type { Customer, CustomerDocumentType, CustomerForm } from '../types'
 
@@ -108,6 +109,7 @@ async function save() {
 
     <BaseDialog v-model:open="dialogOpen" title="Nuevo cliente">
       <form id="customer-form" class="space-y-4" novalidate @submit.prevent="save">
+        <PilotNotice compact />
         <BaseAlert v-if="generalError" variant="error">{{ generalError }}</BaseAlert>
         <FormField label="Tipo de documento" for="new-customer-type" :error="fieldError('document_type')">
           <select id="new-customer-type" v-model="form.document_type" :class="selectClass">
