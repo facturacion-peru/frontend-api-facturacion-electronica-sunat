@@ -5,9 +5,9 @@ withDefaults(defineProps<{ variant?: 'info' | 'success' | 'warning' | 'error'; t
 
 const styles = {
   info: 'border-brand-100 bg-brand-50 text-brand-700',
-  success: 'border-green-200 bg-green-50 text-green-800',
-  warning: 'border-amber-200 bg-amber-50 text-amber-900',
-  error: 'border-red-200 bg-red-50 text-red-800',
+  success: 'border-success-200 bg-success-50 text-success-800',
+  warning: 'border-warning-200 bg-warning-50 text-warning-900',
+  error: 'border-danger-200 bg-danger-50 text-danger-800',
 }
 </script>
 

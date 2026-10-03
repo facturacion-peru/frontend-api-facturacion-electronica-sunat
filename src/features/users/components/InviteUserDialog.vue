@@ -64,7 +64,7 @@ async function onSubmit() {
             {{ label }}
           </label>
         </div>
-        <p v-if="fieldError('role')" class="mt-1 text-xs text-red-600">{{ fieldError('role') }}</p>
+        <p v-if="fieldError('role')" class="mt-1 text-xs text-danger-700">{{ fieldError('role') }}</p>
       </fieldset>
     </form>
 

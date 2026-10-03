@@ -13,7 +13,7 @@ defineProps<{ compact?: boolean }>()
   <div
     v-if="env.pilotMode"
     role="note"
-    class="rounded-lg border border-amber-300 bg-amber-50 text-amber-900"
+    class="rounded-lg border border-warning-300 bg-warning-50 text-warning-900"
     :class="compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'"
     data-test="pilot-notice"
   >

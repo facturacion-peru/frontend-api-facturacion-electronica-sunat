@@ -9,8 +9,10 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { customersApi } from '../api'
 import type { Customer, CustomerForm } from '../types'
 
@@ -30,7 +32,6 @@ const editing = ref<Customer | null>(null)
 const dialogOpen = ref(false)
 const form = ref<CustomerForm>({ document_type: '1', document_number: '', name: '', address: null })
 const { submitting, generalError, fieldError, submit } = useApiForm()
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   try {
@@ -78,7 +79,7 @@ onMounted(load)
 
   <div class="mt-4">
     <label for="customers-search" class="sr-only">Buscar cliente</label>
-    <BaseInput id="customers-search" v-model="search" type="search" placeholder="Buscar por documento o nombre" autocomplete="off" @input="onSearch" />
+    <SearchInput id="customers-search" v-model="search" placeholder="Buscar por documento o nombre" autocomplete="off" @input="onSearch" @clear="onSearch" />
   </div>
 
   <BaseAlert v-if="loadError" variant="error" class="mt-4">{{ loadError }}</BaseAlert>
@@ -106,11 +107,11 @@ onMounted(load)
     <form id="edit-customer-form" class="space-y-4" novalidate @submit.prevent="save">
       <BaseAlert v-if="generalError" variant="error">{{ generalError }}</BaseAlert>
       <FormField label="Tipo de documento" for="edit-customer-type" :error="fieldError('document_type')">
-        <select id="edit-customer-type" v-model="form.document_type" :class="selectClass">
+        <BaseSelect id="edit-customer-type" v-model="form.document_type">
           <option value="1">DNI</option>
           <option value="6">RUC</option>
           <option value="4">Carné de extranjería</option>
-        </select>
+        </BaseSelect>
       </FormField>
       <FormField v-slot="{ describedBy, invalid }" label="Número de documento" for="edit-customer-number" :error="fieldError('document_number')">
         <BaseInput id="edit-customer-number" v-model="form.document_number" :invalid="invalid" :aria-describedby="describedBy" />

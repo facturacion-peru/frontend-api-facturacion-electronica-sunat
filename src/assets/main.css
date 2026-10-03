@@ -4,24 +4,153 @@
  * Tokens de la aplicación. Los componentes usan estos nombres (bg-brand-600,
  * text-ink…) en lugar de colores sueltos, para poder cambiar la marca en un
  * solo lugar.
+ *
+ * Tema «Petróleo»: verde azulado sobrio con neutros pizarra. Para cambiar la
+ * marca basta con reemplazar la escala brand-50…950 (el logo también la usa).
+ * Mantener el contraste AA: texto blanco sobre brand-600 y brand-700 sobre
+ * blanco.
+ *
+ * Papel de cada tono, igual en claro y en oscuro (así el modo oscuro solo
+ * cambia valores): 50–200 fondos y bordes tenues · 300–400 gráficos y
+ * acentos · 600 relleno sólido con texto blanco · 700 texto de acento ·
+ * 800 hover del relleno sólido · 900–950 superficies siempre oscuras.
  */
 @theme {
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
+  --color-brand-50: #effaf8;
+  --color-brand-100: #d7f2ee;
+  --color-brand-200: #b0e4dd;
+  --color-brand-300: #7fcfc6;
+  --color-brand-400: #4bb3a9;
+  --color-brand-500: #2a978e;
+  --color-brand-600: #1d7a73;
+  --color-brand-700: #1a625d;
+  --color-brand-800: #194f4c;
+  --color-brand-900: #18423f;
+  --color-brand-950: #082625;
+
+  /* Neutros (pizarra). */
   --color-ink: #0f172a;
   --color-ink-muted: #475569;
   --color-line: #e2e8f0;
+  --color-subtle: #f1f5f9;
   --color-surface: #ffffff;
-  --color-canvas: #f8fafc;
+  --color-canvas: #eef2f6;
+
+  /* Estados: éxito, aviso y error. Las pantallas usan estos, no red/green/amber. */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+
+  /* Tipografía: Inter autoalojada (A-50, importada en main.ts); si no carga, la del sistema. */
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/*
+ * Tema oscuro (spec 010, HU-5, A-55): los mismos tokens con otros valores.
+ * `useTheme` deja siempre data-theme="light|dark" en <html>, también cuando
+ * la preferencia es «Sistema». Respeta los papeles de cada tono (ver arriba).
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-ink: #e6eaf0;
+  --color-ink-muted: #9aa6b8;
+  --color-line: #2a3549;
+  --color-subtle: #1d2739;
+  --color-surface: #141c2b;
+  --color-canvas: #0b111c;
+
+  --color-brand-50: #0e2b29;
+  --color-brand-100: #123d39;
+  --color-brand-200: #1b5751;
+  --color-brand-300: #347870;
+  --color-brand-400: #3f8c83;
+  --color-brand-500: #4bb3a9;
+  --color-brand-600: #1d7a73;
+  --color-brand-700: #6fd1c6;
+  --color-brand-800: #17635d;
+  --color-brand-900: #18423f;
+  --color-brand-950: #061d1c;
+
+  --color-success-50: #0f2a1c;
+  --color-success-100: #143823;
+  --color-success-200: #1d4d30;
+  --color-success-300: #2b6b42;
+  --color-success-600: #22c55e;
+  --color-success-700: #4ade80;
+  --color-success-800: #86efac;
+  --color-success-900: #bbf7d0;
+
+  --color-warning-50: #2b210b;
+  --color-warning-100: #3a2c0d;
+  --color-warning-200: #574112;
+  --color-warning-300: #7a5a16;
+  --color-warning-600: #f59e0b;
+  --color-warning-700: #fbbf24;
+  --color-warning-800: #fcd34d;
+  --color-warning-900: #fde68a;
+
+  --color-danger-50: #2c1215;
+  --color-danger-100: #3d171b;
+  --color-danger-200: #5a1f25;
+  --color-danger-300: #7d2a31;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #f87171;
+  --color-danger-800: #fca5a5;
+  --color-danger-900: #fecaca;
 }
 
 @layer base {
   html {
+    /* Dígitos de ancho fijo: los montos quedan alineados (A-50). */
+    font-variant-numeric: tabular-nums;
     color: var(--color-ink);
     background-color: var(--color-canvas);
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Casillas y opciones con el color de marca (spec 010, HU-4). */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--color-brand-600);
+  }
+
+  input[type='file']::file-selector-button {
+    margin-right: 0.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.5rem;
+    background-color: var(--color-surface);
+    padding: 0.5rem 0.875rem;
+    color: var(--color-ink);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  input[type='file']::file-selector-button:hover {
+    background-color: var(--color-subtle);
   }
 
   :focus-visible {

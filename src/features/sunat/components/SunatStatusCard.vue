@@ -46,7 +46,7 @@ function expiryText(days: number): string {
     <template v-else-if="status">
       <p v-if="status.can_issue" class="mt-2 text-sm text-ink-muted">La configuración está lista para emitir boletas y facturas de prueba.</p>
       <template v-else>
-        <p v-if="status.reason" class="mt-2 text-sm text-red-700">{{ status.reason }}</p>
+        <p v-if="status.reason" class="mt-2 text-sm text-danger-700">{{ status.reason }}</p>
         <ul v-if="status.missing.length" class="mt-2 list-disc space-y-1 pl-5 text-sm" data-test="sunat-missing">
           <li v-for="item in status.missing" :key="item">{{ item }}</li>
         </ul>

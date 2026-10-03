@@ -8,8 +8,9 @@ import { useSessionStore } from '@/core/auth/session-store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
-import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
 import { inventoryApi } from '../api'
 import { useInventoryCatalogs } from '../composables/useInventoryCatalogs'
@@ -24,7 +25,6 @@ const meta = ref<PaginationMeta | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-const selectClass = 'min-h-11 rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   loading.value = true
@@ -75,20 +75,20 @@ onMounted(() => {
 
   <div class="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
     <label for="product-search" class="sr-only">Buscar por código o nombre</label>
-    <BaseInput id="product-search" v-model="filters.search" type="search" placeholder="Buscar por código o nombre" @input="search" />
+    <SearchInput id="product-search" v-model="filters.search" placeholder="Buscar por código o nombre" @input="search" @clear="applyFilters" />
     <label for="product-type" class="sr-only">Tipo</label>
-    <select id="product-type" v-model="filters.type" :class="selectClass" @change="applyFilters">
+    <BaseSelect id="product-type" v-model="filters.type" @change="applyFilters">
       <option value="">Bienes y servicios</option>
       <option value="good">Solo bienes</option>
       <option value="service">Solo servicios</option>
-    </select>
+    </BaseSelect>
     <template v-if="session.isCompanyAdmin">
       <label for="product-status" class="sr-only">Estado</label>
-      <select id="product-status" v-model="filters.status" :class="selectClass" @change="applyFilters">
+      <BaseSelect id="product-status" v-model="filters.status" @change="applyFilters">
         <option value="active">Activos</option>
         <option value="inactive">Desactivados</option>
         <option value="all">Todos</option>
-      </select>
+      </BaseSelect>
     </template>
   </div>
 

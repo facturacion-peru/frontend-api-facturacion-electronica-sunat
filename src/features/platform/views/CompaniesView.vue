@@ -7,8 +7,9 @@ import type { PaginationMeta } from '@/core/api/types'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
-import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { platformApi } from '../api'
 import { sunatVariant, type CompanyFilters, type PlatformCompany } from '../types'
 
@@ -18,7 +19,6 @@ const companies = ref<PlatformCompany[]>([])
 const meta = ref<PaginationMeta | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   loading.value = true
@@ -58,15 +58,15 @@ onMounted(load)
   <div class="mt-4 grid gap-3 rounded-xl border border-line bg-surface p-4 sm:grid-cols-[1fr_12rem_auto]">
     <div>
       <label for="companies-search" class="sr-only">Buscar empresa</label>
-      <BaseInput id="companies-search" v-model="filters.search" type="search" placeholder="RUC o razón social" autocomplete="off" @input="onSearch" />
+      <SearchInput id="companies-search" v-model="filters.search" placeholder="RUC o razón social" autocomplete="off" @input="onSearch" @clear="apply" />
     </div>
     <div>
       <label for="companies-status" class="sr-only">Estado</label>
-      <select id="companies-status" v-model="filters.status" :class="selectClass" @change="apply">
+      <BaseSelect id="companies-status" v-model="filters.status" @change="apply">
         <option value="">Todas</option>
         <option value="active">Activas</option>
         <option value="inactive">Suspendidas</option>
-      </select>
+      </BaseSelect>
     </div>
     <label class="flex min-h-11 items-center gap-2 text-sm">
       <input id="companies-issues" v-model="filters.issues" type="checkbox" class="size-4" @change="apply" />

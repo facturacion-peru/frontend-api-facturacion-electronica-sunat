@@ -7,6 +7,7 @@ import type { PaginationMeta } from '@/core/api/types'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import { formatDateTime } from '@/shared/utils/format'
 import { platformApi } from '../api'
@@ -22,7 +23,6 @@ const meta = ref<PaginationMeta | null>(null)
 const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 const busyId = ref<number | null>(null)
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   try {
@@ -70,11 +70,11 @@ onMounted(load)
   <div class="mt-4 flex flex-wrap items-end gap-3">
     <div class="w-48">
       <label for="support-status" class="text-sm font-medium">Estado</label>
-      <select id="support-status" v-model="filters.status" :class="selectClass" @change="apply">
+      <BaseSelect id="support-status" v-model="filters.status" @change="apply">
         <option value="">Pendientes y rechazados</option>
         <option value="pending">Pendientes</option>
         <option value="rejected">Rechazados</option>
-      </select>
+      </BaseSelect>
     </div>
     <BaseButton v-if="filters.company_id" variant="secondary" @click="allCompanies">Ver todas las empresas</BaseButton>
   </div>

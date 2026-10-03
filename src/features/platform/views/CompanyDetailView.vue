@@ -9,6 +9,7 @@ import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { formatDateTime } from '@/shared/utils/format'
 import { platformApi } from '../api'
@@ -32,7 +33,6 @@ const suspendOpen = ref(false)
 const reason = ref('')
 const suspendForm = useApiForm()
 
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 const invitationLabels = { accepted: 'Aceptada', pending: 'Pendiente', expired: 'Vencida', none: 'Sin invitación' } as const
 
 async function load() {
@@ -199,9 +199,9 @@ onMounted(load)
           <BaseInput id="edit-comercial" v-model="form.nombre_comercial" :invalid="invalid" :aria-describedby="describedBy" />
         </FormField>
         <FormField label="Régimen tributario" for="edit-regime" :error="editForm.fieldError('tax_regime')">
-          <select id="edit-regime" v-model="form.tax_regime" :class="selectClass">
+          <BaseSelect id="edit-regime" v-model="form.tax_regime">
             <option v-for="(label, value) in taxRegimeLabels" :key="value" :value="value">{{ label }}</option>
-          </select>
+          </BaseSelect>
         </FormField>
         <FormField v-slot="{ describedBy, invalid }" label="Domicilio fiscal" for="edit-address" :error="editForm.fieldError('fiscal_address.address')">
           <BaseInput id="edit-address" v-model="form.fiscal_address.address" :invalid="invalid" :aria-describedby="describedBy" />

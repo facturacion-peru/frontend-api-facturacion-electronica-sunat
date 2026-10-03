@@ -1,11 +1,14 @@
 <script setup lang="ts">
 /**
  * Campo de texto. Los atributos no declarados (id, type, autocomplete,
- * aria-describedby…) pasan directamente al <input>.
+ * aria-describedby…) pasan directamente al <input>. `narrow` es para
+ * cantidades e importes dentro de una fila (5 caracteres de ancho).
  */
+import { fieldClass, fieldStateClass, fieldWidthClass } from './field'
+
 defineOptions({ inheritAttrs: false })
 
-defineProps<{ invalid?: boolean }>()
+defineProps<{ invalid?: boolean; narrow?: boolean }>()
 
 const model = defineModel<string | number | null>({ default: '' })
 </script>
@@ -15,7 +18,6 @@ const model = defineModel<string | number | null>({ default: '' })
     v-model="model"
     v-bind="$attrs"
     :aria-invalid="invalid || undefined"
-    class="block min-h-11 w-full rounded-lg border bg-surface px-3 text-base text-ink placeholder:text-ink-muted/70 disabled:bg-canvas sm:text-sm"
-    :class="invalid ? 'border-red-500' : 'border-line'"
+    :class="[fieldClass, fieldStateClass(invalid), narrow ? 'w-20 px-2' : fieldWidthClass]"
   />
 </template>

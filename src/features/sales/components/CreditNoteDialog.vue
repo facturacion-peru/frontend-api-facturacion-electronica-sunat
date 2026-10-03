@@ -107,15 +107,16 @@ async function submit() {
                 <span class="block truncate font-medium">{{ line.product_name }}</span>
                 <span class="text-xs text-ink-muted">Quedan {{ formatQuantity(line.remaining) }} · {{ formatMoney(line.unit_price) }} c/u</span>
               </label>
-              <input
+              <BaseInput
                 :id="`return-${line.position}`"
                 v-model="quantities[line.position]"
+                narrow
                 inputmode="decimal"
                 placeholder="0"
-                class="min-h-11 w-20 rounded-lg border border-line bg-surface px-2 text-right text-base"
+                class="shrink-0 text-right"
               />
             </div>
-            <p v-if="lineErrors[line.position]" class="mt-1 text-xs text-red-600" role="alert">{{ lineErrors[line.position] }}</p>
+            <p v-if="lineErrors[line.position]" class="mt-1 text-xs text-danger-700" role="alert">{{ lineErrors[line.position] }}</p>
           </li>
         </ul>
         <p class="text-xs text-ink-muted">El stock de lo devuelto vuelve a la tienda. Los importes los calcula el sistema.</p>

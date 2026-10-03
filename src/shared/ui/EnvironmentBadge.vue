@@ -9,7 +9,7 @@ withDefaults(defineProps<{ environment?: 'beta' | 'production' }>(), { environme
 <template>
   <span
     v-if="environment === 'beta'"
-    class="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-amber-900"
+    class="inline-flex items-center rounded-full border border-warning-300 bg-warning-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-warning-900"
     data-test="environment-badge"
   >
     PRUEBAS — sin valor legal

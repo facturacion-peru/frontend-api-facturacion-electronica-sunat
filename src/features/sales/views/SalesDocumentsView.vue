@@ -7,9 +7,11 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import EnvironmentBadge from '@/shared/ui/EnvironmentBadge.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import SearchInput from '@/shared/ui/SearchInput.vue'
 import { formatDateTime, formatMoney } from '@/shared/utils/format'
 import { salesDocumentsApi } from '../api'
 import SalesTabs from '../components/SalesTabs.vue'
@@ -22,7 +24,6 @@ const meta = ref<PaginationMeta | null>(null)
 const counts = ref({ pending: 0, rejected: 0 })
 const loading = ref(false)
 const error = ref<string | null>(null)
-const selectClass = 'block min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base sm:text-sm'
 
 async function load() {
   loading.value = true
@@ -80,23 +81,23 @@ onMounted(load)
     <FormField label="Desde" for="docs-from"><BaseInput id="docs-from" v-model="filters.from" type="date" /></FormField>
     <FormField label="Hasta" for="docs-to"><BaseInput id="docs-to" v-model="filters.to" type="date" /></FormField>
     <FormField label="Tipo" for="docs-type">
-      <select id="docs-type" v-model="filters.document_type" :class="selectClass">
+      <BaseSelect id="docs-type" v-model="filters.document_type">
         <option value="">Todos</option>
         <option value="03">Boletas</option>
         <option value="01">Facturas</option>
         <option value="07">Notas de crédito</option>
-      </select>
+      </BaseSelect>
     </FormField>
     <FormField label="Estado" for="docs-status">
-      <select id="docs-status" v-model="filters.status" :class="selectClass">
+      <BaseSelect id="docs-status" v-model="filters.status">
         <option value="">Todos</option>
         <option value="pending">Pendientes</option>
         <option value="accepted">Aceptados</option>
         <option value="observed">Con observaciones</option>
         <option value="rejected">Rechazados</option>
-      </select>
+      </BaseSelect>
     </FormField>
-    <FormField label="Cliente" for="docs-customer"><BaseInput id="docs-customer" v-model="filters.customer" placeholder="Documento o nombre" /></FormField>
+    <FormField label="Cliente" for="docs-customer" class="col-span-2 lg:col-span-1"><SearchInput id="docs-customer" v-model="filters.customer" placeholder="Documento o nombre" @clear="apply" /></FormField>
     <div class="col-span-2 flex items-end lg:col-span-1"><BaseButton type="submit" block :loading="loading">Filtrar</BaseButton></div>
   </form>
 
