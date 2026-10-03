@@ -69,6 +69,21 @@ describe('SalesDocumentsView', () => {
     expect(salesDocumentsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'rejected', page: 1 }))
   })
 
+  it('011 abre ya filtrado por el estado de la URL (enlaces del Inicio) y lo refleja en el filtro', async () => {
+    vi.mocked(salesDocumentsApi.list).mockResolvedValue(page([pending]))
+    const { wrapper } = await mountWithRouter(SalesDocumentsView, { path: '/?status=rejected' })
+
+    expect(salesDocumentsApi.list).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected' }))
+    expect((wrapper.get('#docs-status').element as HTMLSelectElement).value).toBe('rejected')
+  })
+
+  it('011 ignora un estado desconocido en la URL', async () => {
+    vi.mocked(salesDocumentsApi.list).mockResolvedValue(page([]))
+    await mountWithRouter(SalesDocumentsView, { path: '/?status=perdido' })
+
+    expect(salesDocumentsApi.list).toHaveBeenCalledWith(expect.objectContaining({ status: '' }))
+  })
+
   it('007 marca los comprobantes anulados o devueltos', async () => {
     vi.mocked(salesDocumentsApi.list).mockResolvedValue(page([{ ...base, correction_status: 'voided', correction_status_label: 'Anulado' }]))
     const { wrapper } = await mountWithRouter(SalesDocumentsView)
