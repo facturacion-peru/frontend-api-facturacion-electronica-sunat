@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import type { PaginationMeta } from '@/core/api/types'
@@ -18,7 +19,19 @@ import SalesTabs from '../components/SalesTabs.vue'
 import { correctionVariant, documentStatusVariant, type SalesDocument, type SalesDocumentFilters, type SalesDocumentStatus } from '../types'
 
 /** Comprobantes de la empresa, todos visibles para todos (A-32, HU-6). */
-const filters = reactive<SalesDocumentFilters>({ from: '', to: '', document_type: '', status: '', customer: '', page: 1 })
+const route = useRoute()
+
+/** Estados que se aceptan en `?status=` (enlaces del Inicio, spec 011). */
+const STATUSES: SalesDocumentStatus[] = ['pending', 'sent', 'accepted', 'observed', 'rejected', 'discarded']
+const fromUrl = String(route.query.status ?? '') as SalesDocumentStatus
+const filters = reactive<SalesDocumentFilters>({
+  from: '',
+  to: '',
+  document_type: '',
+  status: STATUSES.includes(fromUrl) ? fromUrl : '',
+  customer: '',
+  page: 1,
+})
 const documents = ref<SalesDocument[]>([])
 const meta = ref<PaginationMeta | null>(null)
 const counts = ref({ pending: 0, rejected: 0 })
