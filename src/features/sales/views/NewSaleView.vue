@@ -48,6 +48,8 @@ watch(doneOpen, async (isOpen) => {
 const catalog = useTemplateRef<InstanceType<typeof ProductCatalog>>('catalog')
 
 function finish(sale: SaleDone) {
+  // La siguiente venta empieza con el mismo comprobante y serie (v1.5, A-60).
+  draft.remember()
   draft.clear()
   catalog.value?.reload()
   cartOpen.value = false
@@ -84,14 +86,27 @@ const needsReceiptCustomer = computed(
   () => draft.kind === '03' && !draft.documentCustomer && Number(draft.total) > Number(ANONYMOUS_RECEIPT_LIMIT),
 )
 const needsInvoiceCustomer = computed(() => draft.kind === '01' && draft.documentCustomer?.document_type !== '6')
-const chargeLabel = computed(() => ({ ticket: 'Cobrar', '03': 'Emitir boleta', '01': 'Emitir factura' })[draft.kind])
+/** Código de la serie elegida (B001…), o null para el ticket o sin serie. */
+const seriesCode = computed(() => (draft.kind === 'ticket' ? null : (kindSeries.value.find((s) => s.id === draft.seriesId)?.code ?? null)))
+/** Dice qué se emitirá: una boleta recordada va a SUNAT (RF-011). */
+const chargeLabel = computed(() => {
+  const label = { ticket: 'Cobrar', '03': 'Emitir boleta', '01': 'Emitir factura' }[draft.kind]
+
+  return seriesCode.value ? `${label} · ${seriesCode.value}` : label
+})
 
 /** Cambio de tipo hecho por el usuario: otra operación, otra clave y la serie por defecto. */
 function onKindChanged() {
   draft.idempotencyKey = crypto.randomUUID()
   draft.seriesId = kindSeries.value[0]?.id ?? null
   if (draft.kind === '01' && draft.documentCustomer?.document_type !== '6') draft.documentCustomer = null
+  draft.remember()
   error.value = null
+}
+
+function onSeriesChanged(id: number) {
+  draft.seriesId = id
+  draft.remember()
 }
 
 /** La venta restaurada pudo quedar con un tipo o serie que ya no sirven (casos límite de la spec 012). */
@@ -192,7 +207,7 @@ function showErrors(e: ApiError) {
   if (!placed) error.value = Object.values(e.fieldErrors)[0]?.[0] ?? e.message
 }
 
-const kindLabel = computed(() => kinds.find((k) => k.value === draft.kind)?.label ?? '')
+const kindLabel = computed(() => [kinds.find((k) => k.value === draft.kind)?.label, seriesCode.value].filter(Boolean).join(' '))
 
 const cartProps = computed(() => ({
   kinds: kinds.map((k) => ({ ...k, disabled: blockedReason(k.value) !== null })),
@@ -219,7 +234,7 @@ const cartProps = computed(() => ({
       </div>
 
       <aside v-if="isDesktop" class="min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-xs">
-        <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" />
+        <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" @series-changed="onSeriesChanged" />
       </aside>
     </div>
 
@@ -241,7 +256,7 @@ const cartProps = computed(() => ({
     </div>
 
     <BaseDialog v-if="!isDesktop" v-model:open="cartOpen" title="Tu venta">
-      <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" />
+      <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" @series-changed="onSeriesChanged" />
     </BaseDialog>
 
     <SaleDoneDialog v-model:open="doneOpen" :sale="done" />

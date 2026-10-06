@@ -110,4 +110,88 @@ describe('sale-draft', () => {
     expect(removed).toEqual(['Azúcar', 'Borrado'])
     expect(draft.lines.map((l) => [l.product.name, l.product.sale_price, l.product.available_stock])).toEqual([['Galletas', '3.50', '7.000']])
   })
+
+  describe('comprobante recordado (v1.5, A-60)', () => {
+    it('RF-009 clear conserva comprobante y serie recordados; cliente y medio de pago vuelven al inicio', async () => {
+      const draft = boot()
+      draft.add(galletas)
+      draft.kind = '03'
+      draft.seriesId = 12
+      draft.remember()
+      draft.paymentMethod = 'card'
+      draft.customerName = 'María'
+      await nextTick()
+
+      draft.clear()
+
+      expect([draft.kind, draft.seriesId]).toEqual(['03', 12])
+      expect([draft.paymentMethod, draft.customerName, draft.documentCustomer]).toEqual(['cash', '', null])
+    })
+
+    it('HU-6 esc. 2 sobrevive a cerrar sesión (la venta se borra, la preferencia no)', async () => {
+      const draft = boot()
+      draft.add(galletas)
+      draft.kind = '01'
+      draft.seriesId = 21
+      draft.remember()
+      await nextTick()
+      draft.clear()
+
+      const again = boot()
+      expect(again.lines).toEqual([])
+      expect([again.kind, again.seriesId]).toEqual(['01', 21])
+    })
+
+    it('HU-6 esc. 5 es por empresa y usuario', () => {
+      const draft = boot(1, 1)
+      draft.kind = '03'
+      draft.seriesId = 12
+      draft.remember()
+
+      expect(boot(2, 1).kind).toBe('ticket')
+      expect(boot(1, 2).kind).toBe('ticket')
+      expect(boot(1, 1).kind).toBe('03')
+    })
+
+    it('un cambio sin remember (corrección automática de la vista) no se recuerda', async () => {
+      const draft = boot()
+      draft.kind = '03'
+      draft.seriesId = 12
+      draft.remember()
+      draft.kind = 'ticket'
+      draft.seriesId = null
+      await nextTick()
+
+      draft.clear()
+      expect([draft.kind, draft.seriesId]).toEqual(['03', 12])
+      expect(boot().kind).toBe('03')
+    })
+
+    it('descarta una preferencia dañada o de otra versión', () => {
+      localStorage.setItem('sunat.sale-preference.1.1', '{no es json')
+      expect(boot().kind).toBe('ticket')
+
+      localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 99, kind: '03', seriesId: 12 }))
+      expect(boot().kind).toBe('ticket')
+
+      localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: 'otro', seriesId: 12 }))
+      expect(boot().kind).toBe('ticket')
+    })
+
+    it('sin almacenamiento la preferencia dura mientras la app esté abierta', () => {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('bloqueado')
+      })
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('bloqueado')
+      })
+      const draft = boot()
+      draft.kind = '03'
+      draft.seriesId = 12
+
+      expect(() => draft.remember()).not.toThrow()
+      draft.clear()
+      expect([draft.kind, draft.seriesId]).toEqual(['03', 12])
+    })
+  })
 })

@@ -35,7 +35,7 @@ defineProps<{
   error: string | null
 }>()
 
-const emit = defineEmits<{ charge: []; clear: []; 'kind-changed': [] }>()
+const emit = defineEmits<{ charge: []; clear: []; 'kind-changed': []; 'series-changed': [id: number] }>()
 
 const draft = useSaleDraftStore()
 const showCustomer = ref(Boolean(draft.customerName || draft.customerDocument))
@@ -125,7 +125,7 @@ const showCustomer = ref(Boolean(draft.customerName || draft.customerDocument))
 
       <div v-if="draft.kind !== 'ticket'" class="mt-3 space-y-3">
         <FormField v-if="kindSeries.length > 1" label="Serie" for="sale-series">
-          <BaseSelect id="sale-series" v-model="draft.seriesId">
+          <BaseSelect id="sale-series" v-model="draft.seriesId" @update:model-value="emit('series-changed', Number($event))">
             <option v-for="s in kindSeries" :key="s.id" :value="s.id">{{ s.code }}</option>
           </BaseSelect>
         </FormField>
