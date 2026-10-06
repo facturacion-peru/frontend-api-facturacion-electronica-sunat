@@ -349,7 +349,7 @@ describe('NewSaleView', () => {
 
       await choose(wrapper, 'Boleta')
       expect(wrapper.find('[data-test="environment-badge"]').exists()).toBe(true)
-      await chargeButton(wrapper, 'Emitir boleta').trigger('click')
+      await chargeButton(wrapper, 'Emitir boleta · B001').trigger('click')
       await flushPromises()
 
       expect(salesDocumentsApi.issue).toHaveBeenCalledWith(expect.objectContaining({
@@ -369,7 +369,7 @@ describe('NewSaleView', () => {
       const { wrapper } = await mountSale()
       await addProducts(wrapper, ['Galletas'])
       await choose(wrapper, 'Boleta')
-      await chargeButton(wrapper, 'Emitir boleta').trigger('click')
+      await chargeButton(wrapper, 'Emitir boleta · B001').trigger('click')
       await flushPromises()
 
       expect(dialog()!.querySelector('[role="status"], [role="alert"]')!.textContent).toContain('SUNAT no respondió')
@@ -382,7 +382,7 @@ describe('NewSaleView', () => {
       await addProducts(wrapper, ['Galletas'])
       await choose(wrapper, 'Factura')
 
-      const emit = () => wrapper.findAll('button').find((b) => b.text() === 'Emitir factura')!
+      const emit = () => wrapper.findAll('button').find((b) => b.text() === 'Emitir factura · F001')!
       expect(emit().attributes('disabled')).toBeDefined()
 
       await wrapper.find('#customer-search').setValue('ferre')
@@ -403,7 +403,7 @@ describe('NewSaleView', () => {
       await choose(wrapper, 'Boleta')
 
       expect(wrapper.find('[data-test="receipt-limit"]').text()).toContain('S/ 700')
-      expect(wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta')!.attributes('disabled')).toBeDefined()
+      expect(wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta · B001')!.attributes('disabled')).toBeDefined()
     })
 
     it('sin emisión SUNAT disponible solo deja el ticket, y dice por qué', async () => {
@@ -426,7 +426,7 @@ describe('NewSaleView', () => {
       await choose(wrapper, 'Boleta')
 
       await wrapper.find('#sale-series').setValue(13)
-      await wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta')!.trigger('click')
+      await wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta · B002')!.trigger('click')
       await flushPromises()
 
       expect(salesDocumentsApi.issue).toHaveBeenCalledWith(expect.objectContaining({ series_id: 13 }))
@@ -438,10 +438,85 @@ describe('NewSaleView', () => {
       await addProducts(wrapper, ['Galletas'])
       await choose(wrapper, 'Boleta')
 
-      await wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta')!.trigger('click')
+      await wrapper.findAll('button').find((b) => b.text() === 'Emitir boleta · B001')!.trigger('click')
       await flushPromises()
 
       expect(wrapper.text()).toContain('La emisión SUNAT no está disponible: Con error.')
+    })
+
+    describe('comprobante recordado (v1.5, A-60)', () => {
+      const withB002: IssuingAvailability = { ...available, series: [...available.series, { id: 13, document_type: '03', code: 'B002', active: true }] }
+      const preference = () => JSON.parse(localStorage.getItem('sunat.sale-preference.1.1') ?? 'null')
+
+      it('HU-6 esc. 1 y CE-004 tras emitir una boleta B002, la siguiente venta ya la tiene elegida', async () => {
+        vi.mocked(salesDocumentsApi.availability).mockResolvedValue(withB002)
+        vi.mocked(salesDocumentsApi.issue).mockResolvedValue(boleta({ display_number: 'B002-00000001' }))
+        const first = await mountSale()
+        await addProducts(first.wrapper, ['Galletas'])
+        await choose(first.wrapper, 'Boleta')
+        await first.wrapper.find('#sale-series').setValue(13)
+        await first.wrapper.find('input[value="card"]').setValue(true)
+        await chargeButton(first.wrapper, 'Emitir boleta · B002').trigger('click')
+        await flushPromises()
+        dialogButton('Nueva venta').click()
+        await flushPromises()
+
+        await addProducts(first.wrapper, ['Azúcar'])
+        expect(chargeButton(first.wrapper, 'Emitir boleta · B002').exists()).toBe(true)
+        expect((first.wrapper.find('input[value="cash"]').element as HTMLInputElement).checked).toBe(true)
+        first.wrapper.unmount()
+        document.body.innerHTML = ''
+
+        // Otra sesión de la app (p. ej. tras cerrar sesión y volver a entrar).
+        localStorage.removeItem('sunat.sale-draft.1.1')
+        const { wrapper } = await mountSale()
+        await addProducts(wrapper, ['Galletas'])
+        await chargeButton(wrapper, 'Emitir boleta · B002').trigger('click')
+        await flushPromises()
+        expect(salesDocumentsApi.issue).toHaveBeenLastCalledWith(expect.objectContaining({ document_type: '03', series_id: 13 }))
+      })
+
+      it('HU-6 esc. 2 y 3 lo elegido se recuerda aunque no se cobre y al vaciar el carrito', async () => {
+        const first = await mountSale()
+        await addProducts(first.wrapper, ['Galletas'])
+        await choose(first.wrapper, 'Factura')
+        await first.wrapper.get('[data-test="clear-cart"]').trigger('click')
+        dialogButton('Vaciar carrito').click()
+        await flushPromises()
+        first.wrapper.unmount()
+
+        const { wrapper } = await mountSale()
+        await addProducts(wrapper, ['Galletas'])
+        expect(wrapper.findAll('button').some((b) => b.text() === 'Emitir factura · F001')).toBe(true)
+      })
+
+      it('RF-010 serie recordada inactiva: usa la serie por defecto sin olvidar la preferencia', async () => {
+        localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 99 }))
+        const { wrapper } = await mountSale()
+        await addProducts(wrapper, ['Galletas'])
+
+        expect(chargeButton(wrapper, 'Emitir boleta · B001').exists()).toBe(true)
+        expect(preference()).toMatchObject({ kind: '03', seriesId: 99 })
+      })
+
+      it('RF-010 sin SUNAT disponible vuelve a ticket, y la boleta sigue recordada para cuando vuelva', async () => {
+        localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
+        vi.mocked(salesDocumentsApi.availability).mockRejectedValue(new Error('red'))
+        const { wrapper } = await mountSale()
+        await addProducts(wrapper, ['Galletas'])
+
+        expect(chargeButton(wrapper).exists()).toBe(true)
+        expect(preference()).toMatchObject({ kind: '03', seriesId: 11 })
+      })
+
+      it('RF-011 la barra del celular dice el comprobante y la serie', async () => {
+        viewport(false)
+        localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
+        const { wrapper } = await mountSale()
+        await addProducts(wrapper, ['Galletas'])
+
+        expect(wrapper.get('[data-test="cart-bar"]').text()).toContain('Boleta B001 · 1 producto')
+      })
     })
   })
 })

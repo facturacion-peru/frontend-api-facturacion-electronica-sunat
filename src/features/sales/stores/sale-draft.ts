@@ -12,6 +12,9 @@ import type { Customer, PaymentMethod, SaleKind } from '../types'
  * la app. Se borra al cobrar, al vaciar y al cerrar sesión (no al vencer la
  * sesión: RF-003). La clave de idempotencia viaja con la venta, así un cobro
  * reintentado tras volver a la pantalla no la duplica (spec 003, RF-008).
+ *
+ * Aparte, el último comprobante y serie elegidos (v1.5, A-60) se recuerdan en
+ * otra clave que no borra `clear()`: cada venta nueva empieza con ellos.
  */
 export interface DraftLine {
   product: SellableProduct
@@ -34,6 +37,28 @@ interface Stored {
   idempotencyKey: string
 }
 
+interface Preference {
+  v: number
+  kind: SaleKind
+  seriesId: number | null
+}
+
+const KINDS: readonly SaleKind[] = ['ticket', '03', '01']
+
+/** Lee la preferencia guardada; dañada, de otra versión o sin almacenamiento: ticket. */
+function readPreference(key: string): Pick<Preference, 'kind' | 'seriesId'> {
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) ?? 'null') as Preference | null
+    if (stored?.v === VERSION && KINDS.includes(stored.kind)) {
+      return { kind: stored.kind, seriesId: typeof stored.seriesId === 'number' ? stored.seriesId : null }
+    }
+  } catch {
+    // Se empieza con ticket.
+  }
+
+  return { kind: 'ticket', seriesId: null }
+}
+
 export const useSaleDraftStore = defineStore('sale-draft', () => {
   const session = useSessionStore()
 
@@ -52,6 +77,10 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
 
     return companyId && userId ? `sunat.sale-draft.${companyId}.${userId}` : null
   })
+  const preferenceKey = computed(() => storageKey.value?.replace('sunat.sale-draft.', 'sunat.sale-preference.') ?? null)
+
+  /** Comprobante y serie con que empieza cada venta (RF-009). */
+  let preference: Pick<Preference, 'kind' | 'seriesId'> = { kind: 'ticket', seriesId: null }
 
   /** Clave cargada: evita releer (y pisar) la venta al volver a la pantalla. */
   let loadedKey: string | null = null
@@ -61,8 +90,8 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
 
   function reset() {
     lines.value = []
-    kind.value = 'ticket'
-    seriesId.value = null
+    kind.value = preference.kind
+    seriesId.value = preference.seriesId
     paymentMethod.value = 'cash'
     customerName.value = ''
     customerDocument.value = ''
@@ -75,6 +104,7 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     const key = storageKey.value
     if (!key || key === loadedKey) return
     loadedKey = key
+    preference = readPreference(preferenceKey.value!)
     reset()
 
     let stored: Stored | null = null
@@ -119,6 +149,20 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
   watch([lines, kind, seriesId, paymentMethod, customerName, customerDocument, documentCustomer, idempotencyKey], save, {
     deep: true,
   })
+
+  /**
+   * Recuerda el comprobante y la serie actuales para las próximas ventas. Solo
+   * para elecciones del usuario y ventas cobradas: las correcciones automáticas
+   * (serie inactiva, SUNAT sin responder) no deben pisar la preferencia.
+   */
+  function remember() {
+    preference = { kind: kind.value, seriesId: seriesId.value }
+    try {
+      if (preferenceKey.value) localStorage.setItem(preferenceKey.value, JSON.stringify({ v: VERSION, ...preference } satisfies Preference))
+    } catch {
+      // Sin almacenamiento se recuerda mientras la app esté abierta.
+    }
+  }
 
   function add(product: SellableProduct) {
     const existing = lines.value.find((l) => l.product.id === product.id)
@@ -190,5 +234,6 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     remove,
     clear,
     refresh,
+    remember,
   }
 })
