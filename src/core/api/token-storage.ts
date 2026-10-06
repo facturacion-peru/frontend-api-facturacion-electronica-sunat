@@ -2,15 +2,31 @@
  * Persistencia del token de Sanctum.
  *
  * Se aísla en su propio módulo porque el almacenamiento cambia según el
- * destino: en web es `localStorage`, pero al empaquetar con Capacitor conviene
- * usar el almacenamiento seguro del dispositivo. Sustituir esa pieza no debería
- * obligar a tocar el cliente HTTP ni los stores.
+ * destino: en la web es `localStorage`; en la app Android, el almacén seguro
+ * del dispositivo (spec 013, A-64), que es asíncrono: el cliente HTTP lee
+ * una copia en memoria que `initTokenStorage()` carga al arrancar.
  *
  * No se usa un store de Pinia porque el cliente HTTP necesita leer el token
  * fuera de un contexto de componente.
  */
 
+import { device } from '@/core/device'
+
 const TOKEN_KEY = 'sunat.auth.token'
+
+/** Copia en memoria del token de la app Android; undefined en la web. */
+let nativeToken: string | null | undefined
+
+/** Carga el token del almacén seguro (solo en la app). Llamar antes de montar. */
+export async function initTokenStorage(): Promise<void> {
+  if (!device().isNative) return
+  try {
+    nativeToken = await device().secureStore.get(TOKEN_KEY)
+  } catch {
+    // Keystore ilegible (p. ej. tras restaurar el teléfono): se entra de nuevo.
+    nativeToken = null
+  }
+}
 
 type Listener = () => void
 const clearedListeners = new Set<Listener>()
@@ -27,6 +43,7 @@ export function onTokenCleared(listener: Listener): () => void {
 }
 
 export function getToken(): string | null {
+  if (nativeToken !== undefined) return nativeToken
   try {
     return localStorage.getItem(TOKEN_KEY)
   } catch {
@@ -36,6 +53,11 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string): void {
+  if (nativeToken !== undefined) {
+    nativeToken = token
+    device().secureStore.set(TOKEN_KEY, token).catch(() => {})
+    return
+  }
   try {
     localStorage.setItem(TOKEN_KEY, token)
   } catch {
@@ -44,10 +66,15 @@ export function setToken(token: string): void {
 }
 
 export function clearToken(): void {
-  try {
-    localStorage.removeItem(TOKEN_KEY)
-  } catch {
-    // Nada que limpiar si el almacenamiento no está disponible.
+  if (nativeToken !== undefined) {
+    nativeToken = null
+    device().secureStore.remove(TOKEN_KEY).catch(() => {})
+  } else {
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+    } catch {
+      // Nada que limpiar si el almacenamiento no está disponible.
+    }
   }
 
   clearedListeners.forEach((listener) => listener())

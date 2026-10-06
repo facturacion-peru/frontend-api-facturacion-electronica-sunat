@@ -3,11 +3,12 @@ import { computed, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { device } from '@/core/device'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import { formatMoney } from '@/shared/utils/format'
-import { salesDocumentsApi } from '../api'
+import { salesApi, salesDocumentsApi } from '../api'
 import { documentResult } from '../document-result'
 import type { SalesDocument, Ticket } from '../types'
 import TicketReceipt from './TicketReceipt.vue'
@@ -38,9 +39,11 @@ const result = computed(() => (props.sale?.kind === 'document' ? documentResult(
 async function print() {
   if (!props.sale) return
   printError.value = null
-  if (props.sale.kind === 'document') {
+  // Comprobantes, y tickets en la app Android (sin impresión del navegador): PDF de 80 mm.
+  if (props.sale.kind === 'document' || device().isNative) {
     try {
-      await salesDocumentsApi.download(props.sale.document, '80mm')
+      if (props.sale.kind === 'document') await salesDocumentsApi.download(props.sale.document, '80mm')
+      else await salesApi.ticketPdf(props.sale.ticket)
     } catch {
       printError.value = 'No se pudo abrir el PDF. Inténtalo desde «Ver detalle».'
     }

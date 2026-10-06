@@ -65,6 +65,9 @@ export const salesApi = {
 
   void: (id: number, reason: string) =>
     unwrapData<Ticket>(apiClient.POST('/api/v1/tickets/{ticket}/void', { params: { path: { ticket: id } }, body: { reason } })),
+
+  /** PDF de 80 mm del ticket: así se imprime en la app Android (spec 013, A-63). */
+  ticketPdf: (ticket: Ticket) => downloadFile(`/api/v1/tickets/${ticket.id}/pdf`, `${ticket.display_number}-80mm.pdf`, { open: true }),
 }
 
 export const salesDocumentsApi = {

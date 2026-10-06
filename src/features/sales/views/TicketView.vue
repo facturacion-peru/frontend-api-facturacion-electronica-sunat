@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import { useSessionStore } from '@/core/auth/session-store'
+import { device } from '@/core/device'
 import { useApiForm } from '@/shared/composables/useApiForm'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
@@ -21,6 +22,7 @@ const ticketId = Number(route.params.id)
 const ticket = ref<Ticket | null>(null)
 const loadError = ref<string | null>(null)
 const notice = ref<string | null>(route.query.nueva ? 'Venta registrada.' : null)
+const printError = ref<string | null>(null)
 const voidOpen = ref(false)
 const reason = ref('')
 const { submitting, generalError, fieldError, reset, submit } = useApiForm()
@@ -43,8 +45,16 @@ watch(voidOpen, (isOpen) => {
   }
 })
 
-function print() {
-  window.print()
+/** En la app Android no hay impresión del navegador: se comparte el PDF de 80 mm (spec 013). */
+async function print() {
+  if (!device().isNative) return window.print()
+  if (!ticket.value) return
+  printError.value = null
+  try {
+    await salesApi.ticketPdf(ticket.value)
+  } catch (e) {
+    printError.value = e instanceof ApiError ? e.message : 'No se pudo abrir el PDF del ticket.'
+  }
 }
 
 async function confirmVoid() {
@@ -68,6 +78,7 @@ async function confirmVoid() {
     </div>
 
     <BaseAlert v-if="notice" variant="success" class="mb-4">{{ notice }}</BaseAlert>
+    <BaseAlert v-if="printError" variant="error" class="mb-4">{{ printError }}</BaseAlert>
 
     <TicketReceipt :ticket="ticket" :company-name="companyName" :company-ruc="companyRuc" />
 

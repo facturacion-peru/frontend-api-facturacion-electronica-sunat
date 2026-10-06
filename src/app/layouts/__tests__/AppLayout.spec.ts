@@ -122,4 +122,19 @@ describe('AppLayout', () => {
     expect(again.sidebar.attributes('data-collapsed')).toBe('true')
     localStorage.removeItem('sunat.sidebar.collapsed')
   })
+
+  it('spec 013 HU-4: avisa cuando no hay conexión y quita el aviso al volver', async () => {
+    const { wrapper } = await mountLayout()
+    const onLine = vi.spyOn(navigator, 'onLine', 'get')
+
+    onLine.mockReturnValue(false)
+    window.dispatchEvent(new Event('offline'))
+    await flushPromises()
+    expect(wrapper.get('[data-test="offline"]').text()).toContain('Sin conexión')
+
+    onLine.mockReturnValue(true)
+    window.dispatchEvent(new Event('online'))
+    await flushPromises()
+    expect(wrapper.find('[data-test="offline"]').exists()).toBe(false)
+  })
 })

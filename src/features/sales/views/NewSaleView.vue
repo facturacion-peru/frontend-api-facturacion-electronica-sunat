@@ -242,7 +242,7 @@ const cartProps = computed(() => ({
     <div
       v-if="!isDesktop && draft.count"
       data-test="cart-bar"
-      class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.06)] backdrop-blur"
+      class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgb(0_0_0/0.06)] backdrop-blur"
     >
       <div class="mx-auto flex max-w-5xl items-center justify-between gap-3">
         <p class="min-w-0">

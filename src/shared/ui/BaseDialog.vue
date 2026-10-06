@@ -2,9 +2,11 @@
 /**
  * Diálogo modal accesible: atrapa el foco, se cierra con Escape y devuelve
  * el foco al elemento que lo abrió (si sigue en la página). Un hijo con
- * `data-autofocus` recibe el foco al abrir.
+ * `data-autofocus` recibe el foco al abrir. En Android, «Atrás» lo cierra.
  */
 import { nextTick, ref, useId, watch } from 'vue'
+
+import { useDismissable } from './dismissable'
 
 defineProps<{ title: string }>()
 
@@ -12,6 +14,9 @@ const open = defineModel<boolean>('open', { default: false })
 const panel = ref<HTMLElement | null>(null)
 const titleId = useId()
 let opener: HTMLElement | null = null
+
+// El botón «Atrás» de Android lo cierra, como Escape (spec 013).
+useDismissable(() => open.value, () => (open.value = false))
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -66,7 +71,7 @@ function onKeydown(event: KeyboardEvent) {
         aria-modal="true"
         :aria-labelledby="titleId"
         tabindex="-1"
-        class="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-xl sm:rounded-2xl"
+        class="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:pb-5"
         @keydown="onKeydown"
       >
         <h2 :id="titleId" class="text-lg font-semibold text-ink">{{ title }}</h2>

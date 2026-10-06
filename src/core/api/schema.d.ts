@@ -881,6 +881,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tickets/{ticket}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PDF de 80 mm para imprimir o compartir desde la app (spec 013, A-63). */
+        get: operations["ticketPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tickets/{ticket}/void": {
         parameters: {
             query?: never;
@@ -3513,6 +3530,40 @@ export interface operations {
         };
     };
     ticketShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ticketPdf: {
         parameters: {
             query?: never;
             header?: never;
