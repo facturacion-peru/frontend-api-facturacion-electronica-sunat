@@ -7,7 +7,7 @@ import type { Customer } from '../types'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
-vi.mock('../api', () => ({ customersApi: { list: vi.fn<AsyncFn>(), update: vi.fn<AsyncFn>() } }))
+vi.mock('../api', () => ({ customersApi: { list: vi.fn<AsyncFn>(), update: vi.fn<AsyncFn>(), export: vi.fn<AsyncFn>() } }))
 
 const { customersApi } = await import('../api')
 const CustomersView = (await import('../views/CustomersView.vue')).default
@@ -67,5 +67,18 @@ describe('CustomersView', () => {
     await flushPromises()
 
     expect(document.querySelector('#edit-customer-number-error')!.textContent).toContain('Ya existe un cliente')
+  })
+
+  it('exporta los clientes con la búsqueda de la lista (spec 014)', async () => {
+    vi.mocked(customersApi.export).mockResolvedValue(undefined)
+    const { wrapper } = await mountWithRouter(CustomersView)
+    await wrapper.find('#customers-search').setValue(' maria ')
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Exportar')!.trigger('click')
+    await flushPromises()
+    Array.from(document.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Descargar')!.click()
+    await flushPromises()
+
+    expect(customersApi.export).toHaveBeenCalledWith('maria', 'xlsx')
   })
 })

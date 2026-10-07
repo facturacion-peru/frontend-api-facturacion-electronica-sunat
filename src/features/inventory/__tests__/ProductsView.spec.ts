@@ -8,7 +8,7 @@ import type { Product } from '../types'
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
 vi.mock('../api', () => ({
-  inventoryApi: { catalogs: vi.fn<AsyncFn>(), listProducts: vi.fn<AsyncFn>() },
+  inventoryApi: { catalogs: vi.fn<AsyncFn>(), listProducts: vi.fn<AsyncFn>(), exportProducts: vi.fn<AsyncFn>() },
 }))
 
 const { inventoryApi } = await import('../api')
@@ -85,5 +85,33 @@ describe('ProductsView', () => {
     await flushPromises()
 
     expect(inventoryApi.listProducts).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'inactive', page: 1 }))
+  })
+
+  it('el administrador exporta con los filtros de la lista y, si quiere, los lotes (spec 014)', async () => {
+    vi.mocked(inventoryApi.exportProducts).mockResolvedValue(undefined)
+    const { wrapper } = await mountAs('company_admin')
+    await wrapper.find('#product-status').setValue('all')
+    await wrapper.find('#product-type').setValue('good')
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Exportar')!.trigger('click')
+    await flushPromises()
+    const lots = document.querySelector<HTMLInputElement>('[data-test="export-lots"]')!
+    lots.checked = true
+    lots.dispatchEvent(new Event('change'))
+    const format = document.querySelector<HTMLSelectElement>('[data-test="export-format"]')!
+    format.value = 'csv'
+    format.dispatchEvent(new Event('change'))
+    await flushPromises()
+    Array.from(document.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Descargar')!.click()
+    await flushPromises()
+
+    expect(inventoryApi.exportProducts).toHaveBeenCalledWith(expect.objectContaining({ status: 'all', type: 'good' }), 'csv', true)
+  })
+
+  it('el vendedor no ve «Exportar»', async () => {
+    const { wrapper } = await mountAs('seller')
+
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Exportar')).toBe(false)
   })
 })

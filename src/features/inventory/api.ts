@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client'
+import { downloadFile } from '@/core/api/download'
 import { unwrap, unwrapData } from '@/core/api/errors'
 import type { CollectionResponse, PaginatedResponse } from '@/core/api/types'
 import type {
@@ -14,6 +15,15 @@ import type {
 } from './types'
 
 export const inventoryApi = {
+  /** Catálogo con stock y los filtros de la lista (spec 014). En CSV con lotes llega un ZIP. */
+  exportProducts: (filters: ProductFilters, format: 'xlsx' | 'csv', lots: boolean) => {
+    const query = new URLSearchParams({ format, status: filters.status, lots: lots ? '1' : '0' })
+    if (filters.search) query.set('search', filters.search)
+    if (filters.type) query.set('type', filters.type)
+
+    return downloadFile(`/api/v1/exports/products?${query}`, `productos.${format === 'csv' && lots ? 'zip' : format}`)
+  },
+
   catalogs: () => unwrapData<InventoryCatalogs>(apiClient.GET('/api/v1/catalogs/inventory')),
 
   listProducts: (filters: ProductFilters) =>

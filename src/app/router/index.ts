@@ -10,6 +10,7 @@ import { inventoryRoutes } from '@/features/inventory/routes'
 import { salesRoutes } from '@/features/sales/routes'
 import { sunatRoutes } from '@/features/sunat/routes'
 import { platformRoutes } from '@/features/platform/routes'
+import { dataTransferRoutes } from '@/features/data-transfer/routes'
 
 /**
  * Router de la aplicación. Cada feature declara sus rutas en su propio
@@ -32,6 +33,7 @@ const routes: RouteRecordRaw[] = [
       ...inventoryRoutes,
       ...salesRoutes,
       ...sunatRoutes,
+      ...dataTransferRoutes,
     ],
   },
   {

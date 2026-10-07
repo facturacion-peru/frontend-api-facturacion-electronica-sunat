@@ -136,4 +136,12 @@ export const customersApi = {
 
   update: (id: number, body: Partial<CustomerForm>) =>
     unwrapData<Customer>(apiClient.PATCH('/api/v1/customers/{customer}', { params: { path: { customer: id } }, body })),
+
+  /** Clientes con la búsqueda de la lista (spec 014). */
+  export: (search: string, format: 'xlsx' | 'csv') => {
+    const query = new URLSearchParams({ format })
+    if (search) query.set('search', search)
+
+    return downloadFile(`/api/v1/exports/customers?${query}`, `clientes.${format}`)
+  },
 }

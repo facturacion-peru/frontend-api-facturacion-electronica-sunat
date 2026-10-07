@@ -11,6 +11,7 @@ import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
+import ExportButton from '@/shared/ui/ExportButton.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import SearchInput from '@/shared/ui/SearchInput.vue'
 import { customersApi } from '../api'
@@ -74,7 +75,10 @@ onMounted(load)
 </script>
 
 <template>
-  <h1 class="text-xl font-semibold">Clientes</h1>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-xl font-semibold">Clientes</h1>
+    <ExportButton title="Exportar clientes" :download="(format) => customersApi.export(search.trim(), format)" />
+  </div>
   <p class="mt-1 text-sm text-ink-muted">Se registran al emitir boletas y facturas. Aquí puedes corregir sus datos.</p>
 
   <div class="mt-4">
