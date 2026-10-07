@@ -9,6 +9,11 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
+  // La app Android para empresas solo habla HTTPS con la API (spec 013, RF-007).
+  if (mode === 'android' && !env.VITE_API_BASE_URL?.startsWith('https://')) {
+    throw new Error('Modo android: VITE_API_BASE_URL debe ser la URL https de la API (ver .env.android).')
+  }
+
   return {
     plugins: [vue(), vueDevTools(), tailwindcss()],
     resolve: {

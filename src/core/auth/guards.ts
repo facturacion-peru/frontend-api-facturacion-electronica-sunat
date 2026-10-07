@@ -39,7 +39,9 @@ export async function authGuard(to: RouteLocationNormalized): Promise<true | Rou
   if (!to.meta.requiresAuth) return true
 
   if (!session.isAuthenticated) {
-    return { name: 'login', query: { redirect: to.fullPath } }
+    // Al inicio no hay a dónde volver: sin `redirect`, el login no dice que la
+    // sesión terminó (la app Android siempre abre aquí, spec 013).
+    return { name: 'login', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
   }
 
   // El administrador de la plataforma solo usa su panel (A-08, A-35).

@@ -3,8 +3,12 @@ import { computed, ref } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
 import { clearToken, getToken, onTokenCleared, setToken } from '@/core/api/token-storage'
+import { device } from '@/core/device'
 import { authApi } from './api'
 import type { AcceptInvitationPayload, Session, SessionWithToken } from './types'
+
+/** El panel de la plataforma no va en la app Android (spec 013, A-65). */
+export const PLATFORM_IN_APP_MESSAGE = 'El panel de la plataforma se usa desde la web, no desde la app.'
 
 /**
  * Sesión del usuario: quién es, su empresa y su rol.
@@ -25,18 +29,27 @@ export const useSessionStore = defineStore('session', () => {
     session.value = null
   })
 
-  function start(result: SessionWithToken): void {
+  async function start(result: SessionWithToken): Promise<void> {
     setToken(result.token)
+    if (blockedInApp(result)) {
+      // Se revoca el token recién creado: en la app no queda sesión de plataforma.
+      await logout()
+      throw new ApiError(403, PLATFORM_IN_APP_MESSAGE)
+    }
     const { token: _token, expires_at: _expiresAt, ...rest } = result
     session.value = rest
   }
 
+  function blockedInApp(s: Session): boolean {
+    return device().isNative && s.platform_admin
+  }
+
   async function login(email: string, password: string): Promise<void> {
-    start(await authApi.login(email, password))
+    await start(await authApi.login(email, password))
   }
 
   async function acceptInvitation(token: string, payload: AcceptInvitationPayload): Promise<void> {
-    start(await authApi.acceptInvitation(token, payload))
+    await start(await authApi.acceptInvitation(token, payload))
   }
 
   /** Al recargar la página: recupera la sesión si hay un token guardado. */
@@ -45,7 +58,12 @@ export const useSessionStore = defineStore('session', () => {
     if (!getToken()) return false
 
     try {
-      session.value = await authApi.me()
+      const restored = await authApi.me()
+      if (blockedInApp(restored)) {
+        await logout()
+        return false
+      }
+      session.value = restored
       return true
     } catch (error) {
       if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {

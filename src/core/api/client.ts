@@ -1,6 +1,8 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 
 import { env } from '@/core/config/env'
+import { device } from '@/core/device'
+import { updateRequired } from './app-update'
 import type { paths } from './schema'
 import { getToken, clearToken } from './token-storage'
 
@@ -13,7 +15,7 @@ import { getToken, clearToken } from './token-storage'
  * cambia un campo, el build falla aquí antes que en producción.
  */
 
-/** Adjunta el token de Sanctum a cada petición saliente. */
+/** Adjunta el token de Sanctum (y en la app, su versión) a cada petición saliente. */
 const authMiddleware: Middleware = {
   async onRequest({ request }) {
     const token = getToken()
@@ -24,6 +26,10 @@ const authMiddleware: Middleware = {
 
     request.headers.set('Accept', 'application/json')
 
+    // La app Android se identifica para el control de versión mínima (spec 013).
+    const version = device().appVersion
+    if (version) request.headers.set('X-App-Version', version)
+
     return request
   },
 
@@ -33,6 +39,12 @@ const authMiddleware: Middleware = {
     // del router, que sí conoce la ruta actual.
     if (response.status === 401) {
       clearToken()
+    }
+
+    // App desactualizada: se pide actualizar, sin cerrar la sesión (spec 013, HU-5).
+    if (response.status === 426) {
+      const body = (await response.clone().json().catch(() => ({}))) as { min_version?: string }
+      updateRequired.value = body.min_version ?? '?'
     }
 
     return response

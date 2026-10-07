@@ -75,7 +75,7 @@ El token caduca a las 24 h (`SANCTUM_EXPIRATION` en la API); el re-login devuelv
 
 Las rutas declaran `meta.requiresAuth`, `meta.guestOnly`, `meta.public` y `meta.roles` (`company_admin`, `seller`). El guard es solo experiencia de usuario: la autorización real la aplica siempre la API. El administrador de la plataforma no usa esta aplicación y ve un aviso propio.
 
-`token-storage.ts` está aislado en su propio módulo a propósito: en web usa `localStorage`, pero al empaquetar con Capacitor conviene cambiarlo por el almacenamiento seguro del dispositivo, y esa sustitución no debería obligar a tocar el cliente HTTP ni los stores.
+`token-storage.ts` está aislado en su propio módulo: en la web usa `localStorage`; en la app Android, el almacén seguro del dispositivo (Keystore) a través de `core/device`, con una copia en memoria que `initTokenStorage()` carga al arrancar. El cliente HTTP y los stores no saben cuál se usa.
 
 ## Tipos generados desde la API
 
@@ -189,6 +189,8 @@ Las respuestas de la API se tipan a mano en el `types.ts` de cada feature, porqu
 | `pnpm format` | Prettier sobre `src/` |
 | `pnpm test:unit` | Vitest en modo watch |
 | `pnpm api:types` | Regenera los tipos desde el spec de la API |
+| `pnpm android:dev` | App Android de desarrollo en el teléfono conectado (API de la PC por la red local) |
+| `pnpm android:release` | APK firmado para empresas (API con HTTPS) |
 
 ## Variables de entorno
 
@@ -200,11 +202,86 @@ Las respuestas de la API se tipan a mano en el `types.ts` de cada feature, porqu
 
 `env.ts` valida al arrancar las que son obligatorias, para fallar al inicio y no a mitad de una petición.
 
-## Empaquetado como APK
+## App Android (spec 013)
 
-Capacitor **todavía no está instalado**. Requiere Java y el Android SDK, que no están configurados en este entorno, y conviene añadirlo como un paso propio.
+La app Android es esta misma aplicación empaquetada con **Capacitor 8** (`android/`). La interfaz va dentro del APK y habla con la API por HTTPS. Todo lo que depende del teléfono pasa por `src/core/device/`, que tiene una implementación web y otra nativa:
 
-Cuando llegue el momento, el punto delicado será la impresión en térmicas Bluetooth. El dato que decide el enfoque es si las impresoras de destino usan **Bluetooth Classic (SPP)** —lo habitual en las térmicas económicas de 58 mm y 80 mm— o **BLE**, porque el plugin cambia en cada caso. Conviene además generar los comandos ESC/POS en el servidor y no en el cliente: la API ya produce el QR y las plantillas de 80 mm y 50 mm, y duplicar ese formato en JavaScript obligaría a mantenerlo sincronizado con las reglas de SUNAT en dos sitios.
+- **Sesión:** se guarda en Keystore.
+- **Archivos:** los PDF, XML y CDR se entregan con «Compartir» de Android. Así se imprime el ticket, usando el PDF de 80 mm de la API.
+- **Botón «Atrás»:** cierra el diálogo abierto, vuelve a la pantalla anterior o manda la app al fondo.
+- **Versión instalada:** se envía en `X-App-Version`. Si la API responde `426`, se muestra «Actualiza la app».
+
+### Requisitos
+
+- **JDK 21.** Capacitor 8 no compila con el 17.
+- **Android SDK con la plataforma 36.**
+
+En esta máquina están en `~/Android`. Antes de compilar, exportar en la terminal (o en `~/.bashrc`):
+
+```bash
+export JAVA_HOME=~/Android/jdk-21.0.12.1+1
+export ANDROID_HOME=~/Android/sdk
+```
+
+`android/local.properties` (no versionado) apunta al SDK: `sdk.dir=/home/<usuario>/Android/sdk`.
+
+### Desarrollo en un teléfono (red local)
+
+1. Levantar la API para la red local: `PHP_CLI_SERVER_WORKERS=4 php artisan serve --host=0.0.0.0 --port=8000`.
+   - Con un solo proceso, las llamadas simultáneas de la app esperan unos segundos.
+   - Su `.env` debe incluir `https://localhost` en `CORS_ALLOWED_ORIGINS`, porque ese es el origen de la app.
+2. Crear `.env.android-dev.local` (no versionado) con la IP de la PC: `VITE_API_BASE_URL=http://192.168.x.y:8000`.
+3. Conectar el teléfono por USB (con la depuración USB activa) o por Wi-Fi (abajo) y ejecutar `pnpm android:dev`. Compila, sincroniza e instala la variante *debug*.
+
+#### Por Wi-Fi (depuración inalámbrica, Android 11 o superior)
+
+El teléfono y la PC deben estar en la **misma red Wi-Fi**. `adb` está en `~/Android/sdk/platform-tools`; conviene agregarlo al `PATH`: `export PATH=~/Android/sdk/platform-tools:$PATH`.
+
+1. **Vincular**, solo la primera vez:
+   - En el teléfono, ir a *Opciones de desarrollador → Depuración inalámbrica → Vincular dispositivo con código de vinculación*. Muestra una IP, un puerto y un código de 6 dígitos.
+   - En la PC, ejecutar `adb pair 192.168.1.50:37123` con la IP y el puerto de **ese diálogo**, y escribir el código.
+2. **Conectar:**
+   - En la pantalla principal de *Depuración inalámbrica* aparece «Dirección IP y puerto». Es **otro puerto**, distinto del de vincular.
+   - En la PC, ejecutar `adb connect 192.168.1.50:41234` con esa IP y ese puerto.
+   - `adb devices` debe listar el teléfono como `device`.
+3. **Instalar y abrir:** ejecutar `pnpm android:dev`, como con USB.
+4. **Depurar:**
+   - En Chrome de la PC, abrir `chrome://inspect/#devices`. Ahí aparece el WebView de la app (solo la variante *debug*) con su consola, red y elementos.
+   - El registro nativo se ve con `adb logcat | grep -iE "Capacitor|chromium"`.
+
+Cosas a saber:
+
+- **El puerto cambia.** Cada vez que se apaga la depuración inalámbrica o se reinicia el teléfono, cambia el puerto de conexión. Hay que repetir `adb connect` con el nuevo; la vinculación se conserva.
+- **El teléfono debe llegar a la API.** Desde el navegador del teléfono, abrir `http://<IP de la PC>:8000/up` debe responder. Si no responde, la API está escuchando solo en `127.0.0.1` (falta `--host=0.0.0.0`), un firewall bloquea el puerto (`sudo ufw allow 8000/tcp`) o la red Wi-Fi aísla a los clientes (pasa en redes de invitados).
+- **Xiaomi, Redmi y Poco (MIUI/HyperOS):** sin un permiso extra, la instalación falla con `INSTALL_FAILED_USER_RESTRICTED`. Hay que activar en *Opciones de desarrollador* «Instalar vía USB» (MIUI pide iniciar sesión con la cuenta Mi y a veces tener SIM) y «Depuración USB (ajustes de seguridad)». Además, hay que aceptar en el teléfono el aviso que aparece en cada instalación. Aunque la conexión sea por Wi-Fi, el permiso se llama igual.
+- **La IP de la PC puede cambiar** con el router. Si la app no conecta, revisar `hostname -I` y actualizar `.env.android-dev.local`.
+
+En el emulador de Android, la PC es `10.0.2.2`: `VITE_API_BASE_URL=http://10.0.2.2:8000 pnpm android:dev`. La variante *debug* también se puede inspeccionar con `chrome://inspect`.
+
+Solo la variante *debug* acepta HTTP. La versión para empresas exige HTTPS: no tiene `usesCleartextTraffic` ni permite contenido mixto.
+
+### Versión para empresas
+
+```bash
+pnpm android:release   # APK firmado en android/app/build/outputs/apk/release/
+```
+
+- `.env.android` debe tener la URL **https** de la API (spec 009); sin ella, la compilación falla.
+- La versión sale de `version` en `package.json`. Subirla en cada entrega: `versionCode` se calcula como x·10000 + y·100 + z, y Android no instala encima una versión menor.
+- En la API, `APP_ANDROID_MIN_VERSION` obliga a actualizar las versiones viejas.
+
+### Firma (clave de la app)
+
+- El APK se firma con la clave `~/Android/keys/facturacion-sunat-release.jks`.
+- Gradle la lee de `android/keystore.properties`, que contiene la ruta, el alias y la contraseña. Ese archivo está en `.gitignore` y **nunca va al repositorio**.
+- Hay una copia en `respaldos/android-firma/` y otra debe guardarse fuera de esta máquina.
+- **Si se pierde la clave o su contraseña, la app instalada ya no se puede actualizar**: habría que desinstalarla y empezar con otro identificador.
+
+### Provisional
+
+El nombre («Facturación SUNAT») y el identificador (`io.github.facturacion_peru.app`) son provisionales (A-61). Se fijan antes de la primera entrega a una empresa. Para cambiarlos hay que modificar `capacitor.config.ts` y `android/app/build.gradle` y regenerar la plataforma.
+
+La impresión Bluetooth directa (ESC/POS) queda para una spec propia. El dato que decide el enfoque es si las térmicas usan **Bluetooth Classic (SPP)** o **BLE**.
 
 ## Nota sobre versiones
 

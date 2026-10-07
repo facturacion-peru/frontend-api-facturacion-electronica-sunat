@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { onKeyStroke, useMediaQuery, useScrollLock } from '@vueuse/core'
-import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { device } from '@/core/device'
 import { useSaleDraftStore } from '@/features/sales/stores/sale-draft'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import LogoApp from '@/shared/ui/LogoApp.vue'
 import ThemeToggle from '@/shared/ui/ThemeToggle.vue'
+import { useDismissable } from '@/shared/ui/dismissable'
 import MainNav from './MainNav.vue'
 
 /**
@@ -73,12 +75,18 @@ async function closePanel({ restoreFocus = true } = {}) {
 }
 
 onKeyStroke('Escape', () => closePanel())
+// En Android, «Atrás» también lo cierra (spec 013).
+useDismissable(() => open.value, () => void closePanel())
 
 // Al navegar, el foco lo maneja la nueva pantalla.
 watch(
   () => route.fullPath,
   () => closePanel({ restoreFocus: false }),
 )
+
+/** Sin conexión se avisa; la venta en curso queda guardada (spec 013, HU-4). */
+const online = ref(true)
+onBeforeUnmount(device().onConnectionChange((value) => (online.value = value)))
 
 async function logout() {
   // La venta en curso es del usuario: se borra al salir (spec 012, RF-003),
@@ -92,7 +100,7 @@ async function logout() {
 <template>
   <div class="min-h-dvh lg:flex">
     <!-- Celular: barra superior mínima. -->
-    <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-surface/95 px-2 backdrop-blur lg:hidden">
+    <header class="sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center gap-2 border-b border-line bg-surface/95 px-2 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
       <button
         ref="toggle"
         type="button"
@@ -127,7 +135,7 @@ async function logout() {
       aria-label="Navegación"
       :inert="(!isDesktop && !open) || undefined"
       :data-collapsed="collapsed || undefined"
-      class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 flex-col border-r border-line bg-surface transition-[translate,width] duration-200 focus:outline-none lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:max-w-none lg:translate-x-0"
+      class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 flex-col border-r border-line bg-surface pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-[translate,width] duration-200 focus:outline-none lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:max-w-none lg:translate-x-0"
       :class="[open ? 'translate-x-0 shadow-xl' : '-translate-x-full', collapsed ? 'lg:w-18' : 'lg:w-64']"
     >
       <div class="flex items-center gap-3 border-b border-line px-4 py-4" :class="collapsed && 'lg:flex-col lg:gap-2 lg:px-0'">
@@ -195,6 +203,14 @@ async function logout() {
     </aside>
 
     <main class="min-w-0 flex-1">
+      <p
+        v-if="!online"
+        data-test="offline"
+        role="status"
+        class="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 border-b border-warning-200 bg-warning-50 px-4 py-2 text-center text-sm font-medium text-warning-700 lg:top-0"
+      >
+        Sin conexión. Revisa tus datos o el Wi-Fi; la venta en curso se conserva.
+      </p>
       <!-- «Vender» y otras pantallas de trabajo usan todo el ancho y, en escritorio, todo el alto. -->
       <div v-if="fullWidth" class="px-4 py-4 lg:flex lg:h-dvh lg:flex-col lg:px-6 lg:py-5">
         <RouterView />

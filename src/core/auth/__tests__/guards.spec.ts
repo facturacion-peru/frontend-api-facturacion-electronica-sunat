@@ -55,6 +55,15 @@ describe('authGuard', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/usuarios?pagina=2')
   })
 
+  it('al abrir el inicio sin sesión, el login no dice que la sesión terminó (spec 013)', async () => {
+    const router = makeRouter()
+
+    await router.push('/')
+
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query.redirect).toBeUndefined()
+  })
+
   it('recupera la sesión guardada antes de decidir', async () => {
     setToken('1|abc')
     vi.mocked(authApi.me).mockResolvedValue(seller)

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo la variante de desarrollo habla con la API de la PC sin HTTPS (spec 013, A-62).
+     La versión que se entrega a las empresas no tiene este permiso (RF-007). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true" />
+</manifest>
