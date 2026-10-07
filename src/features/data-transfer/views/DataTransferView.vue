@@ -36,7 +36,7 @@ async function exportAll(what: 'products' | 'customers') {
   <h1 class="text-xl font-semibold">Importar y exportar</h1>
   <p class="mt-1 text-sm text-ink-muted">Saca tus datos a Excel o carga tu catálogo y tus clientes desde otro sistema. Todo queda en la auditoría.</p>
 
-  <div class="mt-6 grid gap-6 lg:grid-cols-2">
+  <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
     <section aria-labelledby="export-sales-title" class="rounded-xl border border-line bg-surface p-4">
       <h2 id="export-sales-title" class="font-semibold">Exportar ventas</h2>
       <p class="mt-1 mb-4 text-sm text-ink-muted">Tickets, boletas, facturas y notas de crédito de hasta 12 meses.</p>

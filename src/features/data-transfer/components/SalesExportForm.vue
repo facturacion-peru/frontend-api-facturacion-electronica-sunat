@@ -78,7 +78,7 @@ async function download() {
 
 <template>
   <form class="space-y-4" novalidate @submit.prevent="download">
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
       <FormField label="Desde" for="sales-export-from"><BaseInput id="sales-export-from" v-model="form.from" type="date" :max="today" /></FormField>
       <FormField label="Hasta" for="sales-export-to"><BaseInput id="sales-export-to" v-model="form.to" type="date" :max="today" /></FormField>
     </div>

@@ -179,14 +179,14 @@ function restart(clearError = true) {
           <p class="flex flex-wrap items-center gap-2">
             <span class="rounded bg-subtle px-1.5 text-xs font-medium">{{ change.action === 'create' ? 'Nuevo' : 'Cambia' }}</span>
             <span class="font-medium">{{ change.key }}</span>
-            <span class="min-w-0 truncate text-ink-muted">{{ change.name }}</span>
+            <span class="min-w-0 flex-1 truncate text-ink-muted">{{ change.name }}</span>
             <span class="ml-auto text-xs text-ink-muted">Fila {{ change.row }}</span>
           </p>
           <p v-if="change.action === 'create' && change.stock" class="mt-1 text-ink-muted">Stock inicial: {{ formatQuantity(change.stock) }}</p>
           <dl v-if="change.action === 'update'" class="mt-1 grid grid-cols-1 gap-1">
             <div v-for="(diff, column) in change.fields" :key="column" class="text-ink-muted">
-              <dt class="inline">{{ label(String(column)) }}:</dt>
-              <dd class="inline"> {{ show(diff.from) }} → <span class="font-medium text-ink">{{ show(diff.to) }}</span></dd>
+              <dt class="inline">{{ `${label(String(column))}: ` }}</dt>
+              <dd class="inline break-words">{{ show(diff.from) }} → <span class="font-medium text-ink">{{ show(diff.to) }}</span></dd>
             </div>
           </dl>
         </li>
