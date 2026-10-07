@@ -164,10 +164,11 @@ Features actuales (specs 001 a 007):
 | `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
 | `platform` | Panel del administrador de la plataforma en `/plataforma`, con su propio layout: empresas (estado SUNAT, filtros, alta, ficha, corrección de datos legales, suspensión con motivo, reenvío de invitación), soporte de la emisión y auditoría. Solo metadatos (A-37). Se carga en diferido; al empaquetar el APK se puede excluir |
 | `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
+| `data-transfer` | «Importar y exportar» (`/datos`, administrador, spec 014): exportación de ventas por rango de fechas de Lima, catálogo y clientes completos, y asistente de importación (plantilla, «Solo crear» o «Crear y actualizar», vista previa con errores por fila y cambios campo por campo, confirmación). En Android, las descargas abren «Compartir» y el archivo se elige con el selector del teléfono |
 
 Piezas compartidas:
 
-- `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge, estado vacío y `EnvironmentBadge` («PRUEBAS — sin valor legal», siempre visible en beta).
+- `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge, estado vacío, `EnvironmentBadge` («PRUEBAS — sin valor legal», siempre visible en beta) y `ExportButton` (diálogo «Exportar» de una lista; recibe la descarga como prop).
 - `shared/composables/useApiForm`: envío y errores 422 por campo.
 - `core/api/download`: descarga de archivos de la API con el token (un enlace directo no lleva `Authorization`).
 - `shared/utils/format`: soles, cantidades sin ceros sobrantes y fechas en español del Perú. Solo formatean: los importes y las cantidades llegan de la API como cadenas decimales exactas y nunca se calculan en el frontend.
