@@ -40,6 +40,7 @@ const admin: Item[] = [
   { to: '/empresa', label: 'Mi empresa', icon: 'M4 21V5.5L12 3v18M12 9h8v12M2.5 21h19M7 8h2M7 12h2M7 16h2M15 13h2M15 17h2' },
   { to: '/sunat', label: 'SUNAT', icon: 'M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4' },
   { to: '/series', label: 'Series', icon: 'M5 9h14M5 15h14M10.5 3.5 8.5 20.5M15.5 3.5l-2 17' },
+  { to: '/datos', label: 'Importar y exportar', icon: 'M12 3v11m-4-4 4 4 4-4M4.5 15v4.5h15V15' },
 ]
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatDate, formatMoney, formatQuantity } from '../format'
+import { formatDate, formatMoney, formatQuantity, todayInLima } from '../format'
 
 describe('format', () => {
   it('formatea soles', () => {
@@ -19,5 +19,11 @@ describe('format', () => {
   it('muestra fechas sin desfase de zona horaria', () => {
     expect(formatDate('2026-10-01')).toContain('2026')
     expect(formatDate('2026-10-01')).toMatch(/^1 /)
+  })
+
+  it('todayInLima usa la fecha de Lima, no la del dispositivo ni UTC', () => {
+    // 2026-10-08 03:30 UTC son las 22:30 del 7 en Lima (UTC−5).
+    expect(todayInLima(new Date('2026-10-08T03:30:00Z'))).toBe('2026-10-07')
+    expect(todayInLima(new Date('2026-10-08T05:00:00Z'))).toBe('2026-10-08')
   })
 })

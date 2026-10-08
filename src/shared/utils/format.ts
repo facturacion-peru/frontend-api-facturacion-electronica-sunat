@@ -37,3 +37,10 @@ export function today(): string {
 
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
+
+const limaDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' })
+
+/** Fecha de hoy en Lima (AAAA-MM-DD), la que usa la API para los rangos de fechas. */
+export function todayInLima(now: Date = new Date()): string {
+  return limaDate.format(now)
+}

@@ -39,7 +39,7 @@ describe('MainNav', () => {
     const group = wrapper.get('[aria-labelledby="nav-admin"]')
 
     expect(wrapper.get('#nav-admin').text()).toBe('Gestión')
-    expect(group.findAll('a').map((a) => a.text())).toEqual(['Alertas', 'Clientes', 'Usuarios', 'Auditoría', 'Mi empresa', 'SUNAT', 'Series'])
+    expect(group.findAll('a').map((a) => a.text())).toEqual(['Alertas', 'Clientes', 'Usuarios', 'Auditoría', 'Mi empresa', 'SUNAT', 'Series', 'Importar y exportar'])
     expect(group.isVisible()).toBe(true)
   })
 

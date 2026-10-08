@@ -10,6 +10,7 @@ import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
+import ExportButton from '@/shared/ui/ExportButton.vue'
 import SearchInput from '@/shared/ui/SearchInput.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
 import { inventoryApi } from '../api'
@@ -24,7 +25,7 @@ const products = ref<Product[]>([])
 const meta = ref<PaginationMeta | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
-
+const exportLots = ref(false)
 
 async function load() {
   loading.value = true
@@ -68,9 +69,17 @@ onMounted(() => {
 <template>
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-xl font-semibold">Productos</h1>
-    <RouterLink v-if="session.isCompanyAdmin" :to="{ name: 'product-create' }">
-      <BaseButton tabindex="-1">Nuevo producto</BaseButton>
-    </RouterLink>
+    <div v-if="session.isCompanyAdmin" class="flex flex-wrap gap-2">
+      <ExportButton title="Exportar productos" :download="(format) => inventoryApi.exportProducts(filters, format, exportLots)">
+        <label class="flex min-h-11 items-center gap-2 text-sm">
+          <input v-model="exportLots" type="checkbox" class="size-4" data-test="export-lots" />
+          Incluir una hoja con los lotes (costo y vencimiento)
+        </label>
+      </ExportButton>
+      <RouterLink :to="{ name: 'product-create' }">
+        <BaseButton tabindex="-1">Nuevo producto</BaseButton>
+      </RouterLink>
+    </div>
   </div>
 
   <div class="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
