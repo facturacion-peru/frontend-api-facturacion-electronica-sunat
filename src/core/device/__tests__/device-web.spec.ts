@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { device, initDevice } from '..'
+import { device, initDevice, PrinterError } from '..'
 
 /*
  * Spec 013 · T010: en la web el módulo de dispositivo se comporta como hasta
@@ -65,5 +65,15 @@ describe('device (web)', () => {
     stop()
     window.dispatchEvent(new Event('offline'))
     expect(handler).toHaveBeenCalledTimes(3)
+  })
+
+  it('no tiene impresora Bluetooth (spec 015): se imprime como siempre', async () => {
+    expect(device().printer.available).toBe(false)
+    expect(await device().printer.status()).toEqual({ supported: false, enabled: false })
+
+    const error = await device().printer.print('00:11:22:33:44:55', new Uint8Array([1])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(PrinterError)
+    expect((error as InstanceType<typeof PrinterError>).code).toBe('unsupported')
+    await expect(device().printer.listPaired()).rejects.toBeInstanceOf(PrinterError)
   })
 })

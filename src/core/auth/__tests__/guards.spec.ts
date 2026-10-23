@@ -7,6 +7,12 @@ import type { Session } from '../types'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
+const native = vi.hoisted(() => ({ value: false }))
+vi.mock('@/core/device', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/core/device')>()
+  return { ...real, device: () => ({ ...real.device(), isNative: native.value }) }
+})
+
 vi.mock('../api', () => ({
   authApi: { login: vi.fn<AsyncFn>(), me: vi.fn<AsyncFn>(), logout: vi.fn<AsyncFn>(), acceptInvitation: vi.fn<AsyncFn>() },
 }))
@@ -32,6 +38,7 @@ function makeRouter(): Router {
       { path: '/usuarios', name: 'users', component: Stub, meta: { requiresAuth: true, roles: ['company_admin'] } },
       { path: '/plataforma', name: 'platform-companies', component: Stub, meta: { requiresAuth: true, platform: true } },
       { path: '/invitacion/:token', name: 'accept-invitation', component: Stub, meta: { public: true } },
+      { path: '/impresora', name: 'printer', component: Stub, meta: { requiresAuth: true, nativeOnly: true } },
     ],
   })
   router.beforeEach(authGuard)
@@ -44,6 +51,7 @@ describe('authGuard', () => {
     setActivePinia(createPinia())
     localStorage.clear()
     vi.clearAllMocks()
+    native.value = false
   })
 
   it('lleva al login con la ruta de retorno si no hay sesión', async () => {
@@ -144,5 +152,18 @@ describe('safeRedirect', () => {
     expect(safeRedirect('https://malicioso.example')).toBe('/')
     expect(safeRedirect(undefined)).toBe('/')
     expect(safeRedirect(['/a'])).toBe('/')
+  })
+
+  it('«Impresora» (solo en la app, spec 015): en la web lleva al Inicio', async () => {
+    setToken('tok')
+    vi.mocked(authApi.me).mockResolvedValue(seller)
+    const router = makeRouter()
+
+    await router.push('/impresora')
+    expect(router.currentRoute.value.name).toBe('home')
+
+    native.value = true
+    await router.push('/impresora')
+    expect(router.currentRoute.value.name).toBe('printer')
   })
 })

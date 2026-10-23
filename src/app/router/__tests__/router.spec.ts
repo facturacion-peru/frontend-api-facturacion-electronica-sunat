@@ -16,4 +16,11 @@ describe('router', () => {
     expect(resolved.name).toBe('login')
     expect(resolved.meta.requiresAuth).toBeUndefined()
   })
+  it('«Impresora» cuelga de la aplicación y es solo de la app Android (spec 015)', () => {
+    const resolved = router.resolve('/impresora')
+
+    expect(resolved.name).toBe('printer')
+    expect(resolved.meta.requiresAuth).toBe(true)
+    expect(resolved.meta.nativeOnly).toBe(true)
+  })
 })

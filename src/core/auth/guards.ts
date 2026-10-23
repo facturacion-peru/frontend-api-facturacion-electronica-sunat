@@ -1,5 +1,7 @@
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 
+import { device } from '@/core/device'
+
 import { useSessionStore } from './session-store'
 import type { CompanyRole } from './types'
 
@@ -19,6 +21,8 @@ declare module 'vue-router' {
     title?: string
     /** Usa todo el ancho y, en escritorio, todo el alto de la ventana (spec 010 v1.4; «Vender»). */
     fullWidth?: boolean
+    /** Solo en la app Android (spec 015, «Impresora»): en la web lleva al Inicio. */
+    nativeOnly?: boolean
   }
 }
 
@@ -54,6 +58,8 @@ export async function authGuard(to: RouteLocationNormalized): Promise<true | Rou
   if (to.meta.roles && !to.meta.roles.includes(session.role!)) {
     return { name: 'home' }
   }
+
+  if (to.meta.nativeOnly && !device().isNative) return { name: 'home' }
 
   return true
 }

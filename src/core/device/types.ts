@@ -1,3 +1,5 @@
+import type { DevicePrinter } from './printer'
+
 /**
  * Capacidades del dispositivo que cambian entre la web y la app Android
  * (constitución, principio VII; spec 013). El resto del código usa solo esta
@@ -25,4 +27,6 @@ export interface Device {
   onBackButton(handler: () => void): () => void
   /** Manda la app al fondo sin cerrarla (Android). */
   minimize(): Promise<void>
+  /** Impresora térmica Bluetooth (spec 015); no disponible en la web. */
+  readonly printer: DevicePrinter
 }

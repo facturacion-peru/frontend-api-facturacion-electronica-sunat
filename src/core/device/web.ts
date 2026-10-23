@@ -1,4 +1,9 @@
+import { PrinterError } from './printer'
 import type { Device } from './types'
+
+const unsupported = async (): Promise<never> => {
+  throw new PrinterError('unsupported', 'La impresión Bluetooth solo está en la app Android.')
+}
 
 /** La web de siempre: localStorage y descargas con un enlace. */
 export const webDevice: Device = {
@@ -43,4 +48,14 @@ export const webDevice: Device = {
     return () => {}
   },
   async minimize() {},
+  printer: {
+    available: false,
+    async status() {
+      return { supported: false, enabled: false }
+    },
+    listPaired: unsupported,
+    print: unsupported,
+    openSettings: unsupported,
+    requestEnable: unsupported,
+  },
 }
