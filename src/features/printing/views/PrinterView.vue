@@ -121,7 +121,7 @@ onMounted(refreshStatus)
           </div>
         </div>
 
-        <div v-else-if="devices === null" class="mt-3 space-y-3">
+        <div v-else-if="devices === null && bluetooth?.enabled !== false" class="mt-3 space-y-3">
           <p class="text-sm text-ink-muted">
             Primero empareja la impresora en los ajustes de Bluetooth de Android (el PIN suele ser 0000 o 1234). Luego elígela aquí. Android
             pedirá el permiso «Dispositivos cercanos», que solo se usa para imprimir.

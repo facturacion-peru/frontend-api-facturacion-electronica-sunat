@@ -108,12 +108,14 @@ describe('pantalla «Impresora»', () => {
     printer.status.mockResolvedValueOnce({ supported: true, enabled: false }).mockResolvedValue({ supported: true, enabled: true })
     printer.requestEnable.mockResolvedValue(true)
     await open()
+    expect(button('Ver impresoras emparejadas')).toBeUndefined()
 
     button('Encender Bluetooth')!.click()
     await flushPromises()
 
     expect(printer.requestEnable).toHaveBeenCalled()
     expect(document.body.textContent).not.toContain('El Bluetooth está apagado')
+    expect(button('Ver impresoras emparejadas')).toBeDefined()
   })
 
   describe('con una impresora elegida', () => {
