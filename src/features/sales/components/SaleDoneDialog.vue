@@ -65,6 +65,13 @@ async function printInBrowser() {
 
 // «Imprimir al cobrar» (RF-007): opcional, por teléfono y solo con impresora Bluetooth. Una vez por venta.
 let autoPrinted: SaleDone | null = null
+
+// El diálogo sigue montado entre ventas: un aviso de impresión es solo de su venta.
+watch(
+  () => props.sale,
+  () => printer.dismiss(),
+)
+
 watch(
   () => [open.value, props.sale] as const,
   ([isOpen, sale]) => {

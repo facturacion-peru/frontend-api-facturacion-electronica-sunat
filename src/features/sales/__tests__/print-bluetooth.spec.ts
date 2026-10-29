@@ -147,6 +147,21 @@ describe('tras cobrar', () => {
   })
 })
 
+it('el aviso de fallo de una venta no queda en la siguiente (encontrado en el teléfono)', async () => {
+  print.mockRejectedValueOnce(new PrinterError('connect_failed'))
+  const wrapper = await mountDialog({ kind: 'ticket', ticket }, () => choosePrinter())
+  button('Imprimir')!.click()
+  await flushPromises()
+  expect(document.body.querySelector('[data-test="print-failed"]')).not.toBeNull()
+
+  // «Nueva venta» cierra el diálogo; la venta siguiente lo vuelve a abrir.
+  await wrapper.setProps({ open: false })
+  await wrapper.setProps({ open: true, sale: { kind: 'document', document: salesDocument } })
+  await flushPromises()
+
+  expect(document.body.querySelector('[data-test="print-failed"]')).toBeNull()
+})
+
 describe('detalle del ticket', () => {
   it('«Imprimir» va a la impresora; si falla, «Reintentar» vuelve a enviarlo', async () => {
     print.mockRejectedValueOnce(new PrinterError('write_failed'))
