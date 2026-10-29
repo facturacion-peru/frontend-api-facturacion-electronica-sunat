@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { device } from '@/core/device'
 
 /**
  * Navegación de la barra lateral (spec 010, HU-6). Lo del día a día va
@@ -30,6 +31,10 @@ const primary: Item[] = [
   { to: '/vender', label: 'Vender', icon: `${circle(12, 12, 9)}M12 8v8M8 12h8` },
   { to: '/ventas', label: 'Ventas', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3' },
   { to: '/productos', label: 'Productos', icon: 'M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4zM3.5 7.5 12 11.5l8.5-4M12 11.5v9' },
+  // Impresora Bluetooth: solo existe en la app Android (spec 015).
+  ...(device().isNative
+    ? [{ to: '/impresora', label: 'Impresora', icon: 'M7 8.5V3.5h10v5M7 17H4.5v-6.5A2 2 0 0 1 6.5 8.5h11a2 2 0 0 1 2 2V17H17M7 14h10v6.5H7z' }]
+    : []),
 ]
 
 const admin: Item[] = [

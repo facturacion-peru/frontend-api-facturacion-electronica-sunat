@@ -11,7 +11,8 @@ import type { Ticket } from '../types'
  */
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
-vi.mock('@/core/device', () => ({ device: () => ({ isNative: true, appVersion: '0.1.0' }) }))
+// Con Bluetooth pero sin impresora elegida (spec 015): «Imprimir» sigue compartiendo el PDF.
+vi.mock('@/core/device', () => ({ device: () => ({ isNative: true, appVersion: '0.1.0', printer: { available: true } }) }))
 vi.mock('../api', () => ({
   salesApi: { get: vi.fn<AsyncFn>(), void: vi.fn<AsyncFn>(), ticketPdf: vi.fn<AsyncFn>() },
   salesDocumentsApi: { download: vi.fn<AsyncFn>() },

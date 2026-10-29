@@ -14,7 +14,8 @@ function appVersionHeader(): Record<string, string> {
   return version ? { 'X-App-Version': version } : {}
 }
 
-export async function downloadFile(path: string, filename: string, { open = false } = {}): Promise<void> {
+/** Pide un archivo de la API con la sesión; lanza ApiError si falla. También lo usa la impresión (spec 015). */
+export async function fetchFile(path: string): Promise<Blob> {
   let response: Response
 
   try {
@@ -34,5 +35,9 @@ export async function downloadFile(path: string, filename: string, { open = fals
     throw new ApiError(response.status, body.message ?? 'No se pudo descargar el archivo.')
   }
 
-  await device().deliverFile(await response.blob(), filename, { open })
+  return response.blob()
+}
+
+export async function downloadFile(path: string, filename: string, { open = false } = {}): Promise<void> {
+  await device().deliverFile(await fetchFile(path), filename, { open })
 }

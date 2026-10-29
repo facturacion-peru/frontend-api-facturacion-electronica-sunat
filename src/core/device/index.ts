@@ -4,6 +4,7 @@ import type { Device } from './types'
 import { webDevice } from './web'
 
 export type { Device } from './types'
+export { PrinterError, type PairedPrinter, type PrinterErrorCode } from './printer'
 
 let current: Device = webDevice
 

@@ -12,6 +12,8 @@ import EnvironmentBadge from '@/shared/ui/EnvironmentBadge.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { formatDateTime, formatMoney, formatQuantity } from '@/shared/utils/format'
 import { useSessionStore } from '@/core/auth/session-store'
+import PrintFailedAlert from '@/features/printing/components/PrintFailedAlert.vue'
+import { usePrinting } from '@/features/printing/composables/usePrinting'
 import { salesDocumentsApi } from '../api'
 import CreditNoteDialog from '../components/CreditNoteDialog.vue'
 import { documentResult } from '../document-result'
@@ -32,6 +34,8 @@ const loadError = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const retrying = ref(false)
 const justIssued = ref(route.query.nueva === '1')
+// «Imprimir» directo a la impresora Bluetooth de la app (spec 015); sin ella, «PDF 80 mm» como siempre.
+const printing = usePrinting()
 
 const affectationLabels: Record<string, string> = { '10': '', '20': 'Exonerado', '30': 'Inafecto' }
 
@@ -68,6 +72,13 @@ async function download(file: 'a4' | '80mm' | 'xml' | 'cdr') {
   } catch (e) {
     actionError.value = e instanceof ApiError ? e.message : 'No se pudo descargar el archivo.'
   }
+}
+
+async function print() {
+  const current = document.value
+  if (!current) return
+  actionError.value = null
+  await printing.printDocument(current.id, { pdf: () => salesDocumentsApi.download(current, '80mm') })
 }
 
 function openCredit(mode: 'return' | 'void') {
@@ -140,10 +151,19 @@ watch(
       </ul>
     </BaseAlert>
 
-    <BaseAlert v-if="actionError" variant="error" class="mt-4">{{ actionError }}</BaseAlert>
+    <BaseAlert v-if="actionError || printing.error.value" variant="error" class="mt-4">{{ actionError ?? printing.error.value }}</BaseAlert>
+    <PrintFailedAlert
+      v-if="printing.failure.value"
+      :failure="printing.failure.value"
+      :busy="printing.busy.value"
+      class="mt-4"
+      @retry="printing.retry"
+      @share="printing.sharePdf"
+    />
 
     <div class="mt-4 flex flex-wrap gap-2" data-test="actions">
       <BaseButton v-if="document.can_retry" :loading="retrying" @click="retry">Reintentar</BaseButton>
+      <BaseButton v-if="printing.direct.value" variant="secondary" :loading="printing.busy.value" data-test="print" @click="print">Imprimir</BaseButton>
       <BaseButton variant="secondary" @click="download('a4')">PDF A4</BaseButton>
       <BaseButton variant="secondary" @click="download('80mm')">PDF 80 mm</BaseButton>
       <BaseButton variant="secondary" @click="download('xml')">XML</BaseButton>

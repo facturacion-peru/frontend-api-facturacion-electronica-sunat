@@ -1,9 +1,16 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useSessionStore } from '@/core/auth/session-store'
 import type { CompanyRole } from '@/core/auth/types'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
-import MainNav from '../MainNav.vue'
+
+const native = vi.hoisted(() => ({ value: false }))
+vi.mock('@/core/device', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/core/device')>()
+  return { ...real, device: () => ({ ...real.device(), isNative: native.value }) }
+})
+
+const MainNav = (await import('../MainNav.vue')).default
 
 /*
  * Navegación de la barra lateral (spec 010, HU-6). Sustituye al menú «Más»
@@ -24,6 +31,7 @@ async function mountAs(role: CompanyRole, path = '/') {
 
 afterEach(() => {
   document.body.innerHTML = ''
+  native.value = false
 })
 
 describe('MainNav', () => {
@@ -55,5 +63,12 @@ describe('MainNav', () => {
 
     const current = wrapper.findAll('a').filter((a) => a.attributes('aria-current') === 'page').map((a) => a.text())
     expect(current).toEqual(['Series'])
+  })
+
+  it('«Impresora» aparece solo en la app Android (spec 015)', async () => {
+    native.value = true
+    const { wrapper } = await mountAs('seller')
+
+    expect(wrapper.findAll('a').map((a) => a.text())).toEqual(['Inicio', 'Vender', 'Ventas', 'Productos', 'Impresora'])
   })
 })

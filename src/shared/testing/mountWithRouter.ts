@@ -34,6 +34,7 @@ const namedStubs: RouteRecordRaw[] = [
   'sunat',
   'series',
   'data-transfer',
+  'printer',
 ].map((name) => ({ path: `/__${name}/:id?`, name, component: Stub }))
 
 interface MountOptions {

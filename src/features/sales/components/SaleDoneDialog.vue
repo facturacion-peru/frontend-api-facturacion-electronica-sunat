@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useSessionStore } from '@/core/auth/session-store'
-import { device } from '@/core/device'
+import PrintFailedAlert from '@/features/printing/components/PrintFailedAlert.vue'
+import { usePrinting } from '@/features/printing/composables/usePrinting'
+import { usePrinterSettingsStore } from '@/features/printing/stores/printer-settings'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
@@ -25,8 +27,10 @@ const open = defineModel<boolean>('open', { default: false })
 
 const router = useRouter()
 const session = useSessionStore()
+const printer = usePrinting()
+const printerSettings = usePrinterSettingsStore()
+/** El ticket de 80 mm del navegador solo existe mientras se imprime (web). */
 const printing = ref(false)
-const printError = ref<string | null>(null)
 
 const number = computed(() => (props.sale?.kind === 'ticket' ? props.sale.ticket.display_number : props.sale?.document.display_number))
 const total = computed(() => (props.sale?.kind === 'ticket' ? props.sale.ticket.total : props.sale?.document.total))
@@ -36,26 +40,47 @@ const label = computed(() => {
 })
 const result = computed(() => (props.sale?.kind === 'document' ? documentResult(props.sale.document) : null))
 
+/**
+ * Directo a la impresora Bluetooth si hay una elegida (spec 015). Si no, como
+ * antes: el navegador imprime el ticket en la web y el PDF de 80 mm se abre o
+ * se comparte (comprobantes y app Android, spec 013).
+ */
 async function print() {
-  if (!props.sale) return
-  printError.value = null
-  // Comprobantes, y tickets en la app Android (sin impresión del navegador): PDF de 80 mm.
-  if (props.sale.kind === 'document' || device().isNative) {
-    try {
-      if (props.sale.kind === 'document') await salesDocumentsApi.download(props.sale.document, '80mm')
-      else await salesApi.ticketPdf(props.sale.ticket)
-    } catch {
-      printError.value = 'No se pudo abrir el PDF. Inténtalo desde «Ver detalle».'
-    }
-    return
+  const sale = props.sale
+  if (!sale) return
+  if (sale.kind === 'document') {
+    await printer.printDocument(sale.document.id, { pdf: () => salesDocumentsApi.download(sale.document, '80mm') })
+  } else {
+    await printer.printTicket(sale.ticket.id, { pdf: () => salesApi.ticketPdf(sale.ticket), web: printInBrowser })
   }
-  // El ticket se imprime con el mismo formato de 80 mm del detalle y solo existe mientras se
-  // imprime. En algunos navegadores móviles print() no bloquea: se retira tras «afterprint».
+}
+
+async function printInBrowser() {
+  // En algunos navegadores móviles print() no bloquea: el ticket se retira tras «afterprint».
   printing.value = true
   await nextTick()
   window.addEventListener('afterprint', () => (printing.value = false), { once: true })
   window.print()
 }
+
+// «Imprimir al cobrar» (RF-007): opcional, por teléfono y solo con impresora Bluetooth. Una vez por venta.
+let autoPrinted: SaleDone | null = null
+
+// El diálogo sigue montado entre ventas: un aviso de impresión es solo de su venta.
+watch(
+  () => props.sale,
+  () => printer.dismiss(),
+)
+
+watch(
+  () => [open.value, props.sale] as const,
+  ([isOpen, sale]) => {
+    if (!isOpen || !sale || sale === autoPrinted || !printerSettings.autoPrint || !printer.direct.value) return
+    autoPrinted = sale
+    void print()
+  },
+  { immediate: true },
+)
 
 async function viewDetail() {
   if (!props.sale) return
@@ -83,7 +108,15 @@ async function viewDetail() {
     </div>
 
     <BaseAlert v-if="result" :variant="result.variant" class="mt-4">{{ result.text }}</BaseAlert>
-    <BaseAlert v-if="printError" variant="error" class="mt-4">{{ printError }}</BaseAlert>
+    <BaseAlert v-if="printer.error.value" variant="error" class="mt-4">{{ printer.error.value }} Inténtalo desde «Ver detalle».</BaseAlert>
+    <PrintFailedAlert
+      v-if="printer.failure.value"
+      :failure="printer.failure.value"
+      :busy="printer.busy.value"
+      class="mt-4"
+      @retry="printer.retry"
+      @share="printer.sharePdf"
+    />
 
     <TicketReceipt
       v-if="printing && sale?.kind === 'ticket'"
@@ -95,7 +128,7 @@ async function viewDetail() {
 
     <template #actions>
       <BaseButton variant="ghost" @click="viewDetail">Ver detalle</BaseButton>
-      <BaseButton variant="secondary" @click="print">Imprimir</BaseButton>
+      <BaseButton variant="secondary" :loading="printer.busy.value" @click="print">{{ printer.busy.value ? 'Imprimiendo…' : 'Imprimir' }}</BaseButton>
       <BaseButton data-autofocus class="sm:min-w-36" @click="open = false">Nueva venta</BaseButton>
     </template>
   </BaseDialog>

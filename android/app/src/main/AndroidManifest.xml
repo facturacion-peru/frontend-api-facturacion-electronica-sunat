@@ -40,4 +40,11 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Impresora térmica Bluetooth (spec 015): solo equipos ya emparejados, sin búsqueda ni ubicación. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- La app también se instala en teléfonos sin Bluetooth. -->
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 </manifest>

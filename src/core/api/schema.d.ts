@@ -604,6 +604,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/printing/test-page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Test page printing */
+        get: operations["printingTestPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -786,6 +803,23 @@ export interface paths {
         };
         /** Pdf sales-documents */
         get: operations["salesDocumentPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-documents/{salesDocument}/print": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bytes ESC/POS para la impresora térmica de la app (spec 015), con el mismo acceso que el PDF. */
+        get: operations["salesDocumentPrint"];
         put?: never;
         post?: never;
         delete?: never;
@@ -992,6 +1026,23 @@ export interface paths {
         };
         /** PDF de 80 mm para imprimir o compartir desde la app (spec 013, A-63). */
         get: operations["ticketPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tickets/{ticket}/print": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bytes ESC/POS para la impresora térmica de la app (spec 015), con el mismo acceso que el PDF. */
+        get: operations["ticketPrint"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2765,6 +2816,41 @@ export interface operations {
             };
         };
     };
+    printingTestPage: {
+        parameters: {
+            query?: {
+                width?: number;
+                qr?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     productIndex: {
         parameters: {
             query?: {
@@ -3373,6 +3459,43 @@ export interface operations {
             };
         };
     };
+    salesDocumentPrint: {
+        parameters: {
+            query?: {
+                width?: number;
+                qr?: string;
+            };
+            header?: never;
+            path: {
+                salesDocument: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     salesDocumentRetry: {
         parameters: {
             query?: never;
@@ -3904,6 +4027,43 @@ export interface operations {
     ticketPdf: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                ticket: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ticketPrint: {
+        parameters: {
+            query?: {
+                width?: number;
+                qr?: string;
+            };
             header?: never;
             path: {
                 ticket: number;

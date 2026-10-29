@@ -165,6 +165,7 @@ Features actuales (specs 001 a 007):
 | `platform` | Panel del administrador de la plataforma en `/plataforma`, con su propio layout: empresas (estado SUNAT, filtros, alta, ficha, corrección de datos legales, suspensión con motivo, reenvío de invitación), soporte de la emisión y auditoría. Solo metadatos (A-37). Se carga en diferido; al empaquetar el APK se puede excluir |
 | `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
 | `data-transfer` | «Importar y exportar» (`/datos`, administrador, spec 014): exportación de ventas por rango de fechas de Lima, catálogo y clientes completos, y asistente de importación (plantilla, «Solo crear» o «Crear y actualizar», vista previa con errores por fila y cambios campo por campo, confirmación). En Android, las descargas abren «Compartir» y el archivo se elige con el selector del teléfono |
+| `printing` | «Impresora» (`/impresora`, solo en la app Android, spec 015): elegir una impresora térmica Bluetooth emparejada, ancho de 58 u 80 mm, QR como imagen, «Imprimir al cobrar» y hoja de prueba. La elección es del teléfono (`sunat.printer`, no se borra al cerrar sesión). `usePrinting` decide en cada «Imprimir»: con impresora, pide los bytes ESC/POS a la API y los envía; sin ella, el navegador o el PDF de 80 mm como siempre |
 
 Piezas compartidas:
 
@@ -208,7 +209,8 @@ Las respuestas de la API se tipan a mano en el `types.ts` de cada feature, porqu
 La app Android es esta misma aplicación empaquetada con **Capacitor 8** (`android/`). La interfaz va dentro del APK y habla con la API por HTTPS. Todo lo que depende del teléfono pasa por `src/core/device/`, que tiene una implementación web y otra nativa:
 
 - **Sesión:** se guarda en Keystore.
-- **Archivos:** los PDF, XML y CDR se entregan con «Compartir» de Android. Así se imprime el ticket, usando el PDF de 80 mm de la API.
+- **Archivos:** los PDF, XML y CDR se entregan con «Compartir» de Android. Sin impresora Bluetooth elegida, así se imprime el ticket, usando el PDF de 80 mm de la API.
+- **Impresora térmica Bluetooth (spec 015):** `device().printer`, con un plugin propio en Java (`android/app/src/main/java/…/printer/BluetoothPrinterPlugin.java`). Lista los equipos ya emparejados en Android y envía los bytes por Bluetooth clásico (SPP), con una conexión por impresión y un tiempo límite de 8 s para conectar. Solo pide `BLUETOOTH_CONNECT` («Dispositivos cercanos», Android 12+): no busca equipos ni pide la ubicación. En la web no existe.
 - **Botón «Atrás»:** cierra el diálogo abierto, vuelve a la pantalla anterior o manda la app al fondo.
 - **Versión instalada:** se envía en `X-App-Version`. Si la API responde `426`, se muestra «Actualiza la app».
 
@@ -258,6 +260,10 @@ Cosas a saber:
 - **La IP de la PC puede cambiar** con el router. Si la app no conecta, revisar `hostname -I` y actualizar `.env.android-dev.local`.
 
 En el emulador de Android, la PC es `10.0.2.2`: `VITE_API_BASE_URL=http://10.0.2.2:8000 pnpm android:dev`. La variante *debug* también se puede inspeccionar con `chrome://inspect`.
+
+- **El emulador** de esta máquina es `gama-baja` y está en `~/Android/avd`: `ANDROID_AVD_HOME=~/Android/avd ~/Android/sdk/emulator/emulator -avd gama-baja`. Tiene Bluetooth virtual, sin impresoras.
+- **Para automatizar** pruebas en él (o en un teléfono), el WebView de la variante *debug* acepta el protocolo de DevTools. `adb forward tcp:9222 localabstract:$(adb shell cat /proc/net/unix | grep -o 'webview_devtools_remote_[0-9]*' | head -1)` y luego `http://127.0.0.1:9222/json`. Es más fiable que tocar la pantalla con `adb shell input`, porque el teclado mueve los campos.
+- **Compilar la versión para empresas** exige la URL HTTPS de la API. Para comprobar solo que compila, mientras no haya servidor: `VITE_API_BASE_URL=https://api.invalid pnpm android:release` (ese APK no sirve para instalar).
 
 Solo la variante *debug* acepta HTTP. La versión para empresas exige HTTPS: no tiene `usesCleartextTraffic` ni permite contenido mixto.
 

@@ -4,13 +4,14 @@ import { useRoute } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import { useSessionStore } from '@/core/auth/session-store'
-import { device } from '@/core/device'
 import { useApiForm } from '@/shared/composables/useApiForm'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import PrintFailedAlert from '@/features/printing/components/PrintFailedAlert.vue'
+import { usePrinting } from '@/features/printing/composables/usePrinting'
 import { salesApi } from '../api'
 import TicketReceipt from '../components/TicketReceipt.vue'
 import type { Ticket } from '../types'
@@ -22,7 +23,7 @@ const ticketId = Number(route.params.id)
 const ticket = ref<Ticket | null>(null)
 const loadError = ref<string | null>(null)
 const notice = ref<string | null>(route.query.nueva ? 'Venta registrada.' : null)
-const printError = ref<string | null>(null)
+const printing = usePrinting()
 const voidOpen = ref(false)
 const reason = ref('')
 const { submitting, generalError, fieldError, reset, submit } = useApiForm()
@@ -45,16 +46,14 @@ watch(voidOpen, (isOpen) => {
   }
 })
 
-/** En la app Android no hay impresión del navegador: se comparte el PDF de 80 mm (spec 013). */
+/**
+ * Directo a la impresora Bluetooth si hay una elegida (spec 015). Si no, el
+ * navegador en la web y el PDF de 80 mm en la app Android (spec 013).
+ */
 async function print() {
-  if (!device().isNative) return window.print()
-  if (!ticket.value) return
-  printError.value = null
-  try {
-    await salesApi.ticketPdf(ticket.value)
-  } catch (e) {
-    printError.value = e instanceof ApiError ? e.message : 'No se pudo abrir el PDF del ticket.'
-  }
+  const current = ticket.value
+  if (!current) return
+  await printing.printTicket(current.id, { pdf: () => salesApi.ticketPdf(current), web: () => window.print() })
 }
 
 async function confirmVoid() {
@@ -72,13 +71,21 @@ async function confirmVoid() {
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-xl font-semibold">Ticket {{ ticket.display_number }}</h1>
       <div class="flex gap-2">
-        <BaseButton variant="secondary" @click="print">Imprimir</BaseButton>
+        <BaseButton variant="secondary" :loading="printing.busy.value" @click="print">Imprimir</BaseButton>
         <BaseButton v-if="session.isCompanyAdmin && ticket.status === 'issued'" variant="danger" @click="voidOpen = true">Anular</BaseButton>
       </div>
     </div>
 
     <BaseAlert v-if="notice" variant="success" class="mb-4">{{ notice }}</BaseAlert>
-    <BaseAlert v-if="printError" variant="error" class="mb-4">{{ printError }}</BaseAlert>
+    <BaseAlert v-if="printing.error.value" variant="error" class="mb-4">{{ printing.error.value }}</BaseAlert>
+    <PrintFailedAlert
+      v-if="printing.failure.value"
+      :failure="printing.failure.value"
+      :busy="printing.busy.value"
+      class="mb-4"
+      @retry="printing.retry"
+      @share="printing.sharePdf"
+    />
 
     <TicketReceipt :ticket="ticket" :company-name="companyName" :company-ruc="companyRuc" />
 
