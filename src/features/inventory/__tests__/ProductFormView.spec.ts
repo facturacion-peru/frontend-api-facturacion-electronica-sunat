@@ -17,7 +17,7 @@ const ProductFormView = (await import('../views/ProductFormView.vue')).default
 
 const existing: Product = {
   id: 7, code: 'AZU-001', name: 'Azúcar rubia', type: 'good', unit: 'KGM', sale_price: '4.20', igv_affectation: '20',
-  min_stock: '10.000', tracks_expiry: false, active: true, stock: '50.500', available_stock: '50.500', created_at: null,
+  min_stock: '10.000', tracks_expiry: false, active: true, stock: '50.500', available_stock: '50.500', image: null, created_at: null,
 }
 
 beforeEach(() => {

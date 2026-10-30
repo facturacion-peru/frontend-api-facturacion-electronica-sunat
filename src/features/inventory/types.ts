@@ -8,6 +8,12 @@ export type IgvAffectation = '10' | '20' | '30'
 export type MovementType = 'entry' | 'sale' | 'adjustment' | 'return' | 'reversal'
 export type AdjustmentReason = 'count' | 'shrinkage' | 'damage' | 'expiry' | 'error' | 'other'
 
+/** Foto del producto (spec 016): direcciones públicas fijas en S3; `thumb_url` mide 200 px. */
+export interface ProductImage {
+  url: string
+  thumb_url: string
+}
+
 export interface Product {
   id: number
   code: string
@@ -23,6 +29,7 @@ export interface Product {
   available_stock: string | null
   /** Solo para el administrador (RF-022). */
   last_unit_cost?: string | null
+  image: ProductImage | null
   created_at: string | null
 }
 

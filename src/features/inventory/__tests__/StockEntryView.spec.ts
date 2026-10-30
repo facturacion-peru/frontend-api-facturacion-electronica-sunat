@@ -17,7 +17,7 @@ const StockEntryView = (await import('../views/StockEntryView.vue')).default
 
 const product = (overrides: Partial<Product> = {}): Product => ({
   id: 7, code: 'ARZ-001', name: 'Arroz', type: 'good', unit: 'NIU', sale_price: '25.90', igv_affectation: '10',
-  min_stock: null, tracks_expiry: false, active: true, stock: '36.000', available_stock: '36.000', created_at: null, ...overrides,
+  min_stock: null, tracks_expiry: false, active: true, stock: '36.000', available_stock: '36.000', image: null, created_at: null, ...overrides,
 })
 
 async function mountEntry() {

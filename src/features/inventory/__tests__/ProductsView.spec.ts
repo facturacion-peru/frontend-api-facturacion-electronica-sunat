@@ -17,7 +17,7 @@ const ProductsView = (await import('../views/ProductsView.vue')).default
 
 const product = (overrides: Partial<Product> = {}): Product => ({
   id: 1, code: 'ARZ-001', name: 'Arroz extra 5 kg', type: 'good', unit: 'NIU', sale_price: '25.90', igv_affectation: '10',
-  min_stock: '5.000', tracks_expiry: false, active: true, stock: '36.000', available_stock: '36.000', created_at: null, ...overrides,
+  min_stock: '5.000', tracks_expiry: false, active: true, stock: '36.000', available_stock: '36.000', image: null, created_at: null, ...overrides,
 })
 
 const page = (data: Product[]) => ({ success: true as const, data, meta: { current_page: 1, per_page: 20, total: data.length, last_page: 1, from: 1, to: data.length } })

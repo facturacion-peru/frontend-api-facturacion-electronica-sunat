@@ -25,7 +25,7 @@ const ProductDetailView = (await import('../views/ProductDetailView.vue')).defau
 
 const product: Product = {
   id: 7, code: 'YOG-001', name: 'Yogur de fresa', type: 'good', unit: 'NIU', sale_price: '7.50', igv_affectation: '10',
-  min_stock: '6.000', tracks_expiry: true, active: true, stock: '25.000', available_stock: '25.000', last_unit_cost: '4.3000', created_at: null,
+  min_stock: '6.000', tracks_expiry: true, active: true, stock: '25.000', available_stock: '25.000', last_unit_cost: '4.3000', image: null, created_at: null,
 }
 const lot: Lot = {
   id: 3, lot_number: 'L-1', received_at: '2026-09-18', expires_at: '2026-10-08', expired: false, initial_quantity: '10.000',
