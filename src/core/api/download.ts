@@ -1,18 +1,7 @@
 import { env } from '@/core/config/env'
 import { device } from '@/core/device'
 import { ApiError } from './errors'
-import { getToken } from './token-storage'
-
-/**
- * Descarga un archivo de la API (PDF, XML, CDR). Un enlace directo no lleva
- * la cabecera Authorization, así que se pide con fetch y se entrega como Blob:
- * descarga en la web, «Compartir» en la app Android (spec 013, A-63).
- */
-/** La app Android se identifica para el control de versión mínima (spec 013, A-67). */
-function appVersionHeader(): Record<string, string> {
-  const version = device().appVersion
-  return version ? { 'X-App-Version': version } : {}
-}
+import { sessionHeaders } from './session'
 
 /** Pide un archivo de la API con la sesión; lanza ApiError si falla. También lo usa la impresión (spec 015). */
 export async function fetchFile(path: string): Promise<Blob> {
@@ -20,11 +9,7 @@ export async function fetchFile(path: string): Promise<Blob> {
 
   try {
     response = await fetch(`${env.apiBaseUrl}${path}`, {
-      headers: {
-        Authorization: `Bearer ${getToken() ?? ''}`,
-        Accept: '*/*',
-        ...appVersionHeader(),
-      },
+      headers: sessionHeaders('*/*'),
     })
   } catch {
     throw new ApiError(0, 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.')
@@ -38,6 +23,11 @@ export async function fetchFile(path: string): Promise<Blob> {
   return response.blob()
 }
 
+/**
+ * Descarga un archivo de la API (PDF, XML, CDR). Un enlace directo no lleva
+ * la cabecera Authorization, así que se pide con fetch y se entrega como Blob:
+ * descarga en la web, «Compartir» en la app Android (spec 013, A-63).
+ */
 export async function downloadFile(path: string, filename: string, { open = false } = {}): Promise<void> {
   await device().deliverFile(await fetchFile(path), filename, { open })
 }
