@@ -13,8 +13,16 @@ export const usersApi = {
   listInvitations: async () =>
     (await unwrap<CollectionResponse<PendingInvitation>>(apiClient.GET('/api/v1/invitations'))).data,
 
-  invite: (email: string, role: CompanyRole) =>
-    unwrapData<PendingInvitation>(apiClient.POST('/api/v1/invitations', { body: { email, role } })),
+  /** `establishmentIds` solo para un vendedor de una empresa con varios locales (spec 017). */
+  invite: (email: string, role: CompanyRole, establishmentIds?: number[]) =>
+    unwrapData<PendingInvitation>(
+      apiClient.POST('/api/v1/invitations', { body: { email, role, ...(establishmentIds && { establishment_ids: establishmentIds }) } }),
+    ),
+
+  assignEstablishments: (id: number, establishmentIds: number[]) =>
+    unwrapData<CompanyUser>(
+      apiClient.PUT('/api/v1/users/{user}/establishments', { params: { path: { user: id } }, body: { establishment_ids: establishmentIds } }),
+    ),
 
   resendInvitation: (id: number) =>
     unwrapData<PendingInvitation>(
