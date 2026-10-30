@@ -1,7 +1,8 @@
 import { apiClient } from '@/core/api/client'
 import { downloadFile } from '@/core/api/download'
 import { unwrap, unwrapData } from '@/core/api/errors'
-import type { CollectionResponse, PaginatedResponse } from '@/core/api/types'
+import { uploadForm, type UploadOptions } from '@/core/api/upload'
+import type { CollectionResponse, PaginatedResponse, ResourceResponse } from '@/core/api/types'
 import type {
   AdjustmentReason,
   InventoryAlerts,
@@ -53,6 +54,17 @@ export const inventoryApi = {
 
     return { product: response.data, warning: response.warning ?? null }
   },
+
+  /** Sube la foto ya reducida (spec 016); va aparte de guardar el producto (RF-010). */
+  uploadImage: async (id: number, photo: File, options?: UploadOptions) => {
+    const form = new FormData()
+    form.append('image', photo)
+
+    return (await uploadForm<ResourceResponse<Product>>(`/api/v1/products/${id}/image`, form, options)).data
+  },
+
+  removeImage: (id: number) =>
+    unwrapData<Product>(apiClient.DELETE('/api/v1/products/{product}/image', { params: { path: { product: id } } })),
 
   lots: async (id: number, includeEmpty = false) =>
     (
