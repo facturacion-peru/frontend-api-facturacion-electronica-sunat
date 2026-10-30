@@ -200,7 +200,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** api/v1/dashboard */
+        /** Invoke dashboard */
         get: operations["getApiV1Dashboard"];
         put?: never;
         post?: never;
@@ -1820,7 +1820,9 @@ export interface operations {
     };
     getApiV1Dashboard: {
         parameters: {
-            query?: never;
+            query?: {
+                establishment_id?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
