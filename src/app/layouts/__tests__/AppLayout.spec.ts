@@ -12,7 +12,7 @@ import AppLayout from '../AppLayout.vue'
  * layout se comporta como en el celular: el panel empieza cerrado.
  */
 const principal: Establishment = {
-  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true,
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
 }
 const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', is_main: false }
 

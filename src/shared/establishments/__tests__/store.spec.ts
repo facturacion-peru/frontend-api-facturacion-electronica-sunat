@@ -13,7 +13,7 @@ import type { Establishment } from '../types'
  * activo en la empresa no hay nada que elegir ni mostrar (RF-010).
  */
 const principal: Establishment = {
-  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true,
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
 }
 const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', is_main: false, code_locked: false }
 const cerrado: Establishment = { ...principal, id: 3, code: '0002', name: 'Cerrado', is_main: false, active: false }

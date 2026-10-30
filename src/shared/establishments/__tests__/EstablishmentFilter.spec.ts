@@ -1,10 +1,13 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CompanyRole } from '@/core/auth/types'
 import { useSessionStore } from '@/core/auth/session-store'
-import EstablishmentFilter from '../EstablishmentFilter.vue'
+const list = vi.hoisted(() => vi.fn<(includeInactive?: boolean) => Promise<unknown[]>>())
+vi.mock('../api', () => ({ establishmentsApi: { list } }))
+
+const { default: EstablishmentFilter } = await import('../EstablishmentFilter.vue')
 import { useEstablishmentStore } from '../store'
 import type { Establishment } from '../types'
 
@@ -12,7 +15,7 @@ import type { Establishment } from '../types'
  * Spec 017 · F006: filtro de local (HU-4, A-90 y RF-010).
  */
 const principal: Establishment = {
-  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true,
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
 }
 const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', is_main: false }
 const cerrado: Establishment = { ...principal, id: 3, code: '0002', name: 'Cerrado', is_main: false, active: false }
@@ -36,6 +39,7 @@ function mountFilter(modelValue: number | null = null) {
 }
 
 beforeEach(() => {
+  list.mockReset().mockResolvedValue([])
   localStorage.clear()
   setActivePinia(createPinia())
 })
@@ -59,11 +63,25 @@ describe('EstablishmentFilter', () => {
     expect(filter.emitted('change')).toEqual([[sucursal.id], [null]])
   })
 
-  it('el administrador ve también los inactivos, por su historial', () => {
-    const store = boot([principal, sucursal], 2)
-    store.setReadable([principal, sucursal, cerrado])
+  it('el administrador ve también los inactivos, por su historial (una sola petición)', async () => {
+    list.mockResolvedValue([principal, sucursal, cerrado])
+    boot([principal, sucursal], 2)
 
-    expect(mountFilter().findAll('option').map((o) => o.text())).toContain('Cerrado (inactivo)')
+    const filter = mountFilter()
+    mountFilter()
+    await flushPromises()
+
+    expect(filter.findAll('option').map((o) => o.text())).toContain('Cerrado (inactivo)')
+    expect(list).toHaveBeenCalledTimes(1)
+    expect(list).toHaveBeenCalledWith(true)
+  })
+
+  it('el vendedor no pide inactivos: ve sus locales de la sesión', async () => {
+    boot([principal, sucursal], 2, 'seller')
+    mountFilter()
+    await flushPromises()
+
+    expect(list).not.toHaveBeenCalled()
   })
 
   it('A-87: empieza en «Todos» para el administrador y en el local actual para el vendedor', () => {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { establishmentsApi } from './api'
 import type { Establishment } from './types'
 
 /**
@@ -82,7 +83,21 @@ export const useEstablishmentStore = defineStore('establishments', () => {
     readable.value = establishments
   }
 
+  /** Una vez por sesión: el administrador lee también el historial de los inactivos. */
+  let loadingReadable: Promise<void> | null = null
+  function loadReadable(): Promise<void> {
+    if (!multi.value || !session.isCompanyAdmin || readable.value) return Promise.resolve()
+    loadingReadable ??= establishmentsApi
+      .list(true)
+      .then(setReadable)
+      .catch(() => {
+        // Sin red: el filtro ofrece los activos de la sesión.
+      })
+      .finally(() => (loadingReadable = null))
+    return loadingReadable
+  }
+
   watch(storageKey, () => (readable.value = null))
 
-  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable }
+  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable, loadReadable }
 })

@@ -16,7 +16,7 @@ const galletas: SellableProduct = { id: 1, code: 'GAL-1', name: 'Galletas', type
 const azucar: SellableProduct = { id: 2, code: 'AZU-1', name: 'Azúcar', type: 'good', unit: 'KGM', sale_price: '4.20', available_stock: '5.000' }
 
 const principal: Establishment = {
-  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true,
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
 }
 const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal', is_main: false, code_locked: false }
 

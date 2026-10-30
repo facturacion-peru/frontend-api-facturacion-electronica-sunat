@@ -5,6 +5,8 @@
  * y la API usa los permitidos. Con un solo local activo no se pinta (RF-010).
  * El valor inicial lo da `useEstablishmentStore().defaultFilter`.
  */
+import { onMounted } from 'vue'
+
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import { useEstablishmentStore } from './store'
 
@@ -13,6 +15,7 @@ const emit = defineEmits<{ change: [id: number | null] }>()
 
 const model = defineModel<number | null>({ default: null })
 const store = useEstablishmentStore()
+onMounted(store.loadReadable)
 
 function onChange(value: unknown) {
   // `model.value` sigue con el valor anterior hasta que el padre lo actualiza.

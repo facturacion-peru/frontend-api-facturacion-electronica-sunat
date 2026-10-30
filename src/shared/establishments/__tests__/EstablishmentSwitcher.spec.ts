@@ -13,7 +13,7 @@ import type { Establishment } from '../types'
  * Spec 017 · F005: elegir el local donde se trabaja (HU-2, esc. 1 y 2; RF-010).
  */
 const principal: Establishment = {
-  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true,
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
 }
 const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', address: 'Jr. Unión 45', is_main: false }
 

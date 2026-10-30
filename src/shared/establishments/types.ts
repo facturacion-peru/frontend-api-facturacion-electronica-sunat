@@ -11,6 +11,8 @@ export interface Establishment {
   name: string
   address: string
   ubigeo: string
+  /** Distrito del ubigeo para mostrar («Lima / Lima / Lima»). */
+  district: string | null
   is_main: boolean
   active: boolean
   /** Ya tiene comprobantes: el código no se puede cambiar. */
@@ -19,3 +21,11 @@ export interface Establishment {
 
 /** Lo que traen las filas de tickets, comprobantes, lotes, movimientos y alertas. */
 export type EstablishmentRef = Pick<Establishment, 'id' | 'code' | 'name'>
+
+/** Lo que se envía al crear o editar un local. */
+export interface EstablishmentForm {
+  code: string
+  name: string
+  address: string
+  ubigeo: string
+}
