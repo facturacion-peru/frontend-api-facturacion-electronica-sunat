@@ -6,7 +6,7 @@ import type { Customer } from '../types'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
-vi.mock('../api', () => ({ customersApi: { search: vi.fn<AsyncFn>(), create: vi.fn<AsyncFn>() } }))
+vi.mock('../api', () => ({ customersApi: { search: vi.fn<AsyncFn>(), create: vi.fn<AsyncFn>(), lookup: vi.fn<AsyncFn>() } }))
 
 const { customersApi } = await import('../api')
 const CustomerPicker = (await import('../components/CustomerPicker.vue')).default
@@ -96,5 +96,80 @@ describe('CustomerPicker', () => {
     await flushPromises()
 
     expect(document.querySelector('#new-customer-number-error')!.textContent).toContain('dígito verificador')
+  })
+
+  describe('consulta por DNI o RUC (spec 018)', () => {
+    const verified: Customer = {
+      ...ferreteria, id: 7, address: 'AV. UNO 123 LIMA LIMA LIMA', verified: true, verified_at: '2026-10-30T10:00:00-05:00',
+      ruc_status: 'ACTIVO', ruc_condition: 'HABIDO',
+    }
+
+    it('HU-1 esc. 3: un RUC encontrado queda elegido solo, con la insignia y la dirección, sin buscar por nombre', async () => {
+      vi.mocked(customersApi.lookup).mockResolvedValue({ customer: verified, source: 'service', reason: null })
+      const wrapper = await mountPicker({ requireRuc: true })
+
+      await searchFor(wrapper, '20100070970')
+
+      expect(customersApi.lookup).toHaveBeenCalledWith('6', '20100070970', expect.any(AbortSignal))
+      expect(customersApi.search).not.toHaveBeenCalled()
+      expect(wrapper.emitted('update:modelValue')).toEqual([[verified]])
+      const card = wrapper.get('[data-test="selected-customer"]')
+      expect(card.find('[data-test="customer-verified"]').exists()).toBe(true)
+      expect(card.get('[data-test="selected-address"]').text()).toBe('AV. UNO 123 LIMA LIMA LIMA')
+    })
+
+    it('A-95: un RUC de baja se elige con el aviso', async () => {
+      vi.mocked(customersApi.lookup).mockResolvedValue({ customer: { ...verified, ruc_status: 'BAJA DE OFICIO' }, source: 'platform', reason: null })
+      const wrapper = await mountPicker()
+
+      await searchFor(wrapper, '20100070970')
+
+      expect(wrapper.get('[data-test="ruc-status-alert"]').text()).toContain('BAJA DE OFICIO')
+    })
+
+    it.each([
+      ['not_found', 'No encontramos ese DNI en RENIEC.'],
+      ['unavailable', 'El servicio de consulta no responde.'],
+      ['quota', 'Se acabaron las consultas automáticas de hoy.'],
+      ['disabled', 'La consulta automática no está disponible.'],
+    ] as const)('HU-1 esc. 5: con %s dice por qué y ofrece registrar a mano con el número', async (reason, message) => {
+      vi.mocked(customersApi.lookup).mockResolvedValue({ customer: null, source: null, reason })
+      const wrapper = await mountPicker()
+
+      await searchFor(wrapper, '46027897')
+      expect(wrapper.get('[data-test="lookup-status"]').text()).toContain(message)
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+
+      await wrapper.get('[data-test="register-manually"]').trigger('click')
+      expect((document.getElementById('new-customer-number') as HTMLInputElement).value).toBe('46027897')
+      expect((document.getElementById('new-customer-type') as HTMLSelectElement).value).toBe('1')
+    })
+
+    it('un cliente manual que no se pudo verificar se elige igual, con el motivo', async () => {
+      vi.mocked(customersApi.lookup).mockResolvedValue({ customer: maria, source: 'company', reason: 'unavailable' })
+      const wrapper = await mountPicker()
+
+      await searchFor(wrapper, '46027897')
+
+      expect(wrapper.emitted('update:modelValue')).toEqual([[maria]])
+      expect(wrapper.find('[data-test="customer-manual"]').exists()).toBe(true)
+      expect(wrapper.get('[data-test="unverified-note"]').text()).toBe(
+        'El servicio de consulta no responde. Se usa el cliente registrado a mano.',
+      )
+    })
+
+    it('mientras consulta lo anuncia; un RUC inválido avisa sin consultar', async () => {
+      vi.mocked(customersApi.lookup).mockImplementation(() => new Promise(() => {}))
+      const wrapper = await mountPicker()
+
+      await searchFor(wrapper, '20100070970')
+      expect(wrapper.get('[data-test="lookup-status"]').attributes('aria-live')).toBe('polite')
+      expect(wrapper.get('[data-test="lookup-status"]').text()).toBe('Buscando en SUNAT…')
+
+      vi.mocked(customersApi.lookup).mockClear()
+      await searchFor(wrapper, '20100070971')
+      expect(wrapper.get('[data-test="lookup-status"]').text()).toBe('El RUC no es válido: revisa los números.')
+      expect(customersApi.lookup).not.toHaveBeenCalled()
+    })
   })
 })
