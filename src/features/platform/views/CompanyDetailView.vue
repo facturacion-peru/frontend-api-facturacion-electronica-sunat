@@ -122,6 +122,7 @@ onMounted(load)
             <dt class="text-ink-muted">Domicilio fiscal</dt>
             <dd>{{ company.fiscal_address.address }}<br />{{ company.fiscal_address.district }}</dd>
           </div>
+          <div><dt class="text-ink-muted">Locales</dt><dd data-test="establishments-count">{{ company.establishments_count }}</dd></div>
           <div><dt class="text-ink-muted">Contacto</dt><dd>{{ company.email }}<template v-if="company.phone"> · {{ company.phone }}</template></dd></div>
         </dl>
       </section>
