@@ -53,6 +53,8 @@ export interface TicketFilters {
   status: '' | TicketStatus
   payment_method: '' | PaymentMethod
   page: number
+  /** `null`: los locales que puede leer (spec 017). */
+  establishment_id: number | null
 }
 
 export interface NewTicketPayload {
@@ -188,6 +190,8 @@ export interface SalesDocumentFilters {
   status: '' | SalesDocumentStatus
   customer: string
   page: number
+  /** `null`: los locales que puede leer (spec 017). */
+  establishment_id: number | null
 }
 
 export interface NewSalesDocumentPayload {

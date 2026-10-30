@@ -1,8 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import { formatDateTime, formatMoney, formatQuantity } from '@/shared/utils/format'
 import { paymentLabels, type Ticket } from '../types'
 
-defineProps<{ ticket: Ticket; companyName: string; companyRuc: string }>()
+const props = defineProps<{ ticket: Ticket; companyName: string; companyRuc: string }>()
+
+/**
+ * Como el PDF y la impresión de la API (spec 017): el nombre y la dirección
+ * del local van solo si no es el principal; con un solo local no cambia nada.
+ */
+const establishments = useEstablishmentStore()
+const branch = computed(() => {
+  const { establishment } = props.ticket
+  const isMain = establishments.find(establishment.id)?.is_main ?? establishment.code === '0000'
+  return isMain ? null : establishment
+})
 </script>
 
 <template>
@@ -13,6 +27,10 @@ defineProps<{ ticket: Ticket; companyName: string; companyRuc: string }>()
     <header class="text-center">
       <p class="text-sm font-bold">{{ companyName }}</p>
       <p>RUC {{ companyRuc }}</p>
+      <template v-if="branch">
+        <p class="mt-1 font-bold" data-test="receipt-establishment">{{ branch.name }}</p>
+        <p v-if="branch.address">{{ branch.address }}</p>
+      </template>
       <p class="mt-2 font-bold">TICKET {{ ticket.display_number }}</p>
       <p>{{ formatDateTime(ticket.issued_at) }}</p>
     </header>

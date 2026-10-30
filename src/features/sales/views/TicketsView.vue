@@ -3,6 +3,8 @@ import { onMounted, reactive, ref } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
 import type { PaginationMeta } from '@/core/api/types'
+import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
@@ -15,7 +17,10 @@ import { salesApi } from '../api'
 import SalesTabs from '../components/SalesTabs.vue'
 import { paymentLabels, type Ticket, type TicketFilters, type TicketTotals } from '../types'
 
-const filters = reactive<TicketFilters>({ from: today(), to: today(), status: '', payment_method: '', page: 1 })
+const establishments = useEstablishmentStore()
+const filters = reactive<TicketFilters>({
+  from: today(), to: today(), status: '', payment_method: '', page: 1, establishment_id: establishments.defaultFilter,
+})
 const tickets = ref<Ticket[]>([])
 const meta = ref<PaginationMeta | null>(null)
 const totals = ref<TicketTotals | null>(null)
@@ -57,7 +62,7 @@ onMounted(load)
   </div>
   <SalesTabs />
 
-  <form class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4 lg:grid-cols-5" @submit.prevent="apply">
+  <form class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4" :class="establishments.multi ? 'lg:grid-cols-6' : 'lg:grid-cols-5'" @submit.prevent="apply">
     <FormField label="Desde" for="sales-from"><BaseInput id="sales-from" v-model="filters.from" type="date" /></FormField>
     <FormField label="Hasta" for="sales-to"><BaseInput id="sales-to" v-model="filters.to" type="date" /></FormField>
     <FormField label="Estado" for="sales-status">
@@ -73,6 +78,7 @@ onMounted(load)
         <option v-for="(label, value) in paymentLabels" :key="value" :value="value">{{ label }}</option>
       </BaseSelect>
     </FormField>
+    <EstablishmentFilter id="sales-establishment" v-model="filters.establishment_id" show-label class="col-span-2 lg:col-span-1" />
     <div class="col-span-2 flex items-end lg:col-span-1"><BaseButton type="submit" block :loading="loading">Filtrar</BaseButton></div>
   </form>
 
@@ -101,7 +107,7 @@ onMounted(load)
               <BaseBadge v-if="ticket.status === 'voided'" variant="danger">Anulado</BaseBadge>
             </span>
             <span class="block truncate text-sm text-ink-muted">
-              {{ formatDateTime(ticket.issued_at) }} · {{ ticket.seller?.name }} · {{ paymentLabels[ticket.payment_method] }}
+              {{ formatDateTime(ticket.issued_at) }} · {{ ticket.seller?.name }} · {{ paymentLabels[ticket.payment_method] }}<span v-if="establishments.multi" data-test="row-establishment"> · {{ ticket.establishment.name }}</span>
             </span>
           </span>
           <span class="font-medium" :class="ticket.status === 'voided' && 'text-ink-muted line-through'">{{ formatMoney(ticket.total) }}</span>

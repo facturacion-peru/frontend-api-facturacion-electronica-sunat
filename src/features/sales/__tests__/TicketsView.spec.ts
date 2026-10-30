@@ -36,7 +36,7 @@ describe('TicketsView', () => {
   it('carga las ventas de hoy con totales por medio de pago', async () => {
     const { wrapper } = await mountWithRouter(TicketsView)
 
-    expect(salesApi.list).toHaveBeenCalledWith({ from: today(), to: today(), status: '', payment_method: '', page: 1 })
+    expect(salesApi.list).toHaveBeenCalledWith({ from: today(), to: today(), status: '', payment_method: '', page: 1, establishment_id: null })
     expect(wrapper.find('[data-test="sales-totals"]').text()).toContain('Total (1 ventas)')
     expect(wrapper.find('[data-test="sales-totals"]').text()).toContain('Efectivo')
     expect(wrapper.findAll('[data-test="ticket-row"]')[1]!.text()).toContain('Anulado')

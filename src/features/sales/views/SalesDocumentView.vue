@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
@@ -23,6 +24,7 @@ import { correctionVariant, customerDocumentLabels, documentStatusVariant, payme
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
+const establishments = useEstablishmentStore()
 const document = ref<SalesDocument | null>(null)
 const creditMode = ref<'return' | 'void'>('return')
 const creditOpen = ref(false)
@@ -188,7 +190,10 @@ watch(
       </div>
       <div>
         <p class="text-ink-muted">Emitido</p>
-        <p>{{ formatDateTime(document.issued_at) }} · {{ document.seller?.name }}</p>
+        <p>
+          {{ formatDateTime(document.issued_at) }} · {{ document.seller?.name
+          }}<span v-if="establishments.multi" data-test="document-establishment"> · {{ document.establishment.name }}</span>
+        </p>
         <p class="text-ink-muted">{{ paymentLabels[document.payment_method] }} · al contado</p>
       </div>
     </section>

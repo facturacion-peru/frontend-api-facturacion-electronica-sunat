@@ -10,7 +10,8 @@ import { onMounted } from 'vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import { useEstablishmentStore } from './store'
 
-defineProps<{ id: string }>()
+/** `showLabel`: etiqueta visible, como la de `FormField`, para los formularios de filtros. */
+defineProps<{ id: string; showLabel?: boolean }>()
 const emit = defineEmits<{ change: [id: number | null] }>()
 
 const model = defineModel<number | null>({ default: null })
@@ -26,8 +27,8 @@ function onChange(value: unknown) {
 </script>
 
 <template>
-  <template v-if="store.multi">
-    <label :for="id" class="sr-only">Local</label>
+  <div v-if="store.multi" :class="showLabel && 'space-y-1.5'">
+    <label :for="id" :class="showLabel ? 'block text-sm font-medium text-ink' : 'sr-only'">Local</label>
     <!-- «Todos» va como '' y no como null: una <option> sin value toma su texto. -->
     <BaseSelect :id="id" :model-value="model ?? ''" data-test="establishment-filter" @update:model-value="onChange">
       <option value="">Todos los locales</option>
@@ -35,5 +36,5 @@ function onChange(value: unknown) {
         {{ establishment.name }}{{ establishment.active ? '' : ' (inactivo)' }}
       </option>
     </BaseSelect>
-  </template>
+  </div>
 </template>

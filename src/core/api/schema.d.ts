@@ -2113,6 +2113,7 @@ export interface operations {
                     file: string;
                     /** @enum {string} */
                     mode?: "create" | "upsert";
+                    establishment_id?: number | null;
                 };
             };
         };
@@ -3537,6 +3538,7 @@ export interface operations {
                 document_type?: string;
                 status?: string;
                 customer?: string | null;
+                establishment_id?: number;
                 page?: number;
             };
             header?: never;
@@ -4284,6 +4286,7 @@ export interface operations {
                 status?: string;
                 payment_method?: string;
                 seller_id?: number;
+                establishment_id?: number;
                 page?: number;
             };
             header?: never;
