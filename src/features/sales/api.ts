@@ -4,8 +4,10 @@ import { unwrap, unwrapData } from '@/core/api/errors'
 import type { CollectionResponse, PaginatedResponse } from '@/core/api/types'
 import type {
   Customer,
+  CustomerDocumentType,
   CustomerForm,
   IssuingAvailability,
+  LookupResult,
   NewCreditNotePayload,
   NewSalesDocumentPayload,
   NewTicketPayload,
@@ -165,6 +167,18 @@ export const customersApi = {
 
   update: (id: number, body: Partial<CustomerForm>) =>
     unwrapData<Customer>(apiClient.PATCH('/api/v1/customers/{customer}', { params: { path: { customer: id } }, body })),
+
+  /**
+   * Busca por DNI o RUC: en la empresa, en la tabla común y, si no está, en el
+   * servicio (spec 018). Sin cliente, `reason` dice por qué; abortar no es un error.
+   */
+  lookup: async (type: CustomerDocumentType, number: string, signal?: AbortSignal): Promise<LookupResult> => {
+    const response = await unwrap<{ data: Customer | null; meta: Pick<LookupResult, 'source' | 'reason'> }>(
+      apiClient.POST('/api/v1/customers/lookup', { body: { document_type: type, document_number: number }, signal }),
+    )
+
+    return { customer: response.data, source: response.meta.source, reason: response.meta.reason }
+  },
 
   /** Clientes con la búsqueda de la lista (spec 014). */
   export: (search: string, format: 'xlsx' | 'csv') => {
