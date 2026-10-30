@@ -152,7 +152,7 @@ Reglas que sostienen la estructura:
 - **`shared/ui` no habla con la API.** Recibe props y emite eventos.
 - **Las rutas se declaran en cada feature** y se montan en el router raíz, para que agregar un módulo no haga crecer un archivo central sin control.
 
-Features actuales (specs 001 a 007):
+Features actuales (specs 001 a 016):
 
 | Feature | Pantallas |
 |---|---|
@@ -163,15 +163,21 @@ Features actuales (specs 001 a 007):
 | `sales` | Venta rápida que emite ticket, boleta o factura (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos, selector de cliente con alta rápida y de serie); ticket de 80 mm imprimible, anulación y listado con totales; «Ventas» con pestañas Tickets y Comprobantes; detalle del comprobante con el resultado de SUNAT, descargas (PDF A4/80 mm, XML, CDR) y «Reintentar»; devoluciones y anulaciones con nota de crédito, notas y saldo por línea, y descarte de rechazados (administrador); clientes para el administrador |
 | `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
 | `platform` | Panel del administrador de la plataforma en `/plataforma`, con su propio layout: empresas (estado SUNAT, filtros, alta, ficha, corrección de datos legales, suspensión con motivo, reenvío de invitación), soporte de la emisión y auditoría. Solo metadatos (A-37). Se carga en diferido; al empaquetar el APK se puede excluir |
-| `inventory` | Catálogo de productos, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento |
+| `inventory` | Catálogo de productos con su miniatura, formulario, ficha con lotes e historial (ajustes y reversiones), entrada rápida de mercadería y alertas de stock bajo y vencimiento. Foto del producto (spec 016): el administrador la pone, cambia o quita en la ficha o al editar (`ProductPhotoEditor`, aparte de «Guardar»). Al crear se sube después de guardar el producto, y si falla, la ficha avisa |
 | `data-transfer` | «Importar y exportar» (`/datos`, administrador, spec 014): exportación de ventas por rango de fechas de Lima, catálogo y clientes completos, y asistente de importación (plantilla, «Solo crear» o «Crear y actualizar», vista previa con errores por fila y cambios campo por campo, confirmación). En Android, las descargas abren «Compartir» y el archivo se elige con el selector del teléfono |
 | `printing` | «Impresora» (`/impresora`, solo en la app Android, spec 015): elegir una impresora térmica Bluetooth emparejada, ancho de 58 u 80 mm, QR como imagen, «Imprimir al cobrar» y hoja de prueba. La elección es del teléfono (`sunat.printer`, no se borra al cerrar sesión). `usePrinting` decide en cada «Imprimir»: con impresora, pide los bytes ESC/POS a la API y los envía; sin ella, el navegador o el PDF de 80 mm como siempre |
 
 Piezas compartidas:
 
 - `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge, estado vacío, `EnvironmentBadge` («PRUEBAS — sin valor legal», siempre visible en beta) y `ExportButton` (diálogo «Exportar» de una lista; recibe la descarga como prop).
+- `shared/ui/ProductThumb` y `shared/ui/ImagePicker` (spec 016): la miniatura de un producto en una caja de tamaño fijo, con carga diferida y un marcador si no hay foto o no carga; y el selector de foto con vista previa, que en la app ofrece cámara o galería. `ImagePicker` no sube nada: deja la foto reducida en `v-model`.
+- `shared/images/prepare` (spec 016): antes de subirla, `prepareProductPhoto` reduce la foto a un JPEG de 1600 px como máximo y 2 MB, sin EXIF ni GPS.
+  - **Antes de decodificar**, revisa el formato por los primeros bytes (JPEG, PNG o WebP; HEIC no), el peso (10 MB como máximo) y los megapíxeles en la cabecera (50 MP como máximo), para no colgar un celular de gama baja.
+  - **El logo no se reduce** (perdería la transparencia): `checkLogo` solo valida PNG o JPG de hasta 1 MB.
 - `shared/composables/useApiForm`: envío y errores 422 por campo.
+- `core/api/session`: las cabeceras de sesión (token, `Accept` y `X-App-Version`) y la reacción a 401 y 426. Las usan el cliente, las descargas y las subidas.
 - `core/api/download`: descarga de archivos de la API con el token (un enlace directo no lleva `Authorization`).
+- `core/api/upload`: `uploadForm` sube un `FormData` con avance y cancelación, por XHR, porque `fetch` no informa el avance de lo enviado. Cancelar rechaza con `UploadCancelled`, que no es un error que mostrar.
 - `shared/utils/format`: soles, cantidades sin ceros sobrantes y fechas en español del Perú. Solo formatean: los importes y las cantidades llegan de la API como cadenas decimales exactas y nunca se calculan en el frontend.
 - Navegación (`app/layouts/MainNav.vue`): Inicio, Vender, Ventas y Productos; la gestión del administrador (incluidas Clientes, SUNAT y Series) va en «Más». Un enlace se marca activo por prefijo de ruta, para que «Ventas» siga marcada en comprobantes y detalles.
 - Impresión: `main.css` tiene una regla `@media print` que imprime solo `.print-area` en papel de 80 mm.
@@ -211,6 +217,11 @@ La app Android es esta misma aplicación empaquetada con **Capacitor 8** (`andro
 - **Sesión:** se guarda en Keystore.
 - **Archivos:** los PDF, XML y CDR se entregan con «Compartir» de Android. Sin impresora Bluetooth elegida, así se imprime el ticket, usando el PDF de 80 mm de la API.
 - **Impresora térmica Bluetooth (spec 015):** `device().printer`, con un plugin propio en Java (`android/app/src/main/java/…/printer/BluetoothPrinterPlugin.java`). Lista los equipos ya emparejados en Android y envía los bytes por Bluetooth clásico (SPP), con una conexión por impresión y un tiempo límite de 8 s para conectar. Solo pide `BLUETOOTH_CONNECT` («Dispositivos cercanos», Android 12+): no busca equipos ni pide la ubicación. En la web no existe.
+- **Foto del producto (spec 016):** `device().pickImage('camera' | 'gallery')` usa un `<input type="file">` que atiende el WebView de Capacitor, sin plugin ni permiso de cámara.
+  - **Cámara:** se abre la cámara del sistema solo si el `<input>` tiene `capture` y `accept="image/*"`, y el manifiesto declara `<queries>` para `IMAGE_CAPTURE`. Si no, Capacitor abre la galería sin avisar.
+  - **Galería:** el selector de fotos de Android 13+, sin permiso de almacenamiento.
+  - **Foto temporal:** Capacitor la deja en `files/Pictures` del almacenamiento externo de la app (`file_paths.xml`), y puede traer GPS. `pickImage` la borra después de leerla.
+  - **No declarar `CAMERA`:** si se declara, Capacitor lo pide, y negarlo llega como una cancelación muda.
 - **Botón «Atrás»:** cierra el diálogo abierto, vuelve a la pantalla anterior o manda la app al fondo.
 - **Versión instalada:** se envía en `X-App-Version`. Si la API responde `426`, se muestra «Actualiza la app».
 
