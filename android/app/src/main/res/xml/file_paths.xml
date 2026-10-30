@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Solo la caché de la app: ahí se guardan los PDF, XML y CDR que se comparten (spec 013, A-63). -->
+<!--
+  La caché de la app: ahí se guardan los PDF, XML y CDR que se comparten (spec 013, A-63).
+  Pictures/: donde la cámara del WebView deja la foto del producto (spec 016); la app la borra al leerla.
+-->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="shared_files" path="." />
+    <external-files-path name="captured_photos" path="Pictures/" />
 </paths>

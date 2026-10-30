@@ -5,6 +5,7 @@ import { Network } from '@capacitor/network'
 import { Share } from '@capacitor/share'
 import { registerPlugin, type PermissionState } from '@capacitor/core'
 
+import { pickWithInput } from './pick-image'
 import { type PairedPrinter, PrinterError } from './printer'
 import type { Device } from './types'
 
@@ -81,6 +82,21 @@ export async function createNativeDevice(): Promise<Device> {
     },
     async minimize() {
       await App.minimizeApp()
+    },
+    async pickImage(source) {
+      const file = await pickWithInput(source)
+      if (!file || source !== 'camera') return file
+
+      // Capacitor guarda la foto de la cámara en files/Pictures del almacenamiento
+      // externo de la app y no la borra; puede traer GPS (F002). Se copia a memoria
+      // y se borra el archivo.
+      const copy = new File([await file.arrayBuffer()], file.name, { type: file.type })
+      try {
+        await Filesystem.deleteFile({ path: `Pictures/${file.name}`, directory: Directory.External })
+      } catch {
+        // Si no se pudo borrar, la foto igual sirve.
+      }
+      return copy
     },
     printer: {
       available: true,

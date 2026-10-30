@@ -76,4 +76,9 @@ describe('device (web)', () => {
     expect((error as InstanceType<typeof PrinterError>).code).toBe('unsupported')
     await expect(device().printer.listPaired()).rejects.toBeInstanceOf(PrinterError)
   })
+
+  it('pickImage usa el <input> temporal (spec 016)', async () => {
+    const { pickWithInput } = await import('../pick-image')
+    expect(device().pickImage).toBe(pickWithInput)
+  })
 })

@@ -1,3 +1,4 @@
+import type { ImageSource } from './pick-image'
 import type { DevicePrinter } from './printer'
 
 /**
@@ -27,6 +28,12 @@ export interface Device {
   onBackButton(handler: () => void): () => void
   /** Manda la app al fondo sin cerrarla (Android). */
   minimize(): Promise<void>
+  /**
+   * Abre la cámara o la galería para elegir una foto (spec 016, RF-011); null
+   * si el usuario cancela. El archivo llega tal cual: se valida y se reduce
+   * después con `prepareProductPhoto`.
+   */
+  pickImage(source: ImageSource): Promise<File | null>
   /** Impresora térmica Bluetooth (spec 015); no disponible en la web. */
   readonly printer: DevicePrinter
 }

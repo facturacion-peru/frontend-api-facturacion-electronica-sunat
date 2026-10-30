@@ -10,7 +10,7 @@ type AsyncFn = (...args: unknown[]) => Promise<unknown>
 const plugins = vi.hoisted(() => ({
   secure: { getItem: vi.fn<AsyncFn>(), setItem: vi.fn<AsyncFn>(), removeItem: vi.fn<AsyncFn>(), setKeyPrefix: vi.fn<AsyncFn>() },
   app: { getInfo: vi.fn<AsyncFn>(), addListener: vi.fn<(event: string, handler: () => void) => Promise<{ remove: () => void }>>(), minimizeApp: vi.fn<AsyncFn>() },
-  filesystem: { writeFile: vi.fn<AsyncFn>() },
+  filesystem: { writeFile: vi.fn<AsyncFn>(), deleteFile: vi.fn<AsyncFn>() },
   share: { share: vi.fn<AsyncFn>() },
   network: { getStatus: vi.fn<AsyncFn>(), addListener: vi.fn<(event: string, handler: (s: { connected: boolean }) => void) => Promise<{ remove: () => void }>>() },
   // Plugin propio de la spec 015 (android/…/printer/BluetoothPrinterPlugin.java).
@@ -31,9 +31,11 @@ vi.mock('@capacitor/core', () => ({
 }))
 vi.mock('@aparajita/capacitor-secure-storage', () => ({ SecureStorage: plugins.secure }))
 vi.mock('@capacitor/app', () => ({ App: plugins.app }))
-vi.mock('@capacitor/filesystem', () => ({ Filesystem: plugins.filesystem, Directory: { Cache: 'CACHE' } }))
+vi.mock('@capacitor/filesystem', () => ({ Filesystem: plugins.filesystem, Directory: { Cache: 'CACHE', External: 'EXTERNAL' } }))
 vi.mock('@capacitor/share', () => ({ Share: plugins.share }))
 vi.mock('@capacitor/network', () => ({ Network: plugins.network }))
+const pickWithInput = vi.hoisted(() => vi.fn<(source: 'camera' | 'gallery') => Promise<File | null>>())
+vi.mock('../pick-image', () => ({ pickWithInput }))
 
 const { device, initDevice, PrinterError } = await import('..')
 
@@ -47,6 +49,8 @@ beforeEach(() => {
   plugins.secure.setItem.mockReset()
   plugins.secure.removeItem.mockReset()
   plugins.filesystem.writeFile.mockReset()
+  plugins.filesystem.deleteFile.mockReset()
+  pickWithInput.mockReset()
   plugins.share.share.mockReset()
   Object.values(plugins.printer).forEach((fn) => fn.mockReset())
   localStorage.clear()
@@ -206,6 +210,34 @@ describe('device (Android)', () => {
       await device().printer.openSettings()
       expect(await device().printer.requestEnable()).toBe(true)
       expect(plugins.printer.openSettings).toHaveBeenCalled()
+    })
+  })
+
+  describe('pickImage (spec 016)', () => {
+    it('la foto de la cámara se copia a memoria y se borra de files/Pictures (puede traer GPS)', async () => {
+      pickWithInput.mockResolvedValue(new File(['jpeg'], 'JPEG_20261029_1.jpg', { type: 'image/jpeg' }))
+      plugins.filesystem.deleteFile.mockResolvedValue(undefined)
+
+      const photo = await device().pickImage('camera')
+
+      expect(pickWithInput).toHaveBeenCalledWith('camera')
+      expect(plugins.filesystem.deleteFile).toHaveBeenCalledWith({ path: 'Pictures/JPEG_20261029_1.jpg', directory: 'EXTERNAL' })
+      expect(photo).toMatchObject({ name: 'JPEG_20261029_1.jpg', type: 'image/jpeg', size: 4 })
+    })
+
+    it('si no se puede borrar, la foto igual sirve', async () => {
+      pickWithInput.mockResolvedValue(new File(['jpeg'], 'JPEG_2.jpg', { type: 'image/jpeg' }))
+      plugins.filesystem.deleteFile.mockRejectedValue(new Error('File does not exist'))
+
+      await expect(device().pickImage('camera')).resolves.toMatchObject({ name: 'JPEG_2.jpg' })
+    })
+
+    it('de la galería no se borra nada, y cancelar devuelve null', async () => {
+      pickWithInput.mockResolvedValueOnce(new File(['png'], 'foto.png', { type: 'image/png' })).mockResolvedValueOnce(null)
+
+      await expect(device().pickImage('gallery')).resolves.toMatchObject({ name: 'foto.png' })
+      await expect(device().pickImage('camera')).resolves.toBeNull()
+      expect(plugins.filesystem.deleteFile).not.toHaveBeenCalled()
     })
   })
 })
