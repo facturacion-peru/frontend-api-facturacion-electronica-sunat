@@ -111,6 +111,22 @@ describe('sale-draft', () => {
     expect(draft.lines.map((l) => [l.product.name, l.product.sale_price, l.product.available_stock])).toEqual([['Galletas', '3.50', '7.000']])
   })
 
+  it('spec 016, HU-2 esc. 4: no guarda la foto del producto, ni al agregar ni al refrescar', async () => {
+    const image = { url: 'https://img.test/a.webp', thumb_url: 'https://img.test/a-thumb.webp' }
+    const draft = boot()
+    draft.add({ ...galletas, image } as SellableProduct)
+    await nextTick()
+
+    expect(localStorage.getItem('sunat.sale-draft.1.1')).not.toContain('img.test')
+    expect(draft.lines[0]!.product).toEqual(galletas)
+
+    await draft.refresh(async () => ({ ...galletas, image, active: true }) as SellableProduct & { active: boolean })
+    await nextTick()
+
+    expect(draft.lines[0]!.product).toEqual(galletas)
+    expect(localStorage.getItem('sunat.sale-draft.1.1')).not.toContain('img.test')
+  })
+
   describe('comprobante recordado (v1.5, A-60)', () => {
     it('RF-009 clear conserva comprobante y serie recordados; cliente y medio de pago vuelven al inicio', async () => {
       const draft = boot()

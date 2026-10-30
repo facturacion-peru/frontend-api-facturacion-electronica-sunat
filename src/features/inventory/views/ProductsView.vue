@@ -8,6 +8,7 @@ import { useSessionStore } from '@/core/auth/session-store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import ProductThumb from '@/shared/ui/ProductThumb.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import ExportButton from '@/shared/ui/ExportButton.vue'
@@ -115,6 +116,7 @@ onMounted(() => {
   <ul v-else class="mt-4 divide-y divide-line rounded-xl border border-line bg-surface">
     <li v-for="product in products" :key="product.id" data-test="product-row">
       <RouterLink :to="{ name: 'product-detail', params: { id: product.id } }" class="flex items-center gap-3 p-4 hover:bg-canvas">
+        <ProductThumb :image="product.image" :name="product.name" size="sm" />
         <div class="min-w-0 flex-1">
           <p class="flex flex-wrap items-center gap-2 font-medium">
             <span class="truncate">{{ product.name }}</span>

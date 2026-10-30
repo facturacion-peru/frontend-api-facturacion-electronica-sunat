@@ -4,9 +4,10 @@ import { onMounted, ref } from 'vue'
 
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import ProductThumb from '@/shared/ui/ProductThumb.vue'
 import SearchInput from '@/shared/ui/SearchInput.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
-import { salesApi, type SellableProduct } from '../api'
+import { type CatalogProduct, salesApi, type SellableProduct } from '../api'
 
 /**
  * Catálogo de «Vender» (spec 012, A-57): productos activos para agregar con
@@ -21,7 +22,7 @@ defineProps<{
 const emit = defineEmits<{ add: [SellableProduct] }>()
 
 const search = ref('')
-const products = ref<SellableProduct[]>([])
+const products = ref<CatalogProduct[]>([])
 const page = ref(1)
 const lastPage = ref(1)
 const loading = ref(false)
@@ -89,8 +90,13 @@ function canAdd(product: SellableProduct): boolean {
           :disabled="!canAdd(product)"
           @click="emit('add', product)"
         >
-          <span class="line-clamp-2 pr-6 text-sm leading-snug font-medium text-ink">{{ product.name }}</span>
-          <span class="mt-0.5 text-xs text-ink-muted">{{ product.code }}</span>
+          <span class="flex gap-2">
+            <ProductThumb :image="product.image" :name="product.name" size="md" />
+            <span class="min-w-0">
+              <span class="line-clamp-2 pr-6 text-sm leading-snug font-medium text-ink">{{ product.name }}</span>
+              <span class="mt-0.5 block text-xs text-ink-muted">{{ product.code }}</span>
+            </span>
+          </span>
           <span class="mt-auto flex items-end justify-between gap-2 pt-2">
             <span class="font-semibold text-ink">{{ formatMoney(product.sale_price) }}</span>
             <span class="text-xs whitespace-nowrap" :class="canAdd(product) ? 'text-ink-muted' : 'font-medium text-danger-700'">
@@ -108,7 +114,7 @@ function canAdd(product: SellableProduct): boolean {
         </button>
       </li>
       <template v-if="loading">
-        <li v-for="n in 4" :key="`skeleton-${n}`" class="h-24 animate-pulse rounded-xl bg-subtle" aria-hidden="true" />
+        <li v-for="n in 4" :key="`skeleton-${n}`" class="h-28 animate-pulse rounded-xl bg-subtle" aria-hidden="true" />
       </template>
     </ul>
 

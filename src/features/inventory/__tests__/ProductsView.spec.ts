@@ -59,6 +59,17 @@ describe('ProductsView', () => {
     expect(rows[1]!.text()).toContain('Stock bajo')
   })
 
+  it('spec 016: cada fila muestra la miniatura, o el marcador si no tiene foto', async () => {
+    const image = { url: 'https://img.test/a.webp', thumb_url: 'https://img.test/a-thumb.webp' }
+    vi.mocked(inventoryApi.listProducts).mockResolvedValue(page([product({ image }), product({ id: 2, name: 'Leche' })]))
+    const { wrapper } = await mountAs('seller')
+
+    const rows = wrapper.findAll('[data-test="product-row"]')
+    expect(rows[0]!.get('img').attributes()).toMatchObject({ src: image.thumb_url, alt: 'Arroz extra 5 kg', loading: 'lazy' })
+    expect(rows[1]!.find('img').exists()).toBe(false)
+    expect(rows[1]!.find('[data-test="thumb-placeholder"]').exists()).toBe(true)
+  })
+
   it('busca con espera entre teclas y vuelve a la primera página', async () => {
     const { wrapper } = await mountAs('seller')
 

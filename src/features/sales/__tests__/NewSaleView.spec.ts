@@ -5,7 +5,7 @@ import { ApiError } from '@/core/api/errors'
 import type { PaginatedResponse } from '@/core/api/types'
 import { useSessionStore } from '@/core/auth/session-store'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
-import type { SellableProduct } from '../api'
+import type { CatalogProduct } from '../api'
 import type { Customer, IssuingAvailability, SalesDocument, Ticket } from '../types'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
@@ -19,9 +19,9 @@ vi.mock('../api', () => ({
 const { salesApi, salesDocumentsApi, customersApi } = await import('../api')
 const NewSaleView = (await import('../views/NewSaleView.vue')).default
 
-const galletas: SellableProduct = { id: 1, code: 'GAL-1', name: 'Galletas', type: 'good', unit: 'NIU', sale_price: '2.99', available_stock: '10.000' }
-const azucar: SellableProduct = { id: 2, code: 'AZU-1', name: 'Azúcar', type: 'good', unit: 'KGM', sale_price: '4.20', available_stock: '5.000' }
-const agotado: SellableProduct = { id: 3, code: 'AGO-1', name: 'Agotado', type: 'good', unit: 'NIU', sale_price: '1.00', available_stock: '0.000' }
+const galletas: CatalogProduct = { id: 1, code: 'GAL-1', name: 'Galletas', type: 'good', unit: 'NIU', sale_price: '2.99', available_stock: '10.000', image: null }
+const azucar: CatalogProduct = { id: 2, code: 'AZU-1', name: 'Azúcar', type: 'good', unit: 'KGM', sale_price: '4.20', available_stock: '5.000', image: null }
+const agotado: CatalogProduct = { id: 3, code: 'AGO-1', name: 'Agotado', type: 'good', unit: 'NIU', sale_price: '1.00', available_stock: '0.000', image: null }
 
 const ticket: Ticket = {
   id: 9, number: 9, display_number: 'T-000009', status: 'issued', legal_notice: 'Documento interno — no es comprobante de pago',
@@ -49,7 +49,7 @@ const available: IssuingAvailability = {
 }
 const ferreteria: Customer = { id: 5, document_type: '6', document_type_label: 'RUC', document_number: '20100070970', name: 'FERRETERIA EL SOL S.A.C.', address: null }
 
-const page = (data: SellableProduct[], current = 1, last = 1): PaginatedResponse<SellableProduct> => ({
+const page = (data: CatalogProduct[], current = 1, last = 1): PaginatedResponse<CatalogProduct> => ({
   success: true, data, meta: { current_page: current, last_page: last, per_page: 20, total: data.length, from: 1, to: data.length },
 })
 
@@ -119,6 +119,19 @@ describe('NewSaleView', () => {
     expect(wrapper.findAll('[data-test="catalog"] button')).toHaveLength(3)
     expect(card(wrapper, 'Agotado').attributes('disabled')).toBeDefined()
     expect(card(wrapper, 'Agotado').text()).toContain('Sin disponible')
+  })
+
+  it('spec 016: el catálogo muestra la miniatura de cada producto; el carrito no lleva fotos', async () => {
+    const image = { url: 'https://img.test/g.webp', thumb_url: 'https://img.test/g-thumb.webp' }
+    vi.mocked(salesApi.listProducts).mockResolvedValue(page([{ ...galletas, image }, azucar]))
+    const { wrapper } = await mountSale()
+
+    expect(card(wrapper, 'Galletas').get('img').attributes()).toMatchObject({ src: image.thumb_url, alt: 'Galletas', loading: 'lazy' })
+    expect(card(wrapper, 'Azúcar').find('[data-test="thumb-placeholder"]').exists()).toBe(true)
+
+    await addProducts(wrapper, ['Galletas'])
+    const imgs = wrapper.findAll('img').filter((img) => img.attributes('src') === image.thumb_url)
+    expect(imgs).toHaveLength(1)
   })
 
   it('HU-3 la búsqueda filtra el catálogo y «Cargar más» trae la página siguiente', async () => {
