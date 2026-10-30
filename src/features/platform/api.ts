@@ -4,6 +4,7 @@ import type { PaginatedResponse } from '@/core/api/types'
 import type {
   CompanyFilters,
   LegalDataForm,
+  LookupUsageDay,
   NewCompanyForm,
   PlatformAuditEntry,
   PlatformCompany,
@@ -46,6 +47,9 @@ export const platformApi = {
 
   searchUbigeos: async (q: string) =>
     (await unwrap<{ data: Ubigeo[] }>(apiClient.GET('/api/v1/platform/ubigeos/search', { params: { query: { q } } }))).data,
+
+  /** Consultas de DNI y RUC de los últimos 14 días, del más antiguo al más reciente (spec 018). */
+  lookupUsage: async () => (await unwrap<{ data: LookupUsageDay[] }>(apiClient.GET('/api/v1/platform/document-lookups/usage'))).data,
 
   supportDocuments: (filters: { status: '' | 'pending' | 'rejected'; company_id: number | null; page: number }) =>
     unwrap<PaginatedResponse<SupportDocument>>(
