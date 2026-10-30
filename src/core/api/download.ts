@@ -1,6 +1,6 @@
 import { env } from '@/core/config/env'
 import { device } from '@/core/device'
-import { ApiError } from './errors'
+import { ApiError, NETWORK_MESSAGE } from './errors'
 import { sessionHeaders } from './session'
 
 /** Pide un archivo de la API con la sesión; lanza ApiError si falla. También lo usa la impresión (spec 015). */
@@ -12,7 +12,7 @@ export async function fetchFile(path: string): Promise<Blob> {
       headers: sessionHeaders('*/*'),
     })
   } catch {
-    throw new ApiError(0, 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.')
+    throw new ApiError(0, NETWORK_MESSAGE)
   }
 
   if (!response.ok) {
