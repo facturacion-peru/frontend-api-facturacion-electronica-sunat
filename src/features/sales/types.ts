@@ -93,6 +93,21 @@ export interface Customer {
   document_number: string
   name: string
   address: string | null
+  /** Traído de RENIEC o SUNAT (spec 018, A-92): su nombre y dirección no se editan a mano. */
+  verified: boolean
+  verified_at: string | null
+  /** Solo RUC verificados; en mayúsculas («ACTIVO», «BAJA DE OFICIO», «HABIDO», «NO HABIDO»…). */
+  ruc_status: string | null
+  ruc_condition: string | null
+}
+
+/** Respuesta de `POST /customers/lookup` (spec 018). */
+export interface LookupResult {
+  customer: Customer | null
+  /** De dónde salió: la empresa, la tabla común o el servicio. */
+  source: 'company' | 'platform' | 'service' | null
+  /** Por qué no se pudo consultar; con un cliente manual, por qué no se verificó. */
+  reason: 'not_found' | 'unavailable' | 'quota' | 'disabled' | null
 }
 
 export interface CustomerForm {

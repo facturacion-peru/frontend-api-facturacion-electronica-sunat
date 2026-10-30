@@ -12,7 +12,7 @@ vi.mock('../api', () => ({ customersApi: { list: vi.fn<AsyncFn>(), update: vi.fn
 const { customersApi } = await import('../api')
 const CustomersView = (await import('../views/CustomersView.vue')).default
 
-const maria: Customer = { id: 1, document_type: '1', document_type_label: 'DNI', document_number: '46027897', name: 'MARIA QUISPE', address: null }
+const maria: Customer = { id: 1, document_type: '1', document_type_label: 'DNI', document_number: '46027897', name: 'MARIA QUISPE', address: null, verified: false, verified_at: null, ruc_status: null, ruc_condition: null }
 const page = (data: Customer[]) => ({ success: true as const, data, meta: { current_page: 1, per_page: 20, total: data.length, last_page: 1, from: 1, to: data.length } })
 
 beforeEach(() => {

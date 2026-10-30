@@ -56,7 +56,7 @@ const available: IssuingAvailability = {
     { id: 12, document_type: '01', code: 'F001', active: true, establishment_id: 1 },
   ],
 }
-const ferreteria: Customer = { id: 5, document_type: '6', document_type_label: 'RUC', document_number: '20100070970', name: 'FERRETERIA EL SOL S.A.C.', address: null }
+const ferreteria: Customer = { id: 5, document_type: '6', document_type_label: 'RUC', document_number: '20100070970', name: 'FERRETERIA EL SOL S.A.C.', address: null, verified: false, verified_at: null, ruc_status: null, ruc_condition: null }
 
 const page = (data: CatalogProduct[], current = 1, last = 1): PaginatedResponse<CatalogProduct> => ({
   success: true, data, meta: { current_page: current, last_page: last, per_page: 20, total: data.length, from: 1, to: data.length },

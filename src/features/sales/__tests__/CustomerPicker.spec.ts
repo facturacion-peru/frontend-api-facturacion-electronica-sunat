@@ -11,8 +11,8 @@ vi.mock('../api', () => ({ customersApi: { search: vi.fn<AsyncFn>(), create: vi.
 const { customersApi } = await import('../api')
 const CustomerPicker = (await import('../components/CustomerPicker.vue')).default
 
-const maria: Customer = { id: 1, document_type: '1', document_type_label: 'DNI', document_number: '46027897', name: 'MARIA QUISPE', address: null }
-const ferreteria: Customer = { id: 2, document_type: '6', document_type_label: 'RUC', document_number: '20100070970', name: 'FERRETERIA EL SOL S.A.C.', address: 'Av. Uno' }
+const maria: Customer = { id: 1, document_type: '1', document_type_label: 'DNI', document_number: '46027897', name: 'MARIA QUISPE', address: null, verified: false, verified_at: null, ruc_status: null, ruc_condition: null }
+const ferreteria: Customer = { id: 2, document_type: '6', document_type_label: 'RUC', document_number: '20100070970', name: 'FERRETERIA EL SOL S.A.C.', address: 'Av. Uno', verified: false, verified_at: null, ruc_status: null, ruc_condition: null }
 
 beforeEach(() => {
   vi.clearAllMocks()
