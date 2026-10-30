@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
 import { useApiForm } from '@/shared/composables/useApiForm'
+import { checkLogo, ImageRejected } from '@/shared/images/prepare'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
@@ -19,6 +20,8 @@ const { submitting, generalError, fieldError, submit } = useApiForm()
 const logoForm = useApiForm()
 const logoPreview = ref<string | null>(null)
 const logoFile = ref<File | null>(null)
+const logoError = ref<string | null>(null)
+const logoProgress = ref(0)
 
 function fill(data: CompanyDetail) {
   company.value = data
@@ -43,16 +46,33 @@ async function onSubmit() {
   saved.value = await submit(async () => fill(await companyApi.update(form.value)))
 }
 
-function onLogoSelected(event: Event) {
+async function onLogoSelected(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0] ?? null
   if (logoPreview.value) URL.revokeObjectURL(logoPreview.value)
+  logoPreview.value = null
+  logoFile.value = null
+  logoError.value = null
+  logoForm.reset()
+  if (!file) return
+
+  // Formato y peso se revisan antes de subir (spec 016, RF-012); el logo no se reduce.
+  try {
+    await checkLogo(file)
+  } catch (e) {
+    if (!(e instanceof ImageRejected)) throw e
+    logoError.value = e.message
+    return
+  }
   logoFile.value = file
-  logoPreview.value = file ? URL.createObjectURL(file) : null
+  logoPreview.value = URL.createObjectURL(file)
 }
 
 async function uploadLogo() {
   if (!logoFile.value) return
-  const ok = await logoForm.submit(async () => fill(await companyApi.uploadLogo(logoFile.value!)))
+  logoProgress.value = 0
+  const ok = await logoForm.submit(async () =>
+    fill(await companyApi.uploadLogo(logoFile.value!, { onProgress: (fraction) => (logoProgress.value = fraction) })),
+  )
   if (ok) {
     if (logoPreview.value) URL.revokeObjectURL(logoPreview.value)
     logoPreview.value = null
@@ -142,10 +162,13 @@ onBeforeUnmount(() => {
             <BaseButton variant="secondary" :disabled="!logoFile" :loading="logoForm.submitting.value" @click="uploadLogo">
               Subir logo
             </BaseButton>
+            <p v-if="logoForm.submitting.value" class="text-xs text-ink-muted" role="status" data-test="logo-progress">
+              Subiendo… {{ Math.round(logoProgress * 100) }} %
+            </p>
           </div>
         </div>
-        <p v-if="logoForm.fieldError('logo') || logoForm.generalError.value" class="mt-2 text-xs text-danger-700" role="alert">
-          {{ logoForm.fieldError('logo') ?? logoForm.generalError.value }}
+        <p v-if="logoError || logoForm.fieldError('logo') || logoForm.generalError.value" class="mt-2 text-xs text-danger-700" role="alert">
+          {{ logoError ?? logoForm.fieldError('logo') ?? logoForm.generalError.value }}
         </p>
       </section>
     </div>

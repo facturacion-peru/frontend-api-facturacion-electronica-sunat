@@ -8,7 +8,11 @@ import type { CompanyDetail } from '../types'
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
 vi.mock('../api', () => ({
-  companyApi: { get: vi.fn<AsyncFn>(), update: vi.fn<AsyncFn>(), uploadLogo: vi.fn<AsyncFn>() },
+  companyApi: {
+    get: vi.fn<AsyncFn>(),
+    update: vi.fn<AsyncFn>(),
+    uploadLogo: vi.fn<(file: File, options?: { onProgress?: (fraction: number) => void }) => Promise<unknown>>(),
+  },
 }))
 
 const { companyApi } = await import('../api')
@@ -73,5 +77,75 @@ describe('CompanyView', () => {
     await flushPromises()
 
     expect(wrapper.find('#company-email-error').text()).toBe('El campo correo debe ser válido.')
+  })
+
+  describe('logo (spec 016)', () => {
+    /** Cabecera PNG mínima (firma + IHDR) con relleno hasta `size` bytes. */
+    function pngFile(name: string, size = 64, type = 'image/png') {
+      const header = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 1, 0, 0, 0, 0, 100, 8, 6, 0, 0, 0]
+      return new File([new Uint8Array(header), new Uint8Array(Math.max(0, size - header.length))], name, { type })
+    }
+
+    async function choose(wrapper: Awaited<ReturnType<typeof mountWithRouter>>['wrapper'], file: File) {
+      const input = wrapper.get('#logo')
+      Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+      await input.trigger('change')
+      await flushPromises()
+    }
+
+    const uploadButton = (wrapper: Awaited<ReturnType<typeof mountWithRouter>>['wrapper']) =>
+      wrapper.findAll('button').find((b) => b.text() === 'Subir logo')!
+
+    beforeEach(() => {
+      URL.createObjectURL = vi.fn<(blob: Blob) => string>(() => 'blob:logo')
+      URL.revokeObjectURL = vi.fn<(url: string) => void>()
+    })
+
+    it('sube el logo tal cual, sin reducirlo, y muestra el avance', async () => {
+      let report: ((fraction: number) => void) | undefined
+      let finish: (value: CompanyDetail) => void = () => {}
+      vi.mocked(companyApi.uploadLogo).mockImplementation((_file, options) => {
+        report = options?.onProgress
+        return new Promise((resolve) => (finish = resolve))
+      })
+      const { wrapper } = await mountWithRouter(CompanyView)
+      const logo = pngFile('logo.png')
+
+      await choose(wrapper, logo)
+      await uploadButton(wrapper).trigger('click')
+      report!(0.5)
+      await flushPromises()
+
+      expect(companyApi.uploadLogo).toHaveBeenCalledWith(logo, expect.any(Object))
+      expect(wrapper.get('[data-test="logo-progress"]').text()).toContain('50 %')
+
+      finish({ ...company, logo_url: 'https://img.test/logo.png' })
+      await flushPromises()
+      expect(wrapper.find('[data-test="logo-progress"]').exists()).toBe(false)
+    })
+
+    it('rechaza antes de subir un formato distinto de PNG o JPG, o más de 1 MB', async () => {
+      const { wrapper } = await mountWithRouter(CompanyView)
+
+      await choose(wrapper, new File(['GIF89a'], 'logo.gif', { type: 'image/gif' }))
+      expect(wrapper.text()).toContain('El logo debe ser PNG o JPG.')
+      expect(uploadButton(wrapper).attributes('disabled')).toBeDefined()
+
+      await choose(wrapper, pngFile('logo.png', 1024 * 1024 + 1))
+      expect(wrapper.text()).toContain('El logo no puede pesar más de 1 MB.')
+      expect(uploadButton(wrapper).attributes('disabled')).toBeDefined()
+      expect(companyApi.uploadLogo).not.toHaveBeenCalled()
+    })
+
+    it('muestra el 503 de la API si el almacenamiento falla', async () => {
+      vi.mocked(companyApi.uploadLogo).mockRejectedValue(new ApiError(503, 'No se pudo guardar el logo. Inténtalo de nuevo.'))
+      const { wrapper } = await mountWithRouter(CompanyView)
+
+      await choose(wrapper, pngFile('logo.png'))
+      await uploadButton(wrapper).trigger('click')
+      await flushPromises()
+
+      expect(wrapper.text()).toContain('No se pudo guardar el logo. Inténtalo de nuevo.')
+    })
   })
 })
