@@ -6,7 +6,7 @@ import type { Customer } from '../types'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
-vi.mock('../api', () => ({ customersApi: { search: vi.fn<AsyncFn>(), create: vi.fn<AsyncFn>(), lookup: vi.fn<AsyncFn>() } }))
+vi.mock('../api', () => ({ customersApi: { search: vi.fn<AsyncFn>(), create: vi.fn<AsyncFn>(), lookup: vi.fn<AsyncFn>(), refresh: vi.fn<AsyncFn>() } }))
 
 const { customersApi } = await import('../api')
 const CustomerPicker = (await import('../components/CustomerPicker.vue')).default
@@ -170,6 +170,38 @@ describe('CustomerPicker', () => {
       await searchFor(wrapper, '20100070971')
       expect(wrapper.get('[data-test="lookup-status"]').text()).toBe('El RUC no es válido: revisa los números.')
       expect(customersApi.lookup).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('«Actualizar datos» al vender (spec 018, HU-3)', () => {
+    const mountWith = (modelValue: Customer) => {
+      const wrapper = mount(CustomerPicker, { props: { modelValue }, attachTo: document.body })
+      wrapper.setProps({ 'onUpdate:modelValue': (v: Customer | null) => wrapper.setProps({ modelValue: v }) })
+      return wrapper
+    }
+
+    it('reemplaza el cliente de la venta y avisa', async () => {
+      const updated: Customer = { ...ferreteria, address: 'JR. NUEVO 9', verified: true, verified_at: '2026-10-30T10:00:00-05:00' }
+      vi.mocked(customersApi.refresh).mockResolvedValue(updated)
+      const wrapper = mountWith(ferreteria)
+
+      await wrapper.get('[data-test="refresh-customer"]').trigger('click')
+      await flushPromises()
+
+      expect(customersApi.refresh).toHaveBeenCalledWith(2)
+      expect(wrapper.emitted('update:modelValue')).toEqual([[updated]])
+      expect(wrapper.get('[data-test="refresh-message"]').text()).toBe('Datos actualizados.')
+    })
+
+    it('si el servicio falla, el cliente queda como estaba y se dice por qué', async () => {
+      vi.mocked(customersApi.refresh).mockRejectedValue(new ApiError(503, 'El servicio de consulta no responde. Inténtalo más tarde.'))
+      const wrapper = mountWith(maria)
+
+      await wrapper.get('[data-test="refresh-customer"]').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+      expect(wrapper.get('[data-test="refresh-message"]').text()).toBe('El servicio de consulta no responde. Inténtalo más tarde.')
     })
   })
 })

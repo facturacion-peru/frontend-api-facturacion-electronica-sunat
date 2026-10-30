@@ -15,12 +15,17 @@ import ExportButton from '@/shared/ui/ExportButton.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import SearchInput from '@/shared/ui/SearchInput.vue'
 import { customersApi } from '../api'
+import CustomerVerifiedBadge from '../components/CustomerVerifiedBadge.vue'
+import RucStatusAlert from '../components/RucStatusAlert.vue'
 import type { Customer, CustomerForm } from '../types'
 
 /**
  * Clientes de la empresa para el administrador (A-34): buscar y editar.
  * Se registran al vender y no se borran; los comprobantes ya emitidos
  * conservan los datos del momento (RF-006).
+ *
+ * Un cliente verificado (spec 018, A-92) no deja cambiar su nombre ni su
+ * dirección: vienen de RENIEC o SUNAT y se corrigen con «Actualizar datos».
  */
 const search = ref('')
 const customers = ref<Customer[]>([])
@@ -33,6 +38,28 @@ const editing = ref<Customer | null>(null)
 const dialogOpen = ref(false)
 const form = ref<CustomerForm>({ document_type: '1', document_number: '', name: '', address: null })
 const { submitting, generalError, fieldError, submit } = useApiForm()
+const refreshingId = ref<number | null>(null)
+const refreshError = ref<string | null>(null)
+
+/** Solo DNI y RUC se consultan; el carné de extranjería se corrige a mano. */
+const canRefresh = (customer: Customer) => customer.document_type === '1' || customer.document_type === '6'
+
+/** «Actualizar datos» (HU-3): si el servicio falla, el cliente queda como estaba y se dice por qué. */
+async function refresh(customer: Customer) {
+  refreshingId.value = customer.id
+  notice.value = null
+  refreshError.value = null
+  try {
+    const updated = await customersApi.refresh(customer.id)
+    customers.value = customers.value.map((c) => (c.id === updated.id ? updated : c))
+    notice.value = `Datos de ${updated.name} actualizados. Los comprobantes ya emitidos conservan los anteriores.`
+  } catch (e) {
+    if (!(e instanceof ApiError)) throw e
+    refreshError.value = e.message
+  } finally {
+    refreshingId.value = null
+  }
+}
 
 async function load() {
   try {
@@ -66,6 +93,8 @@ async function save() {
   }
 }
 
+const verifiedHint = 'Viene de RENIEC o SUNAT. Usa «Actualizar datos».'
+
 function goTo(next: number) {
   page.value = next
   load()
@@ -87,17 +116,36 @@ onMounted(load)
   </div>
 
   <BaseAlert v-if="loadError" variant="error" class="mt-4">{{ loadError }}</BaseAlert>
+  <BaseAlert v-if="refreshError" variant="error" class="mt-4" data-test="refresh-error">{{ refreshError }}</BaseAlert>
   <BaseAlert v-if="notice" variant="success" class="mt-4">{{ notice }}</BaseAlert>
 
   <EmptyState v-if="!loadError && customers.length === 0" class="mt-4" title="No hay clientes" description="Aparecerán al registrarlos desde «Vender»." />
 
   <ul v-else class="mt-4 divide-y divide-line rounded-xl border border-line bg-surface">
-    <li v-for="c in customers" :key="c.id" class="flex items-center justify-between gap-3 p-4" data-test="customer-row">
-      <p class="min-w-0 text-sm">
-        <span class="block truncate font-medium">{{ c.name }}</span>
-        <span class="text-ink-muted">{{ c.document_type_label }} {{ c.document_number }}<template v-if="c.address"> · {{ c.address }}</template></span>
-      </p>
-      <BaseButton variant="secondary" @click="edit(c)">Editar</BaseButton>
+    <li v-for="c in customers" :key="c.id" class="space-y-2 p-4" data-test="customer-row">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="min-w-0 text-sm">
+          <span class="flex flex-wrap items-center gap-2">
+            <span class="min-w-0 truncate font-medium">{{ c.name }}</span>
+            <CustomerVerifiedBadge :customer="c" />
+          </span>
+          <span class="text-ink-muted">{{ c.document_type_label }} {{ c.document_number }}<template v-if="c.address"> · {{ c.address }}</template></span>
+        </p>
+        <div class="flex gap-2">
+          <BaseButton
+            v-if="canRefresh(c)"
+            variant="ghost"
+            :loading="refreshingId === c.id"
+            :disabled="refreshingId !== null"
+            data-test="refresh-customer"
+            @click="refresh(c)"
+          >
+            Actualizar datos
+          </BaseButton>
+          <BaseButton variant="secondary" @click="edit(c)">Editar</BaseButton>
+        </div>
+      </div>
+      <RucStatusAlert :customer="c" />
     </li>
   </ul>
 
@@ -120,11 +168,23 @@ onMounted(load)
       <FormField v-slot="{ describedBy, invalid }" label="Número de documento" for="edit-customer-number" :error="fieldError('document_number')">
         <BaseInput id="edit-customer-number" v-model="form.document_number" :invalid="invalid" :aria-describedby="describedBy" />
       </FormField>
-      <FormField v-slot="{ describedBy, invalid }" label="Nombre o razón social" for="edit-customer-name" :error="fieldError('name')">
-        <BaseInput id="edit-customer-name" v-model="form.name" :invalid="invalid" :aria-describedby="describedBy" />
+      <FormField
+        v-slot="{ describedBy, invalid }"
+        label="Nombre o razón social"
+        for="edit-customer-name"
+        :hint="editing?.verified ? verifiedHint : undefined"
+        :error="fieldError('name')"
+      >
+        <BaseInput id="edit-customer-name" v-model="form.name" :disabled="editing?.verified" :invalid="invalid" :aria-describedby="describedBy" />
       </FormField>
-      <FormField v-slot="{ describedBy, invalid }" label="Dirección (opcional)" for="edit-customer-address" :error="fieldError('address')">
-        <BaseInput id="edit-customer-address" v-model="form.address" :invalid="invalid" :aria-describedby="describedBy" />
+      <FormField
+        v-slot="{ describedBy, invalid }"
+        label="Dirección (opcional)"
+        for="edit-customer-address"
+        :hint="editing?.verified ? verifiedHint : undefined"
+        :error="fieldError('address')"
+      >
+        <BaseInput id="edit-customer-address" v-model="form.address" :disabled="editing?.verified" :invalid="invalid" :aria-describedby="describedBy" />
       </FormField>
     </form>
     <template #actions>

@@ -180,6 +180,13 @@ export const customersApi = {
     return { customer: response.data, source: response.meta.source, reason: response.meta.reason }
   },
 
+  /**
+   * «Actualizar datos» (spec 018, HU-3): vuelve a consultar el servicio. Si
+   * falla, 503 con el motivo en `message` y el cliente queda como estaba.
+   */
+  refresh: (id: number) =>
+    unwrapData<Customer>(apiClient.POST('/api/v1/customers/{customer}/refresh', { params: { path: { customer: id } } })),
+
   /** Clientes con la búsqueda de la lista (spec 014). */
   export: (search: string, format: 'xlsx' | 'csv') => {
     const query = new URLSearchParams({ format })

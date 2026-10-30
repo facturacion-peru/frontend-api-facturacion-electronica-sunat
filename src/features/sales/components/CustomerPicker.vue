@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
+
+import { ApiError } from '@/core/api/errors'
 import { computed, ref, watch } from 'vue'
 
 import { useApiForm } from '@/shared/composables/useApiForm'
@@ -80,7 +82,29 @@ function selectable(c: Customer): boolean {
   return !props.requireRuc || c.document_type === '6'
 }
 
+/** «Actualizar datos» (HU-3): el cliente de la venta pasa a tener los datos al día. */
+const refreshing = ref(false)
+const refreshMessage = ref<{ ok: boolean; text: string } | null>(null)
+
+async function refresh() {
+  if (!customer.value) return
+  refreshing.value = true
+  refreshMessage.value = null
+  try {
+    const updated = await customersApi.refresh(customer.value.id)
+    customer.value = updated
+    unverifiedNote.value = null
+    refreshMessage.value = { ok: true, text: 'Datos actualizados.' }
+  } catch (e) {
+    if (!(e instanceof ApiError)) throw e
+    refreshMessage.value = { ok: false, text: e.message }
+  } finally {
+    refreshing.value = false
+  }
+}
+
 function choose(c: Customer) {
+  refreshMessage.value = null
   unverifiedNote.value = null
   customer.value = c
   search.value = ''
@@ -119,6 +143,20 @@ async function save() {
       </div>
       <p v-if="unverifiedNote" class="text-xs text-ink-muted" data-test="unverified-note">{{ unverifiedNote }}</p>
       <RucStatusAlert :customer="customer" />
+      <div v-if="customer.document_type === '1' || customer.document_type === '6'" class="flex flex-wrap items-center gap-x-3">
+        <button
+          type="button"
+          class="min-h-11 text-sm font-medium text-brand-700 disabled:opacity-50"
+          :disabled="refreshing"
+          data-test="refresh-customer"
+          @click="refresh"
+        >
+          {{ refreshing ? 'Actualizando…' : 'Actualizar datos' }}
+        </button>
+        <p v-if="refreshMessage" role="status" class="text-xs" :class="refreshMessage.ok ? 'text-success-700' : 'text-danger-700'" data-test="refresh-message">
+          {{ refreshMessage.text }}
+        </p>
+      </div>
     </div>
 
     <template v-else>
