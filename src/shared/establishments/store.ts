@@ -97,7 +97,24 @@ export const useEstablishmentStore = defineStore('establishments', () => {
     return loadingReadable
   }
 
+  /**
+   * Vuelve a pedir los locales: al entrar a «Vender» (uno creado o desactivado
+   * durante la sesión) y después de que el administrador cambia uno. Para el
+   * administrador, que los tiene todos, también se ajusta la cuenta de activos
+   * de la empresa: de ella dependen el selector y los filtros (RF-010).
+   */
+  async function reload(): Promise<void> {
+    const admin = session.isCompanyAdmin
+    const list = await establishmentsApi.list(admin)
+    const active = list.filter((e) => e.active)
+    setAllowed(active)
+    if (admin) {
+      setReadable(list)
+      if (session.session?.company) session.session.company.active_establishments_count = active.length
+    }
+  }
+
   watch(storageKey, () => (readable.value = null))
 
-  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable, loadReadable }
+  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable, loadReadable, reload }
 })

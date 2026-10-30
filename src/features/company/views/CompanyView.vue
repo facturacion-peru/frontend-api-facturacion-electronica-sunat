@@ -9,6 +9,7 @@ import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { companyApi } from '../api'
+import EstablishmentsSection from '../components/EstablishmentsSection.vue'
 import { personTypeLabels, taxRegimeLabels, type CompanyContactForm, type CompanyDetail } from '../types'
 
 const company = ref<CompanyDetail | null>(null)
@@ -172,5 +173,7 @@ onBeforeUnmount(() => {
         </p>
       </section>
     </div>
+
+    <EstablishmentsSection class="lg:col-span-2" />
   </div>
 </template>

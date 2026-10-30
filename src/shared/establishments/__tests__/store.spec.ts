@@ -1,11 +1,16 @@
+import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CompanyRole } from '@/core/auth/types'
 import { useSessionStore } from '@/core/auth/session-store'
-import { useEstablishmentStore } from '../store'
 import type { Establishment } from '../types'
+
+const list = vi.hoisted(() => vi.fn<(includeInactive?: boolean) => Promise<Establishment[]>>())
+vi.mock('../api', () => ({ establishmentsApi: { list } }))
+
+const { useEstablishmentStore } = await import('../store')
 
 /*
  * Spec 017 · F003: el local donde se trabaja (HU-2, esc. 1, 2 y 5; A-87).
@@ -152,5 +157,30 @@ describe('local actual', () => {
     expect(store.current).toBeNull()
     expect(localStorage.getItem(key())).not.toBeNull()
     expect(boot().current).toEqual(sucursal)
+  })
+
+  it('reload: el administrador que crea el segundo local pasa a ver selector y filtros', async () => {
+    const store = boot({ establishments: [principal], activeCount: 1, role: 'company_admin' })
+    expect(store.multi).toBe(false)
+
+    list.mockResolvedValue([principal, sucursal, cerrado])
+    await store.reload()
+    await flushPromises()
+
+    expect(list).toHaveBeenCalledWith(true)
+    expect(store.multi).toBe(true)
+    expect(store.allowed).toEqual([principal, sucursal])
+    expect(store.filterOptions).toEqual([principal, sucursal, cerrado])
+  })
+
+  it('reload del vendedor solo refresca sus locales', async () => {
+    const store = boot({ establishments: [principal, sucursal], activeCount: 3 })
+    list.mockResolvedValue([sucursal])
+
+    await store.reload()
+
+    expect(list).toHaveBeenCalledWith(false)
+    expect(store.allowed).toEqual([sucursal])
+    expect(store.multi).toBe(true)
   })
 })
