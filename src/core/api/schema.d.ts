@@ -939,7 +939,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar series */
+        /** Series de los locales que el usuario puede leer, o de uno (spec 017). */
         get: operations["seriesIndex"];
         put?: never;
         /** Crear series */
@@ -3581,6 +3581,7 @@ export interface operations {
                     idempotency_key: string;
                     document_type: string;
                     series_id?: number | null;
+                    establishment_id?: number | null;
                     customer_id?: number | null;
                     payment_method: string;
                     lines: {
@@ -3946,7 +3947,9 @@ export interface operations {
     };
     seriesIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                establishment_id?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3989,6 +3992,7 @@ export interface operations {
                     document_type: string;
                     code: string;
                     last_number?: number;
+                    establishment_id?: number | null;
                 };
             };
         };
@@ -4322,6 +4326,7 @@ export interface operations {
             content: {
                 "application/json": {
                     idempotency_key: string;
+                    establishment_id?: number | null;
                     payment_method: string;
                     customer_name?: string | null;
                     customer_document?: string | null;

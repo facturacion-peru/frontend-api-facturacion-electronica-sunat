@@ -47,7 +47,8 @@ onMounted(async () => {
 
 async function onSubmit() {
   const payload: StockEntryPayload = { quantity: form.value.quantity }
-  if (establishments.multi && establishmentId.value) payload.establishment_id = establishmentId.value
+  // Las escrituras mandan siempre el local; con uno solo es ese (spec 017).
+  if (establishmentId.value) payload.establishment_id = establishmentId.value
   if (product.value?.tracks_expiry) payload.expires_at = form.value.expires_at
   if (form.value.received_at && form.value.received_at !== today()) payload.received_at = form.value.received_at
   if (form.value.lot_number) payload.lot_number = form.value.lot_number

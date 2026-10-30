@@ -19,7 +19,7 @@ const SalesDocumentView = (await import('../views/SalesDocumentView.vue')).defau
 const boleta: SalesDocument = {
   id: 31, document_type: '03', document_type_label: 'Boleta de venta', series_code: 'B001', number: 151, display_number: 'B001-00000151',
   environment: 'beta', environment_notice: 'PRUEBAS — sin valor legal', issued_at: '2026-09-30T15:00:00+00:00', seller: { id: 2, name: 'Luis' },
-  payment_method: 'cash', currency: 'PEN', customer: { id: null, document_type: '0', document_number: '-', name: 'CLIENTES VARIOS', address: null },
+  establishment: { id: 1, code: '0000', name: 'Principal' }, payment_method: 'cash', currency: 'PEN', customer: { id: null, document_type: '0', document_number: '-', name: 'CLIENTES VARIOS', address: null },
   op_gravadas: '24.58', op_exoneradas: '13.50', op_inafectas: '0.00', igv: '4.42', discount_total: '1.00', total: '42.50',
   status: 'accepted', status_label: 'Aceptado', sunat_code: '0', sunat_message: 'aceptada', sunat_notes: [], hash: 'h', has_cdr: true, attempts: 1,
   next_attempt_at: null, can_retry: false, correction_status: 'partially_returned', correction_status_label: 'Devuelto parcialmente', can_credit: true,

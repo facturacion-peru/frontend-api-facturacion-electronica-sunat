@@ -16,6 +16,15 @@ vi.mock('../api', () => ({
   customersApi: { search: vi.fn<AsyncFn>(), create: vi.fn<AsyncFn>() },
 }))
 
+// «Vender» refresca los locales al entrar (spec 017): aquí, el único de siempre.
+vi.mock('@/shared/establishments/api', () => ({
+  establishmentsApi: {
+    list: async () => [
+      { id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: null, is_main: true, active: true, code_locked: true },
+    ],
+  },
+}))
+
 const { salesApi, salesDocumentsApi, customersApi } = await import('../api')
 const NewSaleView = (await import('../views/NewSaleView.vue')).default
 
@@ -27,7 +36,7 @@ const ticket: Ticket = {
   id: 9, number: 9, display_number: 'T-000009', status: 'issued', legal_notice: 'Documento interno — no es comprobante de pago',
   seller: { id: 2, name: 'Luis' }, customer_name: null, customer_label: 'Cliente varios', customer_document: null,
   payment_method: 'yape_plin', subtotal: '2.99', discount_total: '0.00', total: '2.99', issued_at: '2026-10-03T15:00:00Z',
-  voided_at: null, void_reason: null,
+  voided_at: null, void_reason: null, establishment: { id: 1, code: '0000', name: 'Principal' },
   lines: [{ product_id: 1, product_code: 'GAL-1', product_name: 'Galletas', unit: 'NIU', quantity: '1.000', unit_price: '2.99', gross_amount: '2.99', discount: '0.00', amount: '2.99' }],
 }
 
@@ -43,8 +52,8 @@ const available: IssuingAvailability = {
   can_issue: true,
   status_label: 'Validada',
   series: [
-    { id: 11, document_type: '03', code: 'B001', active: true },
-    { id: 12, document_type: '01', code: 'F001', active: true },
+    { id: 11, document_type: '03', code: 'B001', active: true, establishment_id: 1 },
+    { id: 12, document_type: '01', code: 'F001', active: true, establishment_id: 1 },
   ],
 }
 const ferreteria: Customer = { id: 5, document_type: '6', document_type_label: 'RUC', document_number: '20100070970', name: 'FERRETERIA EL SOL S.A.C.', address: null }
@@ -434,7 +443,7 @@ describe('NewSaleView', () => {
 
     it('con varias series del tipo deja elegir', async () => {
       vi.mocked(salesDocumentsApi.availability).mockResolvedValue({
-        ...available, series: [...available.series, { id: 13, document_type: '03', code: 'B002', active: true }],
+        ...available, series: [...available.series, { id: 13, document_type: '03', code: 'B002', active: true, establishment_id: 1 }],
       })
       vi.mocked(salesDocumentsApi.issue).mockResolvedValue({ id: 33 } as SalesDocument)
       const { wrapper } = await mountSale()
@@ -461,7 +470,7 @@ describe('NewSaleView', () => {
     })
 
     describe('comprobante recordado (v1.5, A-60)', () => {
-      const withB002: IssuingAvailability = { ...available, series: [...available.series, { id: 13, document_type: '03', code: 'B002', active: true }] }
+      const withB002: IssuingAvailability = { ...available, series: [...available.series, { id: 13, document_type: '03', code: 'B002', active: true, establishment_id: 1 }] }
       const preference = () => JSON.parse(localStorage.getItem('sunat.sale-preference.1.1.1') ?? 'null')
 
       it('HU-6 esc. 1 y CE-004 tras emitir una boleta B002, la siguiente venta ya la tiene elegida', async () => {

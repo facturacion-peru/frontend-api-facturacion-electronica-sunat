@@ -266,7 +266,7 @@ describe('lista, alertas y entradas', () => {
     expect(inventoryApi.registerEntry).toHaveBeenCalledWith(7, { quantity: '4', establishment_id: 2 })
   })
 
-  it('RF-010: con un solo local la entrada no pide local ni lo manda', async () => {
+  it('RF-010: con un solo local la entrada no pide local y manda el único', async () => {
     vi.mocked(inventoryApi.registerEntry).mockResolvedValue({ lot: lot(5, principal), productStock: '8.000' })
     const { wrapper } = await mountAs(StockEntryView, '/productos/7/entrada', '/productos/:id/entrada', { establishments: [principal] })
 
@@ -275,6 +275,6 @@ describe('lista, alertas y entradas', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(inventoryApi.registerEntry).toHaveBeenCalledWith(7, { quantity: '4' })
+    expect(inventoryApi.registerEntry).toHaveBeenCalledWith(7, { quantity: '4', establishment_id: 1 })
   })
 })

@@ -17,7 +17,7 @@ const ticket: Ticket = {
   id: 9, number: 9, display_number: 'T-000009', status: 'issued', legal_notice: 'Documento interno — no es comprobante de pago',
   seller: { id: 2, name: 'Luis' }, customer_name: null, customer_label: 'Cliente varios', customer_document: null,
   payment_method: 'yape_plin', subtotal: '10.55', discount_total: '0.97', total: '9.58', issued_at: '2026-09-28T15:00:00Z',
-  voided_at: null, void_reason: null,
+  voided_at: null, void_reason: null, establishment: { id: 1, code: '0000', name: 'Principal' },
   lines: [
     { product_id: 1, product_code: 'GAL-1', product_name: 'Galletas', unit: 'NIU', quantity: '3.000', unit_price: '2.99', gross_amount: '8.97', discount: '0.97', amount: '8.00' },
   ],

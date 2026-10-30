@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
@@ -12,11 +12,12 @@ import { type CatalogProduct, salesApi, type SellableProduct } from '../api'
 /**
  * Catálogo de «Vender» (spec 012, A-57): productos activos para agregar con
  * un toque, sin necesidad de buscar; la búsqueda filtra. Paginado con
- * «Cargar más».
+ * «Cargar más». El disponible es el del local de la venta (spec 017).
  */
-defineProps<{
+const props = defineProps<{
   /** Cantidad en el carrito por producto, para mostrar cuántos llevo. */
   inCart: Record<number, string>
+  establishmentId: number | null
 }>()
 
 const emit = defineEmits<{ add: [SellableProduct] }>()
@@ -33,7 +34,11 @@ async function load(reset: boolean) {
   failed.value = false
   const next = reset ? 1 : page.value + 1
   try {
-    const result = await salesApi.listProducts({ search: search.value.trim(), page: next })
+    const result = await salesApi.listProducts({
+      search: search.value.trim(),
+      page: next,
+      ...(props.establishmentId && { establishmentId: props.establishmentId }),
+    })
     products.value = reset ? result.data : [...products.value, ...result.data]
     page.value = result.meta.current_page
     lastPage.value = result.meta.last_page
@@ -47,6 +52,7 @@ async function load(reset: boolean) {
 const runSearch = useDebounceFn(() => load(true), 250)
 
 onMounted(() => load(true))
+watch(() => props.establishmentId, () => load(true))
 
 /** Tras una venta, la vista recarga el catálogo para que el disponible descuente lo vendido. */
 defineExpose({ reload: () => load(true) })

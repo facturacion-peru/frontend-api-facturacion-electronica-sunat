@@ -15,7 +15,7 @@ const TicketsView = (await import('../views/TicketsView.vue')).default
 const row = (overrides: Partial<Ticket>): Ticket => ({
   id: 1, number: 1, display_number: 'T-000001', status: 'issued', legal_notice: 'Documento interno — no es comprobante de pago',
   seller: { id: 2, name: 'Luis' }, customer_name: null, customer_label: 'Cliente varios', customer_document: null, payment_method: 'cash',
-  subtotal: '10.00', discount_total: '0.00', total: '10.00', issued_at: '2026-09-28T15:00:00Z', voided_at: null, void_reason: null, ...overrides,
+  subtotal: '10.00', discount_total: '0.00', total: '10.00', issued_at: '2026-09-28T15:00:00Z', voided_at: null, void_reason: null, establishment: { id: 1, code: '0000', name: 'Principal' }, ...overrides,
 })
 
 beforeEach(() => {

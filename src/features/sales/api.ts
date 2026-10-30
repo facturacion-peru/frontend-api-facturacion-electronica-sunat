@@ -33,17 +33,37 @@ export interface CatalogProduct extends SellableProduct {
 }
 
 export const salesApi = {
-  /** Catálogo de «Vender» (spec 012, A-57): productos activos, paginados, filtrados por `search`. */
-  listProducts: ({ search = '', page = 1 }: { search?: string; page?: number } = {}) =>
+  /**
+   * Catálogo de «Vender» (spec 012, A-57): productos activos, paginados, filtrados por `search`.
+   * El disponible es el del local de la venta (spec 017).
+   */
+  listProducts: ({ search = '', page = 1, establishmentId = null }: { search?: string; page?: number; establishmentId?: number | null } = {}) =>
     unwrap<PaginatedResponse<CatalogProduct>>(
       apiClient.GET('/api/v1/products', {
-        params: { query: { status: 'active', page, ...(search.trim() && { search: search.trim() }) } },
+        params: {
+          query: {
+            status: 'active',
+            page,
+            ...(search.trim() && { search: search.trim() }),
+            ...(establishmentId && { establishment_id: establishmentId }),
+          },
+        },
       }),
     ),
 
-  /** Para refrescar precio y disponible de la venta guardada (spec 012, RF-002). */
-  getProduct: (id: number) =>
-    unwrapData<SellableProduct & { active: boolean }>(apiClient.GET('/api/v1/products/{product}', { params: { path: { product: id } } })),
+  /**
+   * Para refrescar precio y disponible de la venta guardada (spec 012, RF-002). La ficha
+   * suma los locales; el disponible del local de la venta sale de `stock_by_establishment` (spec 017).
+   */
+  getProduct: async (id: number, establishmentId: number | null = null) => {
+    const product = await unwrapData<
+      SellableProduct & { active: boolean; stock_by_establishment?: { establishment_id: number; available_stock: string }[] }
+    >(apiClient.GET('/api/v1/products/{product}', { params: { path: { product: id } } }))
+    const { stock_by_establishment: byEstablishment, ...rest } = product
+    const local = byEstablishment?.find((s) => s.establishment_id === establishmentId)
+
+    return establishmentId && byEstablishment && product.type === 'good' ? { ...rest, available_stock: local?.available_stock ?? '0.000' } : rest
+  },
 
   issue: async (body: NewTicketPayload) => {
     const response = await unwrap<{ data: Ticket }>(apiClient.POST('/api/v1/tickets', { body }))
@@ -119,11 +139,13 @@ export const salesDocumentsApi = {
       ? downloadFile(`/api/v1/sales-documents/${document.id}/${file}`, `${document.display_number}${file === 'cdr' ? '-cdr.zip' : '.xml'}`)
       : downloadFile(`/api/v1/sales-documents/${document.id}/pdf?format=${file}`, `${document.display_number}-${file}.pdf`, { open: true }),
 
-  /** Estado SUNAT y series activas, para habilitar Boleta y Factura en «Vender». */
-  availability: async (): Promise<IssuingAvailability> => {
+  /** Estado SUNAT y series activas del local de la venta (spec 017), para habilitar Boleta y Factura en «Vender». */
+  availability: async (establishmentId: number | null = null): Promise<IssuingAvailability> => {
     const [status, series] = await Promise.all([
       unwrapData<{ can_issue: boolean; status_label: string }>(apiClient.GET('/api/v1/sunat/status')),
-      unwrap<CollectionResponse<IssuingAvailability['series'][number]>>(apiClient.GET('/api/v1/series')),
+      unwrap<CollectionResponse<IssuingAvailability['series'][number]>>(
+        apiClient.GET('/api/v1/series', { params: { query: establishmentId ? { establishment_id: establishmentId } : {} } }),
+      ),
     ])
 
     return { can_issue: status.can_issue, status_label: status.status_label, series: series.data.filter((s) => s.active) }
