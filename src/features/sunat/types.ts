@@ -57,12 +57,16 @@ export interface Series {
   next_number: number
   active: boolean
   establishment_code: string | null
+  /** Local de la serie (spec 017); no cambia una vez que tiene comprobantes. */
+  establishment_id: number
 }
 
 export interface SeriesForm {
   document_type: DocumentType
   code: string
   last_number: number
+  /** Sin él, la API usa el principal (spec 017). */
+  establishment_id?: number
 }
 
 export const documentTypePrefix: Record<DocumentType, string> = { '01': 'F', '03': 'B', '07': 'F o B' }
