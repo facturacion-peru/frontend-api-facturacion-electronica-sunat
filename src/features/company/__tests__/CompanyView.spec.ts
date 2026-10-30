@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 
 import { ApiError } from '@/core/api/errors'
+import { useSessionStore } from '@/core/auth/session-store'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import type { CompanyDetail } from '../types'
 
@@ -15,7 +16,10 @@ vi.mock('../api', () => ({
   },
 }))
 
+vi.mock('@/shared/establishments/api', () => ({ establishmentsApi: { list: vi.fn<AsyncFn>() } }))
+
 const { companyApi } = await import('../api')
+const { establishmentsApi } = await import('@/shared/establishments/api')
 const CompanyView = (await import('../views/CompanyView.vue')).default
 
 const company: CompanyDetail = {
@@ -27,6 +31,10 @@ const company: CompanyDetail = {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(companyApi.get).mockResolvedValue(company)
+  vi.mocked(establishmentsApi.list).mockResolvedValue([
+    { id: 1, code: '0000', name: 'Principal', address: 'Av. Uno 1', ubigeo: '150101', district: null, is_main: true, active: true, code_locked: true },
+    { id: 3, code: '0002', name: 'Cerrado', address: 'Jr. Dos 2', ubigeo: '150101', district: null, is_main: false, active: false, code_locked: true },
+  ])
 })
 
 afterEach(() => {
@@ -34,6 +42,23 @@ afterEach(() => {
 })
 
 describe('CompanyView', () => {
+  it('017 HU-1: lista los locales, también los inactivos, y ofrece crear otro', async () => {
+    const { wrapper } = await mountWithRouter(CompanyView, {
+      beforeMount: () => {
+        useSessionStore().session = {
+          user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, role: 'company_admin', establishments: [],
+          company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, active_establishments_count: 1 },
+        }
+      },
+    })
+
+    const list = wrapper.get('[data-test="establishment-list"]')
+    expect(establishmentsApi.list).toHaveBeenCalledWith(true)
+    expect(list.get('[data-test="establishment-1"]').text()).toContain('Principal')
+    expect(list.get('[data-test="establishment-3"]').text()).toContain('Inactivo')
+    expect(wrapper.text()).toContain('Nuevo local')
+  })
+
   it('muestra RUC y razón social como datos de solo lectura', async () => {
     const { wrapper } = await mountWithRouter(CompanyView)
 

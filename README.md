@@ -157,8 +157,8 @@ Features actuales (specs 001 a 016):
 | Feature | Pantallas |
 |---|---|
 | `auth` | Login, recuperar contraseña, restablecer y aceptar invitación |
-| `company` | Mi empresa: datos legales de solo lectura, contacto y logo |
-| `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar |
+| `company` | Mi empresa: datos legales de solo lectura, contacto y logo. «Locales» (spec 017): crear, editar, desactivar y activar locales (`/empresa/locales/nuevo` y `/empresa/locales/:id`) con su código de anexo, que no cambia si ya tiene comprobantes |
+| `users` | Usuarios e invitaciones: invitar, reenviar, cancelar, cambiar rol, desactivar. Con varios locales, los locales de cada vendedor y los de la invitación (spec 017, A-87) |
 | `audit` | Auditoría con filtros |
 | `sales` | Venta rápida que emite ticket, boleta o factura (vista previa con la regla de redondeo del servidor, clave de idempotencia en reintentos, selector de cliente con alta rápida y de serie); ticket de 80 mm imprimible, anulación y listado con totales; «Ventas» con pestañas Tickets y Comprobantes; detalle del comprobante con el resultado de SUNAT, descargas (PDF A4/80 mm, XML, CDR) y «Reintentar»; devoluciones y anulaciones con nota de crédito, notas y saldo por línea, y descarte de rechazados (administrador); clientes para el administrador |
 | `sunat` | Configuración SUNAT (credenciales SOL sin mostrar nunca la clave, certificado con historial, «Validar»), series con su correlativo, e indicador «Emisión SUNAT» en el Inicio con aviso de certificado por vencer |
@@ -170,6 +170,16 @@ Features actuales (specs 001 a 016):
 Piezas compartidas:
 
 - `shared/ui`: botón, campo, `FormField`, alerta, diálogo accesible, badge, estado vacío, `EnvironmentBadge` («PRUEBAS — sin valor legal», siempre visible en beta) y `ExportButton` (diálogo «Exportar» de una lista; recibe la descarga como prop).
+- `shared/establishments` (spec 017): el local donde se trabaja y lo que depende de él.
+  - **`useEstablishmentStore`:**
+    - `allowed` son los locales permitidos, y `multi` dice si la empresa tiene más de un local activo. Sin `multi` no se pinta ningún selector, filtro ni nombre de local (RF-010).
+    - `current` es el local elegido, recordado en el dispositivo en `sunat.establishment.<empresa>.<usuario>`; no se borra al cerrar sesión.
+    - `reload()` vuelve a pedir los locales y, para el administrador, la cuenta de activos.
+  - **`EstablishmentSwitcher`:** el selector de la barra lateral y de «Vender».
+  - **`EstablishmentFilter`:** el filtro «Todos los locales» o uno, de las listas, el inicio y las exportaciones. Empieza en «Todos» para el administrador y en el local actual para el vendedor.
+  - **Regla de las peticiones:** las lecturas solo mandan `establishment_id` con varios locales; las escrituras (cobro y entrada de mercadería) lo mandan siempre.
+- La venta en curso (spec 012) y el último comprobante y serie son **de cada local**: `sunat.sale-draft.<empresa>.<usuario>.<local>` y `sunat.sale-preference.<empresa>.<usuario>.<local>`. Cambiar de local guarda la venta de uno y carga la del otro. La clave sin local de la 0.3.0 pasa al principal, y cerrar sesión borra las ventas de todos los locales del usuario.
+- `shared/ui/UbigeoPicker`: buscador de distrito; recibe la búsqueda por prop (la de la plataforma o la de la empresa).
 - `shared/ui/ProductThumb` y `shared/ui/ImagePicker` (spec 016): la miniatura de un producto en una caja de tamaño fijo, con carga diferida y un marcador si no hay foto o no carga; y el selector de foto con vista previa, que en la app ofrece cámara o galería. `ImagePicker` no sube nada: deja la foto reducida en `v-model`.
 - `shared/images/prepare` (spec 016): antes de subirla, `prepareProductPhoto` reduce la foto a un JPEG de 1600 px como máximo y 2 MB, sin EXIF ni GPS.
   - **Antes de decodificar**, revisa el formato por los primeros bytes (JPEG, PNG o WebP; HEIC no), el peso (10 MB como máximo) y los megapíxeles en la cabecera (50 MP como máximo), para no colgar un celular de gama baja.
@@ -181,7 +191,7 @@ Piezas compartidas:
 - `shared/utils/format`: soles, cantidades sin ceros sobrantes y fechas en español del Perú. Solo formatean: los importes y las cantidades llegan de la API como cadenas decimales exactas y nunca se calculan en el frontend.
 - Navegación (`app/layouts/MainNav.vue`): Inicio, Vender, Ventas y Productos; la gestión del administrador (incluidas Clientes, SUNAT y Series) va en «Más». Un enlace se marca activo por prefijo de ruta, para que «Ventas» siga marcada en comprobantes y detalles.
 - Impresión: `main.css` tiene una regla `@media print` que imprime solo `.print-area` en papel de 80 mm.
-- `shared/testing/mountWithRouter`: solo para pruebas; `beforeMount` permite fijar la sesión antes de montar.
+- `shared/testing/mountWithRouter`: solo para pruebas; `beforeMount` permite fijar la sesión antes de montar. `shared/testing/establishments` trae locales de prueba y `sessionWith(locales, rol)`.
 
 Las respuestas de la API se tipan a mano en el `types.ts` de cada feature, porque el OpenAPI aún no documenta respuestas. Cada tipo indica el `JsonResource` de Laravel que refleja; su forma la protegen las pruebas de contrato de la API.
 

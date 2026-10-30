@@ -5,6 +5,8 @@ import { onMounted, reactive, ref } from 'vue'
 import { ApiError } from '@/core/api/errors'
 import type { PaginationMeta } from '@/core/api/types'
 import { useSessionStore } from '@/core/auth/session-store'
+import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
@@ -21,7 +23,10 @@ import type { Product, ProductFilters } from '../types'
 const session = useSessionStore()
 const { load: loadCatalogs, unitLabel } = useInventoryCatalogs()
 
-const filters = reactive<ProductFilters>({ search: '', type: '', status: 'active', page: 1 })
+// El disponible es el del local elegido, o la suma con «Todos» (spec 017). El precio es de la empresa (A-90).
+const filters = reactive<ProductFilters>({
+  search: '', type: '', status: 'active', page: 1, establishment_id: useEstablishmentStore().defaultFilter,
+})
 const products = ref<Product[]>([])
 const meta = ref<PaginationMeta | null>(null)
 const loading = ref(false)
@@ -83,7 +88,7 @@ onMounted(() => {
     </div>
   </div>
 
-  <div class="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+  <div class="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
     <label for="product-search" class="sr-only">Buscar por código o nombre</label>
     <SearchInput id="product-search" v-model="filters.search" placeholder="Buscar por código o nombre" @input="search" @clear="applyFilters" />
     <label for="product-type" class="sr-only">Tipo</label>
@@ -100,6 +105,7 @@ onMounted(() => {
         <option value="all">Todos</option>
       </BaseSelect>
     </template>
+    <EstablishmentFilter id="product-establishment" v-model="filters.establishment_id" @change="applyFilters" />
   </div>
 
   <BaseAlert v-if="error" variant="error" class="mt-4">{{ error }}</BaseAlert>

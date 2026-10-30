@@ -21,8 +21,8 @@ const { useSessionStore } = await import('../session-store')
 
 const session: Session = {
   user: { id: 1, name: 'Ana', email: 'ana@example.com' },
-  platform_admin: false,
-  company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: 'Bodega Ana' },
+  platform_admin: false, establishments: [],
+  company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: 'Bodega Ana', active_establishments_count: 1 },
   role: 'company_admin',
 }
 

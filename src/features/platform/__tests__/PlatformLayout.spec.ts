@@ -14,7 +14,7 @@ describe('PlatformLayout', () => {
       path: '/plataforma/soporte',
       pattern: '/plataforma/:rest(.*)*',
       beforeMount: () => {
-        useSessionStore().session = { user: { id: 1, name: 'Raúl', email: 'r@plataforma.pe' }, platform_admin: true, company: null, role: null }
+        useSessionStore().session = { user: { id: 1, name: 'Raúl', email: 'r@plataforma.pe' }, platform_admin: true, establishments: [], company: null, role: null }
       },
     })
 

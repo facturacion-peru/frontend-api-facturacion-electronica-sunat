@@ -16,12 +16,12 @@ afterEach(() => {
 describe('AlertsView', () => {
   it('muestra stock bajo, próximos a vencer y vencidos con saldo', async () => {
     vi.mocked(inventoryApi.alerts).mockResolvedValue({
-      low_stock: [{ id: 1, code: 'LEC-001', name: 'Leche evaporada', available_stock: '8.000', min_stock: '12.000' }],
+      low_stock: [{ id: 1, code: 'LEC-001', name: 'Leche evaporada', available_stock: '8.000', min_stock: '12.000', establishment: { id: 1, code: '0000', name: 'Principal' } }],
       expiring: [
-        { id: 3, lot_number: 'L-1', product: { id: 2, code: 'YOG-001', name: 'Yogur' }, expires_at: '2026-10-08', days_left: 1, remaining_quantity: '10.000' },
+        { id: 3, lot_number: 'L-1', product: { id: 2, code: 'YOG-001', name: 'Yogur' }, expires_at: '2026-10-08', days_left: 1, remaining_quantity: '10.000', establishment: { id: 1, code: '0000', name: 'Principal' } },
       ],
       expired: [
-        { id: 4, lot_number: 'L-0', product: { id: 2, code: 'YOG-001', name: 'Yogur' }, expires_at: '2026-09-20', days_left: -8, remaining_quantity: '2.000' },
+        { id: 4, lot_number: 'L-0', product: { id: 2, code: 'YOG-001', name: 'Yogur' }, expires_at: '2026-09-20', days_left: -8, remaining_quantity: '2.000', establishment: { id: 1, code: '0000', name: 'Principal' } },
       ],
     })
 

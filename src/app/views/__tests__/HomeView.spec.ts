@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSessionStore } from '@/core/auth/session-store'
 import type { CompanyRole } from '@/core/auth/types'
+import { principal, sessionWith, sucursal } from '@/shared/testing/establishments'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import { summary } from '@/features/dashboard/__tests__/fixtures'
 
@@ -12,6 +13,7 @@ import { summary } from '@/features/dashboard/__tests__/fixtures'
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
 vi.mock('@/features/dashboard/api', () => ({ dashboardApi: { summary: vi.fn<AsyncFn>() } }))
+vi.mock('@/shared/establishments/api', () => ({ establishmentsApi: { list: async () => [principal, sucursal] } }))
 vi.mock('@/features/sunat/components/SunatStatusCard.vue', () => ({ default: { template: '<div data-test="sunat-card" />' } }))
 
 const { dashboardApi } = await import('@/features/dashboard/api')
@@ -21,8 +23,8 @@ function mountAs(role: CompanyRole) {
   return mountWithRouter(HomeView, {
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo' }, role,
+        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: 1 }, role,
       }
     },
   })
@@ -65,5 +67,20 @@ describe('HomeView', () => {
 
     expect(dashboardApi.summary).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('Ventas de hoy')
+  })
+
+  it('017 A-90: con varios locales filtra las cifras por local; con uno solo no hay filtro', async () => {
+    vi.mocked(dashboardApi.summary).mockResolvedValue(summary())
+    const { wrapper } = await mountWithRouter(HomeView, { beforeMount: () => sessionWith([principal, sucursal]) })
+
+    expect(dashboardApi.summary).toHaveBeenLastCalledWith(null)
+    await wrapper.get('#home-establishment').setValue('2')
+    await flushPromises()
+    expect(dashboardApi.summary).toHaveBeenLastCalledWith(2)
+    wrapper.unmount()
+
+    const single = await mountAs('company_admin')
+    expect(single.wrapper.find('#home-establishment').exists()).toBe(false)
+    expect(dashboardApi.summary).toHaveBeenLastCalledWith(null)
   })
 })

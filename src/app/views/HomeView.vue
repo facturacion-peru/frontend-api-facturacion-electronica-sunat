@@ -9,6 +9,8 @@ import TodaySummary from '@/features/dashboard/components/TodaySummary.vue'
 import WeekChart from '@/features/dashboard/components/WeekChart.vue'
 import type { DashboardSummary } from '@/features/dashboard/types'
 import SunatStatusCard from '@/features/sunat/components/SunatStatusCard.vue'
+import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import PilotNotice from '@/shared/ui/PilotNotice.vue'
@@ -16,10 +18,14 @@ import PilotNotice from '@/shared/ui/PilotNotice.vue'
 /**
  * Inicio (spec 011): cómo va el día, qué requiere atención y la venta a un
  * toque. En el celular «Nueva venta» va primero; en escritorio, cuadrícula.
+ * Con varios locales, las cifras son de un local o de «Todos» (spec 017, A-90).
  */
 const session = useSessionStore()
 const firstName = computed(() => session.session?.user.name.split(' ')[0] ?? '')
 const company = computed(() => session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social)
+
+const establishments = useEstablishmentStore()
+const establishmentFilter = ref(establishments.defaultFilter)
 
 const summary = ref<DashboardSummary | null>(null)
 const loading = ref(true)
@@ -32,7 +38,7 @@ async function load() {
   loading.value = true
   failed.value = false
   try {
-    summary.value = await dashboardApi.summary()
+    summary.value = await dashboardApi.summary(establishmentFilter.value)
   } catch {
     failed.value = true
   } finally {
@@ -63,6 +69,10 @@ onMounted(load)
   </div>
 
   <PilotNotice class="mt-4" />
+
+  <div v-if="establishments.multi" class="mt-4 max-w-xs">
+    <EstablishmentFilter id="home-establishment" v-model="establishmentFilter" @change="load" />
+  </div>
 
   <div v-if="loading" class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3" aria-busy="true" aria-label="Cargando el resumen">
     <div v-for="n in 4" :key="n" class="h-40 animate-pulse rounded-2xl bg-subtle" :class="n === 2 || n === 3 ? 'lg:col-span-2' : ''" />

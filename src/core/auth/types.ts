@@ -4,6 +4,8 @@
  * cuya forma protege tests/Feature/Contract/SessionResourceTest.php.
  */
 
+import type { Establishment } from '@/shared/establishments/types'
+
 export type CompanyRole = 'company_admin' | 'seller'
 
 export interface SessionUser {
@@ -17,6 +19,8 @@ export interface SessionCompany {
   ruc: string
   razon_social: string
   nombre_comercial: string | null
+  /** Locales activos de la empresa, aunque el usuario no los tenga todos (spec 017, RF-010). */
+  active_establishments_count: number
 }
 
 export interface Session {
@@ -24,6 +28,8 @@ export interface Session {
   platform_admin: boolean
   company: SessionCompany | null
   role: CompanyRole | null
+  /** Locales donde el usuario puede trabajar (A-87): todos los activos para el administrador. */
+  establishments: Establishment[]
 }
 
 export interface SessionWithToken extends Session {

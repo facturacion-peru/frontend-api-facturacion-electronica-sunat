@@ -3,6 +3,8 @@ import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { useEstablishmentStore } from '@/shared/establishments/store'
+import type { Establishment } from '@/shared/establishments/types'
 import type { SellableProduct } from '../api'
 import { useSaleDraftStore } from '../stores/sale-draft'
 
@@ -13,15 +15,34 @@ import { useSaleDraftStore } from '../stores/sale-draft'
 const galletas: SellableProduct = { id: 1, code: 'GAL-1', name: 'Galletas', type: 'good', unit: 'NIU', sale_price: '2.99', available_stock: '10.000' }
 const azucar: SellableProduct = { id: 2, code: 'AZU-1', name: 'Azúcar', type: 'good', unit: 'KGM', sale_price: '4.20', available_stock: '5.000' }
 
-/** Una «sesión» nueva de la app: Pinia nuevo con el usuario y la empresa dados. */
-function boot(userId = 1, companyId = 1) {
+const principal: Establishment = {
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
+}
+const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal', is_main: false, code_locked: false }
+
+/**
+ * Una «sesión» nueva de la app: Pinia nuevo con el usuario y la empresa dados.
+ * Por defecto, una empresa con un solo local (el principal), como antes de la 017.
+ */
+function boot(userId = 1, companyId = 1, establishments: Establishment[] = [principal]) {
   setActivePinia(createPinia())
   useSessionStore().session = {
-    user: { id: userId, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false,
-    company: { id: companyId, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null }, role: 'seller',
+    user: { id: userId, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, establishments,
+    company: {
+      id: companyId, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: establishments.length,
+    },
+    role: 'seller',
   }
   const draft = useSaleDraftStore()
   draft.load()
+
+  return draft
+}
+
+/** Empresa con dos locales; el vendedor trabaja en `id` (null: aún no eligió). */
+function bootTwo(id: number | null, userId = 1) {
+  const draft = boot(userId, 1, [principal, sucursal])
+  if (id !== null) useEstablishmentStore().choose(id)
 
   return draft
 }
@@ -73,10 +94,10 @@ describe('sale-draft', () => {
   })
 
   it('descarta datos dañados o de otra versión', () => {
-    localStorage.setItem('sunat.sale-draft.1.1', '{no es json')
+    localStorage.setItem('sunat.sale-draft.1.1.1', '{no es json')
     expect(boot().lines).toEqual([])
 
-    localStorage.setItem('sunat.sale-draft.1.1', JSON.stringify({ v: 99, lines: [{ product: galletas, quantity: '1' }] }))
+    localStorage.setItem('sunat.sale-draft.1.1.1', JSON.stringify({ v: 99, lines: [{ product: galletas, quantity: '1' }] }))
     expect(boot().lines).toEqual([])
   })
 
@@ -117,14 +138,14 @@ describe('sale-draft', () => {
     draft.add({ ...galletas, image } as SellableProduct)
     await nextTick()
 
-    expect(localStorage.getItem('sunat.sale-draft.1.1')).not.toContain('img.test')
+    expect(localStorage.getItem('sunat.sale-draft.1.1.1')).not.toContain('img.test')
     expect(draft.lines[0]!.product).toEqual(galletas)
 
     await draft.refresh(async () => ({ ...galletas, image, active: true }) as SellableProduct & { active: boolean })
     await nextTick()
 
     expect(draft.lines[0]!.product).toEqual(galletas)
-    expect(localStorage.getItem('sunat.sale-draft.1.1')).not.toContain('img.test')
+    expect(localStorage.getItem('sunat.sale-draft.1.1.1')).not.toContain('img.test')
   })
 
   describe('comprobante recordado (v1.5, A-60)', () => {
@@ -184,13 +205,13 @@ describe('sale-draft', () => {
     })
 
     it('descarta una preferencia dañada o de otra versión', () => {
-      localStorage.setItem('sunat.sale-preference.1.1', '{no es json')
+      localStorage.setItem('sunat.sale-preference.1.1.1', '{no es json')
       expect(boot().kind).toBe('ticket')
 
-      localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 99, kind: '03', seriesId: 12 }))
+      localStorage.setItem('sunat.sale-preference.1.1.1', JSON.stringify({ v: 99, kind: '03', seriesId: 12 }))
       expect(boot().kind).toBe('ticket')
 
-      localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: 'otro', seriesId: 12 }))
+      localStorage.setItem('sunat.sale-preference.1.1.1', JSON.stringify({ v: 1, kind: 'otro', seriesId: 12 }))
       expect(boot().kind).toBe('ticket')
     })
 
@@ -208,6 +229,123 @@ describe('sale-draft', () => {
       expect(() => draft.remember()).not.toThrow()
       draft.clear()
       expect([draft.kind, draft.seriesId]).toEqual(['03', 12])
+    })
+  })
+
+  describe('por local (spec 017)', () => {
+    it('HU-2 esc. 2: cada local tiene su venta en curso; cambiar y volver la recupera', async () => {
+      const draft = bootTwo(principal.id)
+      draft.add(galletas)
+      await nextTick()
+
+      useEstablishmentStore().choose(sucursal.id)
+      await nextTick()
+      expect(draft.lines).toEqual([])
+      expect(draft.establishmentId).toBe(sucursal.id)
+      draft.add(azucar)
+      await nextTick()
+
+      useEstablishmentStore().choose(principal.id)
+      await nextTick()
+      expect(draft.lines.map((l) => l.product.name)).toEqual(['Galletas'])
+      expect(JSON.parse(localStorage.getItem('sunat.sale-draft.1.1.2')!).lines[0].product.name).toBe('Azúcar')
+    })
+
+    it('cada local conserva su propia clave de idempotencia', async () => {
+      const draft = bootTwo(principal.id)
+      draft.add(galletas)
+      await nextTick()
+      const first = draft.idempotencyKey
+
+      useEstablishmentStore().choose(sucursal.id)
+      await nextTick()
+      expect(draft.idempotencyKey).not.toBe(first)
+
+      useEstablishmentStore().choose(principal.id)
+      await nextTick()
+      expect(draft.idempotencyKey).toBe(first)
+    })
+
+    it('sin local elegido no hay venta en memoria ni se guarda nada', async () => {
+      const draft = bootTwo(null)
+      expect(draft.establishmentId).toBeNull()
+
+      draft.add(galletas)
+      await nextTick()
+      expect(localStorage.length).toBe(0)
+    })
+
+    it('si el local actual deja de valer, la venta queda guardada en su local y no pasa a otro', async () => {
+      const draft = bootTwo(sucursal.id)
+      draft.add(azucar)
+      await nextTick()
+
+      useEstablishmentStore().setAllowed([principal, { ...sucursal, active: false }, { ...sucursal, id: 3, code: '0002' }])
+      await nextTick()
+      expect(draft.establishmentId).toBeNull()
+      expect(draft.lines).toEqual([])
+      expect(localStorage.getItem('sunat.sale-draft.1.1.2')).not.toBeNull()
+    })
+
+    it('A-60: la preferencia de comprobante y serie es por local', async () => {
+      const draft = bootTwo(principal.id)
+      draft.kind = '03'
+      draft.seriesId = 11
+      draft.remember()
+
+      useEstablishmentStore().choose(sucursal.id)
+      await nextTick()
+      expect([draft.kind, draft.seriesId]).toEqual(['ticket', null])
+      draft.kind = '03'
+      draft.seriesId = 21
+      draft.remember()
+
+      expect(JSON.parse(localStorage.getItem('sunat.sale-preference.1.1.1')!)).toMatchObject({ seriesId: 11 })
+      expect(JSON.parse(localStorage.getItem('sunat.sale-preference.1.1.2')!)).toMatchObject({ seriesId: 21 })
+    })
+
+    it('A-91: la venta y la preferencia guardadas por la 0.3.0 pasan al principal', () => {
+      localStorage.setItem('sunat.sale-draft.1.1', JSON.stringify({
+        v: 1, lines: [{ product: galletas, quantity: '2', discount: '' }], kind: 'ticket', seriesId: null, paymentMethod: 'cash',
+        customerName: '', customerDocument: '', documentCustomer: null, idempotencyKey: 'clave-antigua',
+      }))
+      localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
+
+      const draft = boot()
+      expect(draft.lines.map((l) => [l.product.name, l.quantity])).toEqual([['Galletas', '2']])
+      expect(draft.idempotencyKey).toBe('clave-antigua')
+      expect(localStorage.getItem('sunat.sale-draft.1.1')).toBeNull()
+      expect(localStorage.getItem('sunat.sale-draft.1.1.1')).not.toBeNull()
+      expect(localStorage.getItem('sunat.sale-preference.1.1')).toBeNull()
+      expect(JSON.parse(localStorage.getItem('sunat.sale-preference.1.1.1')!)).toMatchObject({ kind: '03', seriesId: 11 })
+    })
+
+    it('la clave de la 0.3.0 no se mueve a otro local que el principal', () => {
+      localStorage.setItem('sunat.sale-draft.1.1', JSON.stringify({ v: 1, lines: [{ product: galletas, quantity: '1', discount: '' }] }))
+
+      expect(bootTwo(sucursal.id).lines).toEqual([])
+      expect(localStorage.getItem('sunat.sale-draft.1.1')).not.toBeNull()
+    })
+
+    it('clearAll borra las ventas de todos los locales del usuario y nada de otro usuario', async () => {
+      bootTwo(principal.id, 12).add(azucar)
+      await nextTick()
+      const draft = bootTwo(principal.id)
+      draft.add(galletas)
+      await nextTick()
+      useEstablishmentStore().choose(sucursal.id)
+      await nextTick()
+      draft.add(azucar)
+      draft.remember()
+      await nextTick()
+      localStorage.setItem('sunat.sale-draft.1.1', '{antigua')
+
+      draft.clearAll()
+
+      expect(draft.lines).toEqual([])
+      expect(Object.keys(localStorage).sort()).toEqual([
+        'sunat.establishment.1.1', 'sunat.establishment.1.12', 'sunat.sale-draft.1.12.1', 'sunat.sale-preference.1.1.2',
+      ])
     })
   })
 })

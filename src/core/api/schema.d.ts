@@ -200,7 +200,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** api/v1/dashboard */
+        /** Invoke dashboard */
         get: operations["getApiV1Dashboard"];
         put?: never;
         post?: never;
@@ -208,6 +208,41 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/establishments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar establishments */
+        get: operations["establishmentIndex"];
+        put?: never;
+        /** Crear establishments */
+        post: operations["establishmentStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/establishments/{establishment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Actualizar establishments */
+        patch: operations["establishmentUpdate"];
         trace?: never;
     };
     "/api/v1/exports/customers": {
@@ -646,7 +681,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Obtener products */
+        /** Stock de los locales que puede leer y el de cada uno (spec 017). */
         get: operations["productShow"];
         put?: never;
         post?: never;
@@ -720,6 +755,23 @@ export interface paths {
         get: operations["stockMovements"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Traslado entre locales (spec 017, HU-3). Se puede sacar stock de un */
+        post: operations["stockStoreTransfer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -887,7 +939,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar series */
+        /** Series de los locales que el usuario puede leer, o de uno (spec 017). */
         get: operations["seriesIndex"];
         put?: never;
         /** Crear series */
@@ -1203,6 +1255,23 @@ export interface paths {
         head?: never;
         /** {user} se resuelve solo entre los miembros de la empresa (AppServiceProvider). */
         patch: operations["userUpdate"];
+        trace?: never;
+    };
+    "/api/v1/users/{user}/establishments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** {user} se resuelve solo entre los miembros de la empresa (AppServiceProvider). */
+        put: operations["establishmentAssign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -1751,7 +1820,9 @@ export interface operations {
     };
     getApiV1Dashboard: {
         parameters: {
-            query?: never;
+            query?: {
+                establishment_id?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1767,6 +1838,139 @@ export interface operations {
             };
             /** @description No autenticado */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    establishmentIndex: {
+        parameters: {
+            query?: {
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    establishmentStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                    name: string;
+                    address: string;
+                    ubigeo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    establishmentUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                establishment: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code?: string;
+                    name?: string;
+                    address?: string;
+                    ubigeo?: string;
+                    active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1824,6 +2028,7 @@ export interface operations {
                 search?: string | null;
                 type?: "good" | "service";
                 status?: "active" | "inactive" | "all";
+                establishment_id?: number;
             };
             header?: never;
             path?: never;
@@ -1862,6 +2067,7 @@ export interface operations {
                 to: string;
                 types?: Record<string, never>[];
                 statuses?: Record<string, never>[];
+                establishment_id?: number;
             };
             header?: never;
             path?: never;
@@ -1911,6 +2117,7 @@ export interface operations {
                     file: string;
                     /** @enum {string} */
                     mode?: "create" | "upsert";
+                    establishment_id?: number | null;
                 };
             };
         };
@@ -2022,7 +2229,9 @@ export interface operations {
     };
     alertIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                establishment_id?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2097,6 +2306,7 @@ export interface operations {
                     /** Format: email */
                     email: string;
                     role: string;
+                    establishment_ids?: number[];
                 };
             };
         };
@@ -2882,6 +3092,7 @@ export interface operations {
                 type?: "good" | "service";
                 status?: "active" | "inactive" | "all";
                 page?: number;
+                establishment_id?: number;
             };
             header?: never;
             path?: never;
@@ -3078,6 +3289,7 @@ export interface operations {
                     /** Format: decimal */
                     unit_cost?: string | null;
                     reference?: string | null;
+                    establishment_id?: number;
                 };
             };
         };
@@ -3199,7 +3411,10 @@ export interface operations {
     };
     stockLots: {
         parameters: {
-            query?: never;
+            query?: {
+                include_empty?: boolean;
+                establishment_id?: number;
+            };
             header?: never;
             path: {
                 product: number;
@@ -3233,7 +3448,10 @@ export interface operations {
     };
     stockMovements: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                establishment_id?: number;
+            };
             header?: never;
             path: {
                 product: number;
@@ -3265,6 +3483,57 @@ export interface operations {
             };
         };
     };
+    stockStoreTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    from_establishment_id: number;
+                    to_establishment_id: number;
+                    /** Format: decimal */
+                    quantity: string;
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     salesDocumentIndex: {
         parameters: {
             query?: {
@@ -3273,6 +3542,7 @@ export interface operations {
                 document_type?: string;
                 status?: string;
                 customer?: string | null;
+                establishment_id?: number;
                 page?: number;
             };
             header?: never;
@@ -3317,6 +3587,7 @@ export interface operations {
                     idempotency_key: string;
                     document_type: string;
                     series_id?: number | null;
+                    establishment_id?: number | null;
                     customer_id?: number | null;
                     payment_method: string;
                     lines: {
@@ -3682,7 +3953,9 @@ export interface operations {
     };
     seriesIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                establishment_id?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3725,6 +3998,7 @@ export interface operations {
                     document_type: string;
                     code: string;
                     last_number?: number;
+                    establishment_id?: number | null;
                 };
             };
         };
@@ -4016,6 +4290,7 @@ export interface operations {
                 status?: string;
                 payment_method?: string;
                 seller_id?: number;
+                establishment_id?: number;
                 page?: number;
             };
             header?: never;
@@ -4058,6 +4333,7 @@ export interface operations {
             content: {
                 "application/json": {
                     idempotency_key: string;
+                    establishment_id?: number | null;
                     payment_method: string;
                     customer_name?: string | null;
                     customer_document?: string | null;
@@ -4472,6 +4748,53 @@ export interface operations {
                 "application/json": {
                     role?: string;
                     active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    establishmentAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    establishment_ids: number[];
                 };
             };
         };

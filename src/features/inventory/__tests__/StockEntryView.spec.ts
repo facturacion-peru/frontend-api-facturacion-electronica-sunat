@@ -36,6 +36,7 @@ beforeEach(() => {
     lot: {
       id: 1, lot_number: 'L-1', received_at: '2026-09-28', expires_at: null, expired: false, initial_quantity: '4.000',
       remaining_quantity: '4.000', reference: null, created_by: null, created_at: null,
+      establishment: { id: 1, code: '0000', name: 'Principal' },
     },
     productStock: '40.000',
   })

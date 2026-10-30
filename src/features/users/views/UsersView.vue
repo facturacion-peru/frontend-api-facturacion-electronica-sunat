@@ -4,16 +4,19 @@ import { onMounted, ref } from 'vue'
 import { ApiError } from '@/core/api/errors'
 import { useSessionStore } from '@/core/auth/session-store'
 import type { CompanyRole } from '@/core/auth/types'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import { usersApi } from '../api'
+import AssignEstablishmentsDialog from '../components/AssignEstablishmentsDialog.vue'
 import InviteUserDialog from '../components/InviteUserDialog.vue'
 import { roleLabels, type CompanyUser, type PendingInvitation } from '../types'
 
 const session = useSessionStore()
+const establishments = useEstablishmentStore()
 
 const users = ref<CompanyUser[]>([])
 const invitations = ref<PendingInvitation[]>([])
@@ -22,6 +25,8 @@ const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 const busyId = ref<string | null>(null)
 const inviteOpen = ref(false)
+const assigning = ref<CompanyUser | null>(null)
+const assignOpen = ref(false)
 
 const dateFormat = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -65,12 +70,34 @@ function toggleActive(user: CompanyUser) {
   )
 }
 
+/** «Principal, Sucursal Centro»: los nombres salen de la lista completa (también inactivos). */
+function establishmentNames(user: CompanyUser): string {
+  const ids = user.establishment_ids ?? []
+  return establishments.filterOptions
+    .filter((e) => ids.includes(e.id))
+    .map((e) => e.name)
+    .join(', ')
+}
+
+function editEstablishments(user: CompanyUser) {
+  assigning.value = user
+  assignOpen.value = true
+}
+
+function onEstablishmentsSaved(user: CompanyUser) {
+  notice.value = `Locales de ${user.name} actualizados.`
+  load()
+}
+
 function onInvited() {
   notice.value = 'Invitación enviada.'
   load()
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  establishments.loadReadable()
+})
 </script>
 
 <template>
@@ -96,6 +123,11 @@ onMounted(load)
             <BaseBadge v-if="user.id === session.session?.user.id" variant="info">Tú</BaseBadge>
           </p>
           <p class="truncate text-sm text-ink-muted">{{ user.email }}</p>
+          <p v-if="establishments.multi" class="text-xs text-ink-muted" data-test="user-establishments">
+            <template v-if="user.role === 'company_admin'">Todos los locales</template>
+            <BaseBadge v-else-if="!establishmentNames(user)" variant="warning">Sin local asignado</BaseBadge>
+            <template v-else>Locales: {{ establishmentNames(user) }}</template>
+          </p>
           <p class="text-xs text-ink-muted">
             Último acceso: {{ user.last_login_at ? dateFormat.format(new Date(user.last_login_at)) : 'nunca' }}
           </p>
@@ -110,6 +142,15 @@ onMounted(load)
           >
             <option v-for="(label, value) in roleLabels" :key="value" :value="value">{{ label }}</option>
           </BaseSelect>
+          <BaseButton
+            v-if="establishments.multi && user.role === 'seller'"
+            variant="secondary"
+            :disabled="busyId !== null"
+            data-test="edit-establishments"
+            @click="editEstablishments(user)"
+          >
+            Locales
+          </BaseButton>
           <BaseButton
             :variant="user.active ? 'secondary' : 'primary'"
             :loading="busyId === `active-${user.id}`"
@@ -158,4 +199,5 @@ onMounted(load)
   </template>
 
   <InviteUserDialog v-model:open="inviteOpen" @invited="onInvited" />
+  <AssignEstablishmentsDialog v-model:open="assignOpen" :user="assigning" @saved="onEstablishmentsSaved" />
 </template>

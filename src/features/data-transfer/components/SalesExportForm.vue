@@ -2,6 +2,8 @@
 import { reactive, ref } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
+import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
@@ -37,6 +39,7 @@ const form = reactive({
   types: kinds.map((k) => k.value),
   status: 'all' as keyof typeof statusGroups,
   format: 'xlsx' as ExportFormat,
+  establishment_id: useEstablishmentStore().defaultFilter,
 })
 const downloading = ref(false)
 const error = ref<string | null>(null)
@@ -66,6 +69,7 @@ async function download() {
       types: kinds.map((k) => k.value).filter((k) => form.types.includes(k)),
       statuses: [...statusGroups[form.status]],
       format: form.format,
+      establishment_id: form.establishment_id,
     })
     done.value = true
   } catch (e) {
@@ -108,6 +112,8 @@ async function download() {
         </BaseSelect>
       </FormField>
     </div>
+
+    <EstablishmentFilter id="sales-export-establishment" v-model="form.establishment_id" show-label />
 
     <BaseAlert v-if="error" variant="error">{{ error }}</BaseAlert>
     <BaseAlert v-else-if="done" variant="success">Descarga lista. La hoja «documentos» trae una fila por venta y «lineas», una por producto vendido.</BaseAlert>

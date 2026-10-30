@@ -4,9 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import { useApiForm } from '@/shared/composables/useApiForm'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import { formatQuantity, today } from '@/shared/utils/format'
 import { inventoryApi } from '../api'
@@ -22,6 +24,9 @@ const route = useRoute()
 const router = useRouter()
 const { load: loadCatalogs, unitLabel, allowsDecimals } = useInventoryCatalogs()
 const { submitting, generalError, fieldError, submit } = useApiForm()
+const establishments = useEstablishmentStore()
+/** Dónde entra la mercadería (spec 017, HU-3 esc. 1): por defecto, el local actual. */
+const establishmentId = ref<number | null>(establishments.current?.id ?? establishments.allowed[0]?.id ?? null)
 
 const productId = Number(route.params.id)
 const product = ref<Product | null>(null)
@@ -42,6 +47,8 @@ onMounted(async () => {
 
 async function onSubmit() {
   const payload: StockEntryPayload = { quantity: form.value.quantity }
+  // Las escrituras mandan siempre el local; con uno solo es ese (spec 017).
+  if (establishmentId.value) payload.establishment_id = establishmentId.value
   if (product.value?.tracks_expiry) payload.expires_at = form.value.expires_at
   if (form.value.received_at && form.value.received_at !== today()) payload.received_at = form.value.received_at
   if (form.value.lot_number) payload.lot_number = form.value.lot_number
@@ -67,6 +74,18 @@ async function onSubmit() {
 
     <form class="mt-4 max-w-md space-y-4 rounded-xl border border-line bg-surface p-5" novalidate @submit.prevent="onSubmit">
       <BaseAlert v-if="generalError || fieldError('product')" variant="error">{{ fieldError('product') ?? generalError }}</BaseAlert>
+
+      <FormField
+        v-if="establishments.multi"
+        v-slot="{ describedBy, invalid }"
+        label="Local"
+        for="entry-establishment"
+        :error="fieldError('establishment_id')"
+      >
+        <BaseSelect id="entry-establishment" v-model="establishmentId" :invalid="invalid" :aria-describedby="describedBy">
+          <option v-for="establishment in establishments.allowed" :key="establishment.id" :value="establishment.id">{{ establishment.name }}</option>
+        </BaseSelect>
+      </FormField>
 
       <FormField v-slot="{ describedBy, invalid }" label="Cantidad recibida" for="quantity" :error="fieldError('quantity')">
         <BaseInput

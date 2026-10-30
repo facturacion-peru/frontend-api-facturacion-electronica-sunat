@@ -3,6 +3,8 @@ import { useMediaQuery } from '@vueuse/core'
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
+import EstablishmentSwitcher from '@/shared/establishments/EstablishmentSwitcher.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
@@ -23,7 +25,13 @@ import { ANONYMOUS_RECEIPT_LIMIT, type IssuingAvailability, type SaleKind } from
  * volver (A-58). En pantallas anchas, catálogo y carrito en dos columnas; en
  * el celular, una barra fija abre el carrito como hoja (A-56). Los importes
  * son una vista previa: el servidor guarda los suyos.
+ *
+ * Todo es del local actual (spec 017): el catálogo, las series, el stock y la
+ * venta en curso. Cambiar de local carga la venta guardada en el otro y la
+ * cobra allí; sin local elegido no hay catálogo ni carrito.
  */
+const establishments = useEstablishmentStore()
+const switcher = useTemplateRef<InstanceType<typeof EstablishmentSwitcher>>('switcher')
 const draft = useSaleDraftStore()
 // Antes de pintar: el carrito y sus hijos ya ven la venta restaurada.
 draft.load()
@@ -120,20 +128,60 @@ function validateRestoredKind() {
   }
 }
 
-onMounted(async () => {
+/**
+ * Local para las lecturas (catálogo, series y precios). Con un solo local se
+ * omite y las peticiones son las de antes (RF-010); el cobro lo manda siempre.
+ */
+const readEstablishment = computed(() => (establishments.multi ? draft.establishmentId : null))
+
+/** Local para el que ya se pidieron series y precios: evita repetirlo si cambia dos veces seguidas. */
+let preparedFor: number | null = null
+
+/** Precios y disponible de la venta guardada, y las series del local (spec 012 RF-002; spec 017). */
+async function prepare(establishmentId: number) {
+  if (preparedFor === establishmentId) return
+  preparedFor = establishmentId
+  removedNotice.value = null
+  availability.value = null
+  availabilityError.value = false
   const refreshing = draft.lines.length
-    ? draft.refresh(salesApi.getProduct).then((removed) => {
+    ? draft.refresh((id) => salesApi.getProduct(id, readEstablishment.value)).then((removed) => {
         if (removed.length) removedNotice.value = `Se quitó del carrito: ${removed.join(', ')}. Ya no está disponible para la venta.`
       })
     : Promise.resolve()
 
   try {
-    availability.value = await salesDocumentsApi.availability()
+    const result = await salesDocumentsApi.availability(readEstablishment.value)
+    if (preparedFor !== establishmentId) return
+    availability.value = result
   } catch {
     availabilityError.value = true
   }
   validateRestoredKind()
   await refreshing
+}
+
+// Otro local: la venta guardada allí ya está cargada (sale-draft); faltan sus series y precios.
+watch(
+  () => draft.establishmentId,
+  (id) => {
+    error.value = null
+    if (id) prepare(id)
+    else preparedFor = null
+  },
+)
+
+/** Pide elegir si el local recordado ya no vale (HU-2, esc. 5) o aún no hay uno. */
+async function refreshEstablishments() {
+  await establishments.reload().catch(() => {
+    // Sin red: se sigue con los locales de la sesión.
+  })
+  if (establishments.needsChoice) switcher.value?.open()
+}
+
+onMounted(async () => {
+  await refreshEstablishments()
+  if (draft.establishmentId) await prepare(draft.establishmentId)
 })
 
 function add(product: SellableProduct) {
@@ -147,6 +195,11 @@ function clearCart() {
   error.value = null
 }
 
+/** La venta se cobra en el local donde se armó: el de su clave guardada (spec 017). */
+function establishmentField() {
+  return draft.establishmentId ? { establishment_id: draft.establishmentId } : {}
+}
+
 async function charge() {
   error.value = null
   draft.lines.forEach((l) => (l.error = null))
@@ -156,6 +209,7 @@ async function charge() {
   try {
     if (draft.kind !== 'ticket') {
       const document = await salesDocumentsApi.issue({
+        ...establishmentField(),
         idempotency_key: draft.idempotencyKey,
         document_type: draft.kind,
         series_id: draft.seriesId,
@@ -168,6 +222,7 @@ async function charge() {
     }
 
     const ticket = await salesApi.issue({
+      ...establishmentField(),
       idempotency_key: draft.idempotencyKey,
       payment_method: draft.paymentMethod,
       ...(draft.customerName && { customer_name: draft.customerName }),
@@ -180,6 +235,13 @@ async function charge() {
     // Un 422 no creó nada: la venta corregida es otra operación con otra clave.
     if (e.status === 422) draft.idempotencyKey = crypto.randomUUID()
     showErrors(e)
+    // El local se desactivó o le quitaron el local al vendedor: se vuelve a preguntar.
+    if (e.fieldErrors.establishment_id) await refreshEstablishments()
+    // La serie ya no es de un local donde trabaja: se vuelven a pedir las del local.
+    if (e.fieldErrors.series_id && draft.establishmentId) {
+      preparedFor = null
+      await prepare(draft.establishmentId)
+    }
   } finally {
     submitting.value = false
   }
@@ -224,19 +286,36 @@ const cartProps = computed(() => ({
 <template>
   <!-- Escritorio: ocupa el alto que da el layout (meta.fullWidth); catálogo y carrito se desplazan por separado. -->
   <div class="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" :class="!isDesktop && draft.count ? 'pb-24' : ''">
-    <h1 class="text-2xl font-semibold tracking-tight">Vender</h1>
-
-    <BaseAlert v-if="removedNotice" variant="warning" class="mt-4">{{ removedNotice }}</BaseAlert>
-
-    <div class="mt-4 grid grid-cols-1 gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_24rem] 2xl:grid-cols-[minmax(0,1fr)_26rem]">
-      <div class="lg:-mx-2 lg:min-h-0 lg:overflow-y-auto lg:px-2">
-        <ProductCatalog ref="catalog" :in-cart="inCart" @add="add" />
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <h1 class="text-2xl font-semibold tracking-tight">Vender</h1>
+      <div class="min-w-0 max-w-full sm:max-w-xs" data-test="sale-establishment">
+        <EstablishmentSwitcher ref="switcher" :draft-count="draft.count" />
       </div>
-
-      <aside v-if="isDesktop" class="min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-xs">
-        <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" @series-changed="onSeriesChanged" />
-      </aside>
     </div>
+
+    <BaseAlert v-if="establishments.noneAllowed" variant="warning" class="mt-4" data-test="no-establishment">
+      No tienes un local asignado. Pide al administrador que te asigne uno.
+    </BaseAlert>
+
+    <div v-else-if="!draft.establishmentId" class="mt-4 rounded-2xl border border-line bg-surface p-6 text-center" data-test="choose-establishment">
+      <p class="font-medium">¿En qué local vas a vender?</p>
+      <p class="mt-1 text-sm text-ink-muted">El catálogo, las series y el stock son de cada local.</p>
+      <BaseButton class="mt-4" @click="switcher?.open()">Elegir local</BaseButton>
+    </div>
+
+    <template v-else>
+      <BaseAlert v-if="removedNotice" variant="warning" class="mt-4">{{ removedNotice }}</BaseAlert>
+
+      <div class="mt-4 grid grid-cols-1 gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_24rem] 2xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div class="lg:-mx-2 lg:min-h-0 lg:overflow-y-auto lg:px-2">
+          <ProductCatalog ref="catalog" :in-cart="inCart" :establishment-id="readEstablishment" @add="add" />
+        </div>
+
+        <aside v-if="isDesktop" class="min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-xs">
+          <SaleCart v-bind="cartProps" @charge="charge" @clear="confirmClear = true" @kind-changed="onKindChanged" @series-changed="onSeriesChanged" />
+        </aside>
+      </div>
+    </template>
 
     <!-- Celular: barra fija con cantidad y total; abre el carrito como hoja. -->
     <div

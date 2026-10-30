@@ -39,7 +39,7 @@ const BYTES = new Uint8Array([0x1b, 0x40])
 const ticket = {
   id: 9, number: 9, display_number: 'T-000009', status: 'issued', legal_notice: 'Documento interno — no es comprobante de pago',
   seller: null, customer_name: null, customer_label: 'Cliente varios', customer_document: null, payment_method: 'cash',
-  subtotal: '2.99', discount_total: '0.00', total: '2.99', issued_at: '2026-10-06T15:00:00Z', voided_at: null, void_reason: null, lines: [],
+  subtotal: '2.99', discount_total: '0.00', total: '2.99', issued_at: '2026-10-06T15:00:00Z', voided_at: null, void_reason: null, establishment: { id: 1, code: '0000', name: 'Principal' }, lines: [],
 } as Ticket
 
 const salesDocument = {

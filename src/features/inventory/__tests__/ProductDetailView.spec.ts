@@ -49,10 +49,12 @@ const product: Product = {
 const lot: Lot = {
   id: 3, lot_number: 'L-1', received_at: '2026-09-18', expires_at: '2026-10-08', expired: false, initial_quantity: '10.000',
   remaining_quantity: '10.000', unit_cost: '4.2000', reference: null, created_by: { id: 1, name: 'Ana' }, created_at: null,
+  establishment: { id: 1, code: '0000', name: 'Principal' },
 }
 const movement: Movement = {
   id: 11, type: 'entry', quantity: '10.000', lot: { id: 3, lot_number: 'L-1' }, lot_balance_after: '10.000', product_balance_after: '10.000',
   reason: null, note: null, source: null, reverses_id: null, reversed: false, created_by: { id: 1, name: 'Ana' }, created_at: '2026-09-18T10:00:00Z',
+  establishment: { id: 1, code: '0000', name: 'Principal' }, transfer: null,
 }
 
 async function mountAs(role: 'company_admin' | 'seller', query = '') {
@@ -61,8 +63,8 @@ async function mountAs(role: 'company_admin' | 'seller', query = '') {
     pattern: '/productos/:id',
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null }, role,
+        user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role,
       }
     },
   })

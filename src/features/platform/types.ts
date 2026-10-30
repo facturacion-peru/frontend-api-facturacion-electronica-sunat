@@ -27,6 +27,8 @@ export interface PlatformCompanyDetail extends PlatformCompany {
   email: string
   phone: string | null
   fiscal_address: { address: string; ubigeo: string; district: string | null } | null
+  /** Locales de la empresa, activos o no (spec 017); sin datos de venta por local. */
+  establishments_count: number
   admin: { name: string | null; email: string | null; invitation: 'accepted' | 'pending' | 'expired' | 'none' }
   active_users: number
   last_activity_at: string | null
@@ -59,13 +61,7 @@ export interface LegalDataForm {
   fiscal_address: { address: string; ubigeo: string }
 }
 
-export interface Ubigeo {
-  id: string
-  nombre: string
-  provincia: string
-  region: string
-  ubigeo_completo: string
-}
+export type { Ubigeo } from '@/shared/ui/ubigeo'
 
 /** Refleja App\Http\Resources\PlatformSalesDocumentResource: solo datos de envío (A-37). */
 export interface SupportDocument {

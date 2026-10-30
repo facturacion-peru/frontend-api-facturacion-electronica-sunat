@@ -6,6 +6,8 @@ import { ApiError } from '@/core/api/errors'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseDialog from '@/shared/ui/BaseDialog.vue'
+import BaseSelect from '@/shared/ui/BaseSelect.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import { formatQuantity } from '@/shared/utils/format'
 import { dataTransferApi } from '../api'
 import type { ImportKind, ImportMode, ImportPreview, ImportResult, ImportValue } from '../types'
@@ -32,6 +34,9 @@ const COLUMN_LABELS: Record<string, string> = {
 
 const kind = ref<ImportKind>('products')
 const mode = ref<ImportMode>('create')
+const establishments = useEstablishmentStore()
+/** Local del stock inicial de los productos (spec 017): por defecto, el principal. */
+const stockEstablishment = ref<number | null>(establishments.allowed.find((e) => e.is_main)?.id ?? null)
 const file = ref<File | null>(null)
 const preview = ref<ImportPreview | null>(null)
 const result = ref<ImportResult | null>(null)
@@ -92,11 +97,12 @@ async function review() {
   busy.value = true
   error.value = null
   try {
-    preview.value = await dataTransferApi.preview(kind.value, file.value, mode.value)
+    const local = kind.value === 'products' && establishments.multi ? stockEstablishment.value : null
+    preview.value = await dataTransferApi.preview(kind.value, file.value, mode.value, local)
     shown.value = PAGE
     now.value = Date.now()
   } catch (e) {
-    error.value = e instanceof ApiError ? (e.field('file') ?? e.field('mode') ?? e.message) : 'No se pudo revisar el archivo.'
+    error.value = e instanceof ApiError ? (e.field('file') ?? e.field('mode') ?? e.field('establishment_id') ?? e.message) : 'No se pudo revisar el archivo.'
   } finally {
     busy.value = false
   }
@@ -227,6 +233,13 @@ function restart(clearError = true) {
       <div class="space-y-1.5">
         <label for="import-file" class="block text-sm font-medium text-ink">Archivo (XLSX o CSV)</label>
         <input id="import-file" type="file" :accept="ACCEPT" class="block w-full text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-surface file:px-4 file:text-ink" @change="onFile" />
+      </div>
+
+      <div v-if="kind === 'products' && establishments.multi" class="space-y-1.5">
+        <label for="import-establishment" class="block text-sm font-medium text-ink">Local del stock inicial</label>
+        <BaseSelect id="import-establishment" v-model="stockEstablishment">
+          <option v-for="establishment in establishments.allowed" :key="establishment.id" :value="establishment.id">{{ establishment.name }}</option>
+        </BaseSelect>
       </div>
 
       <fieldset>

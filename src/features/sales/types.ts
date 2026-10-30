@@ -1,5 +1,7 @@
 /** Refleja App\Http\Resources\TicketResource (tests/Feature/Contract/TicketResourceTest). */
 
+import type { EstablishmentRef } from '@/shared/establishments/types'
+
 export type PaymentMethod = 'cash' | 'card' | 'yape_plin' | 'transfer'
 export type TicketStatus = 'issued' | 'voided'
 
@@ -33,7 +35,11 @@ export interface Ticket {
   voided_at: string | null
   void_reason: string | null
   lines?: TicketLine[]
+  /** Local de la venta (spec 017); el detalle trae también la dirección. */
+  establishment: SaleEstablishment
 }
+
+export type SaleEstablishment = EstablishmentRef & { address?: string }
 
 export interface TicketTotals {
   count: number
@@ -47,6 +53,8 @@ export interface TicketFilters {
   status: '' | TicketStatus
   payment_method: '' | PaymentMethod
   page: number
+  /** `null`: los locales que puede leer (spec 017). */
+  establishment_id: number | null
 }
 
 export interface NewTicketPayload {
@@ -55,6 +63,8 @@ export interface NewTicketPayload {
   customer_name?: string
   customer_document?: string
   lines: { product_id: number; quantity: string; discount?: string }[]
+  /** El local de la venta en curso (spec 017). */
+  establishment_id?: number
 }
 
 export const paymentLabels: Record<PaymentMethod, string> = {
@@ -129,6 +139,8 @@ export interface SalesDocument {
   environment_notice: string
   issued_at: string
   seller: { id: number; name: string } | null
+  /** El de su serie (spec 017); el detalle trae también la dirección. */
+  establishment: SaleEstablishment
   payment_method: PaymentMethod
   currency: 'PEN'
   customer: { id: number | null; document_type: string; document_number: string; name: string; address: string | null }
@@ -178,6 +190,8 @@ export interface SalesDocumentFilters {
   status: '' | SalesDocumentStatus
   customer: string
   page: number
+  /** `null`: los locales que puede leer (spec 017). */
+  establishment_id: number | null
 }
 
 export interface NewSalesDocumentPayload {
@@ -187,13 +201,16 @@ export interface NewSalesDocumentPayload {
   customer_id?: number | null
   payment_method: PaymentMethod
   lines: { product_id: number; quantity: string; discount?: string }[]
+  /** Si viene con `series_id`, tiene que ser el local de la serie (spec 017). */
+  establishment_id?: number
 }
 
 /** Lo mínimo del estado SUNAT y de las series que necesita «Vender» (endpoints de la 004). */
 export interface IssuingAvailability {
   can_issue: boolean
   status_label: string
-  series: { id: number; document_type: DocumentType; code: string; active: boolean }[]
+  /** Solo las del local de la venta (spec 017). */
+  series: { id: number; document_type: DocumentType; code: string; active: boolean; establishment_id: number }[]
 }
 
 export const documentStatusVariant: Record<SalesDocumentStatus, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {

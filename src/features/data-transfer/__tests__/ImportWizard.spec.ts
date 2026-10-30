@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 
 import { ApiError } from '@/core/api/errors'
+import { principal, sessionWith, sucursal } from '@/shared/testing/establishments'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import type { ImportPreview } from '../types'
 
@@ -36,9 +37,9 @@ async function chooseFile(wrapper: Awaited<ReturnType<typeof mountWithRouter>>['
   await input.trigger('change')
 }
 
-async function reviewWith(result: ImportPreview, mode?: 'create' | 'upsert') {
+async function reviewWith(result: ImportPreview, mode?: 'create' | 'upsert', beforeMount?: () => void) {
   vi.mocked(dataTransferApi.preview).mockResolvedValue(result)
-  const { wrapper } = await mountWithRouter(ImportWizard)
+  const { wrapper } = await mountWithRouter(ImportWizard, { beforeMount })
   if (mode) await wrapper.find(`input[name="import-mode"][value="${mode}"]`).setValue(true)
   await chooseFile(wrapper)
   await wrapper.find('form').trigger('submit')
@@ -77,7 +78,7 @@ describe('ImportWizard', () => {
   it('paso 2: envía el archivo y muestra resumen, cambios campo por campo y avisos', async () => {
     const wrapper = await reviewWith(preview(), 'upsert')
 
-    expect(dataTransferApi.preview).toHaveBeenCalledWith('products', file, 'upsert')
+    expect(dataTransferApi.preview).toHaveBeenCalledWith('products', file, 'upsert', null)
     expect(wrapper.find('[data-test="import-summary"]').text()).toMatch(/1\s*nuevo.*1\s*con cambios.*1\s*sin cambios/s)
     const update = wrapper.find('[data-test="import-change-2"]')
     expect(update.text()).toContain('ACE-1')
@@ -157,5 +158,29 @@ describe('ImportWizard', () => {
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Falta la columna «precio_venta»')
     expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+  })
+
+  it('017 A-90: con varios locales el stock inicial va al local elegido, por defecto el principal', async () => {
+    vi.mocked(dataTransferApi.preview).mockResolvedValue(preview())
+    const { wrapper } = await mountWithRouter(ImportWizard, { beforeMount: () => sessionWith([principal, sucursal]) })
+
+    expect((wrapper.get('#import-establishment').element as HTMLSelectElement).value).toBe('1')
+    await wrapper.get('#import-establishment').setValue('2')
+    await chooseFile(wrapper)
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(dataTransferApi.preview).toHaveBeenCalledWith('products', file, 'create', 2)
+  })
+
+  it('el local no se pide al importar clientes ni con un solo local', async () => {
+    const multi = await mountWithRouter(ImportWizard, { beforeMount: () => sessionWith([principal, sucursal]) })
+    await multi.wrapper.find('input[name="import-kind"][value="customers"]').setValue(true)
+    expect(multi.wrapper.find('#import-establishment').exists()).toBe(false)
+    multi.wrapper.unmount()
+
+    await reviewWith(preview(), undefined, () => sessionWith([principal]))
+    expect(document.getElementById('import-establishment')).toBeNull()
+    expect(dataTransferApi.preview).toHaveBeenLastCalledWith('products', file, 'create', null)
   })
 })

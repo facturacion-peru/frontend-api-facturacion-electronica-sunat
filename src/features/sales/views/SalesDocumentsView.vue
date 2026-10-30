@@ -4,6 +4,8 @@ import { useRoute } from 'vue-router'
 
 import { ApiError } from '@/core/api/errors'
 import type { PaginationMeta } from '@/core/api/types'
+import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
@@ -18,8 +20,12 @@ import { salesDocumentsApi } from '../api'
 import SalesTabs from '../components/SalesTabs.vue'
 import { correctionVariant, documentStatusVariant, type SalesDocument, type SalesDocumentFilters, type SalesDocumentStatus } from '../types'
 
-/** Comprobantes de la empresa, todos visibles para todos (A-32, HU-6). */
+/**
+ * Comprobantes de la empresa (A-32, HU-6). Con varios locales, el vendedor ve
+ * los de sus locales y el administrador filtra por local (spec 017, A-87).
+ */
 const route = useRoute()
+const establishments = useEstablishmentStore()
 
 /** Estados que se aceptan en `?status=` (enlaces del Inicio, spec 011). */
 const STATUSES: SalesDocumentStatus[] = ['pending', 'sent', 'accepted', 'observed', 'rejected', 'discarded']
@@ -31,6 +37,7 @@ const filters = reactive<SalesDocumentFilters>({
   status: STATUSES.includes(fromUrl) ? fromUrl : '',
   customer: '',
   page: 1,
+  establishment_id: establishments.defaultFilter,
 })
 const documents = ref<SalesDocument[]>([])
 const meta = ref<PaginationMeta | null>(null)
@@ -90,7 +97,7 @@ onMounted(load)
     </span>
   </BaseAlert>
 
-  <form class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4 lg:grid-cols-6" @submit.prevent="apply">
+  <form class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4" :class="establishments.multi ? 'lg:grid-cols-7' : 'lg:grid-cols-6'" @submit.prevent="apply">
     <FormField label="Desde" for="docs-from"><BaseInput id="docs-from" v-model="filters.from" type="date" /></FormField>
     <FormField label="Hasta" for="docs-to"><BaseInput id="docs-to" v-model="filters.to" type="date" /></FormField>
     <FormField label="Tipo" for="docs-type">
@@ -111,6 +118,7 @@ onMounted(load)
       </BaseSelect>
     </FormField>
     <FormField label="Cliente" for="docs-customer" class="col-span-2 lg:col-span-1"><SearchInput id="docs-customer" v-model="filters.customer" placeholder="Documento o nombre" @clear="apply" /></FormField>
+    <EstablishmentFilter id="docs-establishment" v-model="filters.establishment_id" show-label class="col-span-2 lg:col-span-1" />
     <div class="col-span-2 flex items-end lg:col-span-1"><BaseButton type="submit" block :loading="loading">Filtrar</BaseButton></div>
   </form>
 
@@ -131,7 +139,7 @@ onMounted(load)
               </BaseBadge>
             </span>
             <span class="block truncate text-sm text-ink-muted">
-              {{ formatDateTime(doc.issued_at) }} · {{ doc.customer.name }} · {{ doc.seller?.name }}
+              {{ formatDateTime(doc.issued_at) }} · {{ doc.customer.name }} · {{ doc.seller?.name }}<span v-if="establishments.multi" data-test="row-establishment"> · {{ doc.establishment.name }}</span>
             </span>
           </span>
           <span class="font-medium">{{ formatMoney(doc.total) }}</span>

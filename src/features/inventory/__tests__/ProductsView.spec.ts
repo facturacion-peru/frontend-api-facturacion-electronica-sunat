@@ -26,8 +26,8 @@ async function mountAs(role: 'company_admin' | 'seller') {
   const mounted = await mountWithRouter(ProductsView)
   const session = useSessionStore()
   session.session = {
-    user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false,
-    company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null }, role,
+    user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
+    company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role,
   }
   await flushPromises()
 
@@ -78,7 +78,7 @@ describe('ProductsView', () => {
     vi.advanceTimersByTime(350)
     await flushPromises()
 
-    expect(inventoryApi.listProducts).toHaveBeenLastCalledWith({ search: 'lec', type: '', status: 'active', page: 1 })
+    expect(inventoryApi.listProducts).toHaveBeenLastCalledWith({ search: 'lec', type: '', status: 'active', page: 1, establishment_id: null })
   })
 
   it('el vendedor no ve el alta ni el filtro de desactivados', async () => {

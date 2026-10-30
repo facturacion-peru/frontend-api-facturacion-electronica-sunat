@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { clearToken } from '@/core/api/token-storage'
 import { useSessionStore } from '@/core/auth/session-store'
+import type { Establishment } from '@/shared/establishments/types'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import AppLayout from '../AppLayout.vue'
 
@@ -10,14 +11,22 @@ import AppLayout from '../AppLayout.vue'
  * Spec 010 · HU-6: barra lateral. En jsdom no hay matchMedia, así que el
  * layout se comporta como en el celular: el panel empieza cerrado.
  */
-async function mountLayout(path = '/') {
+const principal: Establishment = {
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true,
+}
+const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', is_main: false }
+
+async function mountLayout(path = '/', establishments: Establishment[] = [principal]) {
   const result = await mountWithRouter(AppLayout, {
     path,
     pattern: '/:rest(.*)*',
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo' }, role: 'company_admin',
+        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments,
+        company: {
+          id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: establishments.length,
+        },
+        role: 'company_admin',
       }
     },
   })
@@ -41,6 +50,16 @@ describe('AppLayout', () => {
     expect(sidebar.text()).toContain('Administrador')
     expect(sidebar.find('[aria-label^="Tema:"]').exists()).toBe(true)
     expect(sidebar.text()).toContain('Cerrar sesión')
+  })
+
+  it('017 RF-010: el local se elige en la barra lateral solo si la empresa tiene varios', async () => {
+    const single = await mountLayout()
+    expect(single.sidebar.find('[data-test="establishment-switcher"]').exists()).toBe(false)
+    expect(single.sidebar.text()).not.toContain('Principal')
+    single.wrapper.unmount()
+
+    const { sidebar } = await mountLayout('/', [principal, sucursal])
+    expect(sidebar.get('[data-test="establishment-switcher"]').text()).toContain('Elegir local')
   })
 
   it('en el celular el panel empieza cerrado e inerte: sus enlaces no reciben foco', async () => {
@@ -87,19 +106,22 @@ describe('AppLayout', () => {
     expect(router.currentRoute.value.name).toBe('login')
   })
 
-  it('012 RF-003 cerrar sesión borra la venta en curso del dispositivo; vencer la sesión no', async () => {
-    const draftKey = 'sunat.sale-draft.1.1'
-    localStorage.setItem(draftKey, '{"v":1}')
+  it('012 RF-003 cerrar sesión borra la venta en curso de todos los locales (017); vencer la sesión no', async () => {
+    const draftKeys = ['sunat.sale-draft.1.1.1', 'sunat.sale-draft.1.1.2']
+    draftKeys.forEach((key) => localStorage.setItem(key, '{"v":1}'))
+    localStorage.setItem('sunat.sale-draft.1.12.1', '{"v":1}')
 
     clearToken() // lo que pasa con un 401
-    expect(localStorage.getItem(draftKey)).not.toBeNull()
+    expect(localStorage.getItem(draftKeys[0]!)).not.toBeNull()
 
     const { sidebar } = await mountLayout()
     vi.spyOn(useSessionStore(), 'logout').mockResolvedValue()
     await sidebar.findAll('button').find((b) => b.text().includes('Cerrar sesión'))!.trigger('click')
     await flushPromises()
 
-    expect(localStorage.getItem(draftKey)).toBeNull()
+    draftKeys.forEach((key) => expect(localStorage.getItem(key)).toBeNull())
+    expect(localStorage.getItem('sunat.sale-draft.1.12.1')).not.toBeNull()
+    localStorage.removeItem('sunat.sale-draft.1.12.1')
   })
 
   it('010 v1.4 la barra se contrae a íconos, conserva los nombres accesibles y se recuerda', async () => {

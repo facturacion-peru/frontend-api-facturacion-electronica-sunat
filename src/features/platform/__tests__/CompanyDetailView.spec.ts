@@ -21,7 +21,7 @@ const company: PlatformCompanyDetail = {
   id: 1, ruc: '20600000013', razon_social: 'Bodega Alfa S.A.C.', nombre_comercial: 'Alfa', active: true, sunat_status: 'validated',
   sunat_status_label: 'Validada', sunat_reason: null, users_count: 3, pending_documents: 2, rejected_documents: 0, created_at: null,
   person_type: 'juridica', tax_regime: 'rmt', tax_regime_label: 'Régimen MYPE Tributario', email: 'contacto@alfa.pe', phone: null,
-  fiscal_address: { address: 'Av. Uno 1', ubigeo: '150101', district: 'Lima / Lima / Lima' },
+  fiscal_address: { address: 'Av. Uno 1', ubigeo: '150101', district: 'Lima / Lima / Lima' }, establishments_count: 2,
   admin: { name: null, email: 'jefe@alfa.pe', invitation: 'expired' }, active_users: 2, last_activity_at: '2026-09-25T18:30:00+00:00',
 }
 
@@ -41,6 +41,8 @@ describe('CompanyDetailView', () => {
     const { wrapper } = await open()
 
     expect(wrapper.find('[data-test="legal"]').text()).toContain('20600000013')
+    // Spec 017: cuántos locales tiene, sin datos de venta por local.
+    expect(wrapper.get('[data-test="establishments-count"]').text()).toBe('2')
     expect(wrapper.find('[data-test="status"]').text()).toContain('Validada')
     expect(wrapper.find('[data-test="status"]').text()).toContain('2 de 3')
     expect(wrapper.find('[data-test="admin"]').text()).toContain('jefe@alfa.pe')
