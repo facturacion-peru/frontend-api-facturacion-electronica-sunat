@@ -9,6 +9,7 @@ import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import PasswordInput from '@/shared/ui/PasswordInput.vue'
 
 const session = useSessionStore()
 const route = useRoute()
@@ -48,10 +49,9 @@ async function onSubmit() {
     </FormField>
 
     <FormField v-slot="{ describedBy, invalid }" label="Contraseña" for="password" :error="fieldError('password')">
-      <BaseInput
+      <PasswordInput
         id="password"
         v-model="password"
-        type="password"
         autocomplete="current-password"
         required
         :invalid="invalid"
