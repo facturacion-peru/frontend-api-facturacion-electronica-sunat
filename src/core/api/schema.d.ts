@@ -1556,8 +1556,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: binary */
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 1024 KB.
+                     */
                     logo: string;
                 };
             };
@@ -1882,8 +1885,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: binary */
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 5120 KB.
+                     */
                     file: string;
                     /** @enum {string} */
                     mode?: "create" | "upsert";
@@ -3709,8 +3715,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: binary */
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 1024 KB.
+                     */
                     certificate: string;
                     password?: string | null;
                 };
