@@ -78,7 +78,7 @@ describe('ProductsView', () => {
     vi.advanceTimersByTime(350)
     await flushPromises()
 
-    expect(inventoryApi.listProducts).toHaveBeenLastCalledWith({ search: 'lec', type: '', status: 'active', page: 1 })
+    expect(inventoryApi.listProducts).toHaveBeenLastCalledWith({ search: 'lec', type: '', status: 'active', page: 1, establishment_id: null })
   })
 
   it('el vendedor no ve el alta ni el filtro de desactivados', async () => {

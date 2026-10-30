@@ -13,6 +13,7 @@ import type {
   ProductFilters,
   ProductPayload,
   StockEntryPayload,
+  TransferPayload,
 } from './types'
 
 export const inventoryApi = {
@@ -36,6 +37,7 @@ export const inventoryApi = {
             ...(filters.type && { type: filters.type }),
             status: filters.status,
             page: filters.page,
+            ...(filters.establishment_id && { establishment_id: filters.establishment_id }),
           },
         },
       }),
@@ -66,19 +68,27 @@ export const inventoryApi = {
   removeImage: (id: number) =>
     unwrapData<Product>(apiClient.DELETE('/api/v1/products/{product}/image', { params: { path: { product: id } } })),
 
-  lots: async (id: number, includeEmpty = false) =>
+  /** `establishmentId` null: los lotes de todos los locales que puede leer (spec 017). */
+  lots: async (id: number, includeEmpty = false, establishmentId: number | null = null) =>
     (
       await unwrap<CollectionResponse<Lot>>(
         apiClient.GET('/api/v1/products/{product}/lots', {
-          params: { path: { product: id }, query: includeEmpty ? ({ include_empty: 1 } as never) : undefined },
+          params: {
+            path: { product: id },
+            query: {
+              // La regla `boolean` de Laravel no acepta «true»: va como 1.
+              ...(includeEmpty && { include_empty: 1 as unknown as boolean }),
+              ...(establishmentId && { establishment_id: establishmentId }),
+            },
+          },
         }),
       )
     ).data,
 
-  movements: (id: number, page = 1) =>
+  movements: (id: number, page = 1, establishmentId: number | null = null) =>
     unwrap<PaginatedResponse<Movement>>(
       apiClient.GET('/api/v1/products/{product}/movements', {
-        params: { path: { product: id }, query: { page } as never },
+        params: { path: { product: id }, query: { page, ...(establishmentId && { establishment_id: establishmentId }) } },
       }),
     ),
 
@@ -98,5 +108,12 @@ export const inventoryApi = {
       apiClient.POST('/api/v1/movements/{movement}/reverse', { params: { path: { movement: movementId } }, body }),
     ),
 
-  alerts: () => unwrapData<InventoryAlerts>(apiClient.GET('/api/v1/inventory/alerts')),
+  alerts: (establishmentId: number | null = null) =>
+    unwrapData<InventoryAlerts>(
+      apiClient.GET('/api/v1/inventory/alerts', { params: { query: establishmentId ? { establishment_id: establishmentId } : {} } }),
+    ),
+
+  /** Traslado entre locales (spec 017, HU-3); devuelve el producto con `stock_by_establishment`. */
+  transfer: (id: number, body: TransferPayload) =>
+    unwrapData<Product>(apiClient.POST('/api/v1/products/{product}/transfers', { params: { path: { product: id } }, body })),
 }

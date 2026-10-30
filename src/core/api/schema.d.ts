@@ -681,7 +681,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Obtener products */
+        /** Stock de los locales que puede leer y el de cada uno (spec 017). */
         get: operations["productShow"];
         put?: never;
         post?: never;
@@ -755,6 +755,23 @@ export interface paths {
         get: operations["stockMovements"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Traslado entre locales (spec 017, HU-3). Se puede sacar stock de un */
+        post: operations["stockStoreTransfer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2207,7 +2224,9 @@ export interface operations {
     };
     alertIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                establishment_id?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3068,6 +3087,7 @@ export interface operations {
                 type?: "good" | "service";
                 status?: "active" | "inactive" | "all";
                 page?: number;
+                establishment_id?: number;
             };
             header?: never;
             path?: never;
@@ -3264,6 +3284,7 @@ export interface operations {
                     /** Format: decimal */
                     unit_cost?: string | null;
                     reference?: string | null;
+                    establishment_id?: number;
                 };
             };
         };
@@ -3385,7 +3406,10 @@ export interface operations {
     };
     stockLots: {
         parameters: {
-            query?: never;
+            query?: {
+                include_empty?: boolean;
+                establishment_id?: number;
+            };
             header?: never;
             path: {
                 product: number;
@@ -3419,7 +3443,10 @@ export interface operations {
     };
     stockMovements: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                establishment_id?: number;
+            };
             header?: never;
             path: {
                 product: number;
@@ -3437,6 +3464,57 @@ export interface operations {
             };
             /** @description No autenticado */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stockStoreTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    from_establishment_id: number;
+                    to_establishment_id: number;
+                    /** Format: decimal */
+                    quantity: string;
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

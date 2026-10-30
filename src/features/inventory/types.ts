@@ -3,9 +3,11 @@
  * MovementResource de la API (protegidos por tests/Feature/Contract).
  */
 
+import type { EstablishmentRef } from '@/shared/establishments/types'
+
 export type ProductType = 'good' | 'service'
 export type IgvAffectation = '10' | '20' | '30'
-export type MovementType = 'entry' | 'sale' | 'adjustment' | 'return' | 'reversal'
+export type MovementType = 'entry' | 'sale' | 'adjustment' | 'return' | 'reversal' | 'transfer_out' | 'transfer_in'
 export type AdjustmentReason = 'count' | 'shrinkage' | 'damage' | 'expiry' | 'error' | 'other'
 
 /** Foto del producto (spec 016): direcciones públicas fijas en S3; `thumb_url` mide 200 px. */
@@ -31,6 +33,14 @@ export interface Product {
   last_unit_cost?: string | null
   image: ProductImage | null
   created_at: string | null
+  /** Solo en la ficha y tras un traslado (spec 017): el stock de cada local que puede leer. */
+  stock_by_establishment?: EstablishmentStock[]
+}
+
+export interface EstablishmentStock {
+  establishment_id: number
+  stock: string
+  available_stock: string
 }
 
 export interface ProductPayload {
@@ -50,6 +60,8 @@ export interface ProductFilters {
   type: '' | ProductType
   status: 'active' | 'inactive' | 'all'
   page: number
+  /** `null`: todos los locales que puede leer (spec 017). */
+  establishment_id: number | null
 }
 
 export interface Lot {
@@ -65,6 +77,7 @@ export interface Lot {
   reference: string | null
   created_by: { id: number; name: string } | null
   created_at: string | null
+  establishment: EstablishmentRef
 }
 
 export interface Movement {
@@ -81,6 +94,9 @@ export interface Movement {
   reversed: boolean
   created_by: { id: number; name: string } | null
   created_at: string
+  establishment: EstablishmentRef
+  /** Solo en `transfer_out` y `transfer_in`. */
+  transfer: { from: EstablishmentRef; to: EstablishmentRef } | null
 }
 
 export interface StockEntryPayload {
@@ -90,6 +106,15 @@ export interface StockEntryPayload {
   expires_at?: string
   unit_cost?: string
   reference?: string
+  /** Sin él, la API usa el único local permitido (spec 017). */
+  establishment_id?: number
+}
+
+export interface TransferPayload {
+  from_establishment_id: number
+  to_establishment_id: number
+  quantity: string
+  note?: string | null
 }
 
 export interface CatalogItem {
@@ -110,10 +135,12 @@ export interface LotAlert {
   expires_at: string
   days_left: number
   remaining_quantity: string
+  establishment: EstablishmentRef
 }
 
 export interface InventoryAlerts {
-  low_stock: { id: number; code: string; name: string; available_stock: string; min_stock: string }[]
+  /** Una por producto y local activo bajo el mínimo (spec 017). */
+  low_stock: { id: number; code: string; name: string; available_stock: string; min_stock: string; establishment: EstablishmentRef }[]
   expiring: LotAlert[]
   expired: LotAlert[]
 }
@@ -124,4 +151,6 @@ export const movementLabels: Record<MovementType, string> = {
   adjustment: 'Ajuste',
   return: 'Devolución',
   reversal: 'Reversión',
+  transfer_out: 'Traslado',
+  transfer_in: 'Traslado',
 }

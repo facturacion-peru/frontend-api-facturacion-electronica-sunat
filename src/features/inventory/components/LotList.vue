@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import { formatDate, formatMoney, formatQuantity } from '@/shared/utils/format'
@@ -6,6 +7,9 @@ import type { Lot } from '../types'
 
 defineProps<{ lots: Lot[]; canAdjust: boolean }>()
 defineEmits<{ adjust: [lot: Lot] }>()
+
+// Tras un traslado, el mismo número de lote puede estar en dos locales (spec 017).
+const establishments = useEstablishmentStore()
 </script>
 
 <template>
@@ -18,6 +22,7 @@ defineEmits<{ adjust: [lot: Lot] }>()
           <span>Lote {{ lot.lot_number }}</span>
           <BaseBadge v-if="lot.expired" variant="danger">Vencido</BaseBadge>
         </p>
+        <p v-if="establishments.multi" class="text-xs font-medium text-ink-muted" data-test="lot-establishment">{{ lot.establishment.name }}</p>
         <p class="text-sm text-ink-muted">
           Ingreso {{ formatDate(lot.received_at) }}
           <template v-if="lot.expires_at"> · Vence {{ formatDate(lot.expires_at) }}</template>

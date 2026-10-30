@@ -79,6 +79,11 @@ export const useEstablishmentStore = defineStore('establishments', () => {
     if (session.session) session.session.establishments = establishments
   }
 
+  /** El local con ese id entre los que se pueden leer (p. ej. de `stock_by_establishment`). */
+  function find(id: number): Establishment | null {
+    return filterOptions.value.find((e) => e.id === id) ?? null
+  }
+
   function setReadable(establishments: Establishment[]) {
     readable.value = establishments
   }
@@ -116,5 +121,5 @@ export const useEstablishmentStore = defineStore('establishments', () => {
 
   watch(storageKey, () => (readable.value = null))
 
-  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable, loadReadable, reload }
+  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable, loadReadable, reload, find }
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import EmptyState from '@/shared/ui/EmptyState.vue'
 import { formatDateTime, formatQuantity } from '@/shared/utils/format'
@@ -9,9 +10,18 @@ defineProps<{ movements: Movement[] }>()
 defineEmits<{ reverse: [movement: Movement] }>()
 
 const { reasonLabel } = useInventoryCatalogs()
+const establishments = useEstablishmentStore()
 
+/** Un traslado se corrige con otro traslado, no revirtiéndolo (spec 017). */
 function canReverse(movement: Movement): boolean {
-  return !movement.reversed && movement.type !== 'reversal'
+  return !movement.reversed && !['reversal', 'transfer_out', 'transfer_in'].includes(movement.type)
+}
+
+/** «Traslado a Sucursal» en la salida y «Traslado desde Principal» en la entrada. */
+function label(movement: Movement): string {
+  if (movement.type === 'transfer_out' && movement.transfer) return `Traslado a ${movement.transfer.to.name}`
+  if (movement.type === 'transfer_in' && movement.transfer) return `Traslado desde ${movement.transfer.from.name}`
+  return movementLabels[movement.type]
 }
 </script>
 
@@ -22,14 +32,17 @@ function canReverse(movement: Movement): boolean {
     <li v-for="movement in movements" :key="movement.id" class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center" data-test="movement-row">
       <div class="min-w-0 flex-1">
         <p class="flex flex-wrap items-center gap-2">
-          <span class="font-medium">{{ movementLabels[movement.type] }}</span>
+          <span class="font-medium">{{ label(movement) }}</span>
           <span :class="movement.quantity.startsWith('-') ? 'text-danger-700' : 'text-success-700'" class="font-medium">
             {{ movement.quantity.startsWith('-') ? '' : '+' }}{{ formatQuantity(movement.quantity) }}
           </span>
           <BaseBadge v-if="movement.reversed" variant="neutral">Revertido</BaseBadge>
         </p>
         <p class="text-sm text-ink-muted">
-          Lote {{ movement.lot.lot_number }} · Saldo {{ formatQuantity(movement.product_balance_after) }}
+          Lote {{ movement.lot.lot_number }} ·
+          <template v-if="establishments.multi">Saldo en {{ movement.establishment.name }}</template>
+          <template v-else>Saldo</template>
+          {{ formatQuantity(movement.product_balance_after) }}
           <template v-if="movement.reason"> · {{ reasonLabel(movement.reason) }}</template>
         </p>
         <p class="text-xs text-ink-muted">
