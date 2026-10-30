@@ -8,6 +8,13 @@ import type { CapacitorConfig } from '@capacitor/cli'
  * `CAP_ANDROID_DEV=1` (lo pone `pnpm android:dev`) permite llamar a la API de
  * la PC por HTTP en la red local. La versión para empresas se sincroniza sin
  * esa variable: sin contenido mixto (RF-007).
+ *
+ * En desarrollo la interfaz se sirve como `http://localhost` (spec 016): desde
+ * `https://localhost`, Chromium bloquea las imágenes HTTP de la API (las fotos
+ * de `IMAGES_DISK=public`) aunque `allowMixedContent` deje pasar fetch y XHR.
+ * `localhost` sigue siendo un contexto seguro. Cambiar el esquema cambia el
+ * origen: el localStorage del APK de desarrollo empieza vacío una vez (la
+ * sesión está en Keystore y no se pierde).
  */
 const dev = process.env.CAP_ANDROID_DEV === '1'
 
@@ -18,6 +25,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: dev,
   },
+  ...(dev && { server: { androidScheme: 'http' } }),
 }
 
 export default config

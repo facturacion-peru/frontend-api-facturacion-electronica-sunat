@@ -27,10 +27,15 @@ export interface SellableProduct {
   available_stock: string | null
 }
 
+/** Producto del catálogo de «Vender», con su foto (spec 016). La venta en curso guarda solo `SellableProduct`. */
+export interface CatalogProduct extends SellableProduct {
+  image: { url: string; thumb_url: string } | null
+}
+
 export const salesApi = {
   /** Catálogo de «Vender» (spec 012, A-57): productos activos, paginados, filtrados por `search`. */
   listProducts: ({ search = '', page = 1 }: { search?: string; page?: number } = {}) =>
-    unwrap<PaginatedResponse<SellableProduct>>(
+    unwrap<PaginatedResponse<CatalogProduct>>(
       apiClient.GET('/api/v1/products', {
         params: { query: { status: 'active', page, ...(search.trim() && { search: search.trim() }) } },
       }),

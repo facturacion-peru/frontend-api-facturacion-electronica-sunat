@@ -674,6 +674,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{product}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sube o cambia la foto (spec 016, HU-1). */
+        post: operations["productUpdateImage"];
+        /** Quita la foto; sin foto también responde 200. */
+        delete: operations["productDestroyImage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{product}/lots": {
         parameters: {
             query?: never;
@@ -1556,8 +1574,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: binary */
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 1024 KB.
+                     */
                     logo: string;
                 };
             };
@@ -1882,8 +1903,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: binary */
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 5120 KB.
+                     */
                     file: string;
                     /** @enum {string} */
                     mode?: "create" | "upsert";
@@ -3088,6 +3112,91 @@ export interface operations {
             };
         };
     };
+    productUpdateImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 2048 KB.
+                     */
+                    image: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error de validación */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    productDestroyImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operación exitosa */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error interno */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     stockLots: {
         parameters: {
             query?: never;
@@ -3709,8 +3818,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: binary */
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Máximo 1024 KB.
+                     */
                     certificate: string;
                     password?: string | null;
                 };

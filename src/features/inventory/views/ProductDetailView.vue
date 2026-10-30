@@ -8,11 +8,13 @@ import { useSessionStore } from '@/core/auth/session-store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import ProductThumb from '@/shared/ui/ProductThumb.vue'
 import { formatMoney, formatQuantity } from '@/shared/utils/format'
 import { inventoryApi } from '../api'
 import AdjustStockDialog from '../components/AdjustStockDialog.vue'
 import LotList from '../components/LotList.vue'
 import MovementList from '../components/MovementList.vue'
+import ProductPhotoEditor from '../components/ProductPhotoEditor.vue'
 import ReverseMovementDialog from '../components/ReverseMovementDialog.vue'
 import { useInventoryCatalogs } from '../composables/useInventoryCatalogs'
 import type { Lot, Movement, Product } from '../types'
@@ -40,6 +42,10 @@ const tracksStock = computed(() => product.value?.type === 'good')
 
 if (route.query.guardado) notice.value = 'Producto guardado.'
 if (route.query.entrada) notice.value = 'Entrada registrada.'
+// El producto se creó pero su foto no se subió (spec 016, HU-1 esc. 7).
+if (route.query.foto === 'pendiente') {
+  warning.value = 'El producto se guardó, pero la foto no se pudo subir. Puedes intentarlo de nuevo en «Foto».'
+}
 
 async function load(movementsPage = 1) {
   try {
@@ -68,6 +74,12 @@ function openAdjust(lot: Lot) {
 function openReverse(movement: Movement) {
   reversing.value = movement
   reverseOpen.value = true
+}
+
+function onPhotoUpdated(updated: Product, message: string) {
+  product.value = updated
+  notice.value = message
+  warning.value = null
 }
 
 function afterChange(message: string) {
@@ -108,6 +120,12 @@ onMounted(() => {
     <div class="mt-4 space-y-3">
       <BaseAlert v-if="notice" variant="success">{{ notice }}</BaseAlert>
       <BaseAlert v-if="warning" variant="warning">{{ warning }}</BaseAlert>
+    </div>
+
+    <!-- Spec 016: el administrador pone, cambia o quita la foto; los demás solo la ven. -->
+    <ProductPhotoEditor v-if="isAdmin" :product="product" class="mt-4 rounded-xl border border-line bg-surface p-4" @updated="onPhotoUpdated" />
+    <div v-else-if="product.image" class="mt-4 max-w-xs">
+      <ProductThumb :image="product.image" :name="product.name" size="lg" />
     </div>
 
     <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4" data-test="product-summary">

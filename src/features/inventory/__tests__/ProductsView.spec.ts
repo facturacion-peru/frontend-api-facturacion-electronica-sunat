@@ -17,7 +17,7 @@ const ProductsView = (await import('../views/ProductsView.vue')).default
 
 const product = (overrides: Partial<Product> = {}): Product => ({
   id: 1, code: 'ARZ-001', name: 'Arroz extra 5 kg', type: 'good', unit: 'NIU', sale_price: '25.90', igv_affectation: '10',
-  min_stock: '5.000', tracks_expiry: false, active: true, stock: '36.000', available_stock: '36.000', created_at: null, ...overrides,
+  min_stock: '5.000', tracks_expiry: false, active: true, stock: '36.000', available_stock: '36.000', image: null, created_at: null, ...overrides,
 })
 
 const page = (data: Product[]) => ({ success: true as const, data, meta: { current_page: 1, per_page: 20, total: data.length, last_page: 1, from: 1, to: data.length } })
@@ -57,6 +57,17 @@ describe('ProductsView', () => {
     expect(rows[0]!.text()).toContain('Unidad')
     expect(rows[0]!.text()).toMatch(/25\.90/)
     expect(rows[1]!.text()).toContain('Stock bajo')
+  })
+
+  it('spec 016: cada fila muestra la miniatura, o el marcador si no tiene foto', async () => {
+    const image = { url: 'https://img.test/a.webp', thumb_url: 'https://img.test/a-thumb.webp' }
+    vi.mocked(inventoryApi.listProducts).mockResolvedValue(page([product({ image }), product({ id: 2, name: 'Leche' })]))
+    const { wrapper } = await mountAs('seller')
+
+    const rows = wrapper.findAll('[data-test="product-row"]')
+    expect(rows[0]!.get('img').attributes()).toMatchObject({ src: image.thumb_url, alt: 'Arroz extra 5 kg', loading: 'lazy' })
+    expect(rows[1]!.find('img').exists()).toBe(false)
+    expect(rows[1]!.find('[data-test="thumb-placeholder"]').exists()).toBe(true)
   })
 
   it('busca con espera entre teclas y vuelve a la primera página', async () => {

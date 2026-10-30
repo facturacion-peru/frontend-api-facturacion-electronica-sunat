@@ -1,5 +1,7 @@
 import { apiClient } from '@/core/api/client'
 import { unwrapData } from '@/core/api/errors'
+import type { ResourceResponse } from '@/core/api/types'
+import { uploadForm, type UploadOptions } from '@/core/api/upload'
 import type { CompanyContactForm, CompanyDetail } from './types'
 
 export const companyApi = {
@@ -7,16 +9,11 @@ export const companyApi = {
 
   update: (body: CompanyContactForm) => unwrapData<CompanyDetail>(apiClient.PATCH('/api/v1/company', { body })),
 
-  uploadLogo: (file: File) => {
+  /** Con avance (spec 016); el logo va tal cual, sin reducir, para no perder la transparencia. */
+  uploadLogo: async (file: File, options?: UploadOptions) => {
     const form = new FormData()
     form.append('logo', file)
 
-    return unwrapData<CompanyDetail>(
-      apiClient.POST('/api/v1/company/logo', {
-        // Multipart: se envía el FormData tal cual, sin serializar a JSON.
-        body: form as never,
-        bodySerializer: (body) => body as unknown as FormData,
-      }),
-    )
+    return (await uploadForm<ResourceResponse<CompanyDetail>>('/api/v1/company/logo', form, options)).data
   },
 }

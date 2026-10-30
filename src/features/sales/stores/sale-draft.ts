@@ -25,6 +25,14 @@ export interface DraftLine {
 
 const VERSION = 1
 
+/**
+ * Solo los campos de `SellableProduct`: lo que llega del catálogo o de la API
+ * trae más (p. ej. la foto, spec 016), y la venta guardada no debe llevarlo.
+ */
+function sellable({ id, code, name, type, unit, sale_price, available_stock }: SellableProduct): SellableProduct {
+  return { id, code, name, type, unit, sale_price, available_stock }
+}
+
 interface Stored {
   v: number
   lines: Omit<DraftLine, 'error'>[]
@@ -170,7 +178,7 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
       existing.quantity = String(Number(existing.quantity || '0') + 1)
       existing.error = null
     } else {
-      lines.value.push({ product, quantity: '1', discount: '', error: null })
+      lines.value.push({ product: sellable(product), quantity: '1', discount: '', error: null })
     }
   }
 
@@ -206,8 +214,7 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     lines.value = lines.value.filter((line, i) => {
       const result = results[i]!
       if (result.status === 'fulfilled' && result.value.active) {
-        const { active: _active, ...product } = result.value
-        line.product = { ...line.product, ...product }
+        line.product = sellable(result.value)
         return true
       }
       removed.push(line.product.name)

@@ -1,3 +1,4 @@
+import { pickWithInput } from './pick-image'
 import { PrinterError } from './printer'
 import type { Device } from './types'
 
@@ -48,6 +49,7 @@ export const webDevice: Device = {
     return () => {}
   },
   async minimize() {},
+  pickImage: pickWithInput,
   printer: {
     available: false,
     async status() {

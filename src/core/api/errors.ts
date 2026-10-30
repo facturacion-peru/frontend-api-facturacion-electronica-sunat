@@ -22,7 +22,7 @@ export class ApiError extends Error {
   }
 }
 
-const NETWORK_MESSAGE = 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
+export const NETWORK_MESSAGE = 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
 
 interface FetchResult {
   data?: unknown

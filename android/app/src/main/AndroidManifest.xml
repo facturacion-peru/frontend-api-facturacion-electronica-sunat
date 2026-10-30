@@ -47,4 +47,16 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- La app también se instala en teléfonos sin Bluetooth. -->
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+
+    <!--
+      Foto del producto (spec 016, F002): la cámara del sistema se abre desde el
+      <input capture> del WebView. Android 11+ oculta la app de cámara sin esta
+      consulta. Sin el permiso CAMERA a propósito: si se declarara, Capacitor lo
+      pediría y negarlo sería una cancelación muda.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
 </manifest>

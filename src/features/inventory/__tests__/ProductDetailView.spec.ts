@@ -16,7 +16,26 @@ vi.mock('../api', () => ({
     movements: vi.fn<AsyncFn>(),
     adjust: vi.fn<AsyncFn>(),
     reverse: vi.fn<AsyncFn>(),
+    uploadImage: vi.fn<AsyncFn>(),
+    removeImage: vi.fn<AsyncFn>(),
   },
+}))
+
+// Spec 016: dispositivo y reducción simulados para la foto.
+const fake = vi.hoisted(() => ({
+  online: true,
+  reduced: new File(['reducida'], 'IMG_1.jpg', { type: 'image/jpeg' }),
+}))
+vi.mock('@/core/device', () => ({
+  device: () => ({
+    isNative: false,
+    pickImage: async () => new File(['original'], 'IMG_1.jpg', { type: 'image/jpeg' }),
+    onConnectionChange: (fn: (online: boolean) => void) => (fn(fake.online), () => {}),
+  }),
+}))
+vi.mock('@/shared/images/prepare', async (original) => ({
+  ...(await original<typeof import('@/shared/images/prepare')>()),
+  prepareProductPhoto: async () => fake.reduced,
 }))
 
 const { inventoryApi } = await import('../api')
@@ -25,7 +44,7 @@ const ProductDetailView = (await import('../views/ProductDetailView.vue')).defau
 
 const product: Product = {
   id: 7, code: 'YOG-001', name: 'Yogur de fresa', type: 'good', unit: 'NIU', sale_price: '7.50', igv_affectation: '10',
-  min_stock: '6.000', tracks_expiry: true, active: true, stock: '25.000', available_stock: '25.000', last_unit_cost: '4.3000', created_at: null,
+  min_stock: '6.000', tracks_expiry: true, active: true, stock: '25.000', available_stock: '25.000', last_unit_cost: '4.3000', image: null, created_at: null,
 }
 const lot: Lot = {
   id: 3, lot_number: 'L-1', received_at: '2026-09-18', expires_at: '2026-10-08', expired: false, initial_quantity: '10.000',
@@ -130,5 +149,96 @@ describe('ProductDetailView', () => {
 
     expect(inventoryApi.reverse).toHaveBeenCalledWith(11, { reason: 'error' })
     expect(document.querySelector('[role="dialog"] [role="alert"]')?.textContent).toContain('saldo 3.000')
+  })
+
+  describe('foto (spec 016)', () => {
+    const image = { url: 'https://img.test/a.webp', thumb_url: 'https://img.test/a-thumb.webp' }
+
+    beforeEach(() => {
+      fake.online = true
+      URL.createObjectURL = vi.fn<(blob: Blob) => string>(() => 'blob:vista-previa')
+      URL.revokeObjectURL = vi.fn<(url: string) => void>()
+    })
+
+    async function pickPhoto(wrapper: Awaited<ReturnType<typeof mountAs>>['wrapper']) {
+      await wrapper.get('[data-test="choose-photo"]').trigger('click')
+      await flushPromises()
+    }
+
+    it('el vendedor ve la foto grande, sin poder cambiarla ni quitarla (HU-1 esc. 5, HU-2 esc. 3)', async () => {
+      vi.mocked(inventoryApi.getProduct).mockResolvedValue({ ...product, image, last_unit_cost: undefined })
+      const { wrapper } = await mountAs('seller')
+      await flushPromises()
+
+      expect(wrapper.get('img').attributes('src')).toBe(image.url)
+      expect(wrapper.find('[data-test="choose-photo"]').exists()).toBe(false)
+      expect(wrapper.find('[data-test="remove-photo"]').exists()).toBe(false)
+    })
+
+    it('el administrador sube la foto con su propio botón y la ve en la ficha', async () => {
+      vi.mocked(inventoryApi.uploadImage).mockResolvedValue({ ...product, image })
+      const { wrapper } = await mountAs('company_admin')
+      await flushPromises()
+
+      await pickPhoto(wrapper)
+      expect(inventoryApi.uploadImage).not.toHaveBeenCalled()
+      await wrapper.get('[data-test="upload-photo"]').trigger('click')
+      await flushPromises()
+
+      expect(inventoryApi.uploadImage).toHaveBeenCalledWith(7, fake.reduced, expect.objectContaining({ signal: expect.any(AbortSignal) }))
+      expect(wrapper.text()).toContain('Foto guardada.')
+      expect(wrapper.get('img').attributes('src')).toBe(image.url)
+    })
+
+    it('quitar la foto pide confirmación (HU-1 esc. 3)', async () => {
+      vi.mocked(inventoryApi.getProduct).mockResolvedValue({ ...product, image })
+      vi.mocked(inventoryApi.removeImage).mockResolvedValue({ ...product, image: null })
+      const { wrapper } = await mountAs('company_admin')
+      await flushPromises()
+
+      await wrapper.get('[data-test="remove-photo"]').trigger('click')
+      expect(inventoryApi.removeImage).not.toHaveBeenCalled()
+
+      document.querySelector<HTMLButtonElement>('[data-test="confirm-remove"]')!.click()
+      await flushPromises()
+
+      expect(inventoryApi.removeImage).toHaveBeenCalledWith(7)
+      expect(wrapper.text()).toContain('Foto quitada.')
+      expect(wrapper.find('[data-test="thumb-placeholder"]').exists()).toBe(true)
+    })
+
+    it.each([
+      ['422 con el motivo de la API', new ApiError(422, 'Datos inválidos', { image: ['La foto no se puede leer. Prueba con otra.'] }), 'La foto no se puede leer. Prueba con otra.'],
+      ['503 si el almacenamiento falla', new ApiError(503, 'No se pudo guardar la foto. Inténtalo de nuevo.'), 'No se pudo guardar la foto. Inténtalo de nuevo.'],
+    ])('muestra el error %s y conserva la foto elegida', async (_label, error, message) => {
+      vi.mocked(inventoryApi.uploadImage).mockRejectedValue(error)
+      const { wrapper } = await mountAs('company_admin')
+      await flushPromises()
+
+      await pickPhoto(wrapper)
+      await wrapper.get('[data-test="upload-photo"]').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.get('[data-test="upload-error"]').text()).toBe(message)
+      expect(wrapper.find('[data-test="upload-photo"]').exists()).toBe(true)
+    })
+
+    it('sin conexión no deja subir y avisa', async () => {
+      fake.online = false
+      const { wrapper } = await mountAs('company_admin')
+      await flushPromises()
+
+      await pickPhoto(wrapper)
+
+      expect(wrapper.get('[data-test="upload-photo"]').attributes('disabled')).toBeDefined()
+      expect(wrapper.text()).toContain('Necesitas conexión para subir la foto.')
+    })
+
+    it('avisa si el producto se creó pero su foto no se subió (HU-1 esc. 7)', async () => {
+      const { wrapper } = await mountAs('company_admin', '?guardado=1&foto=pendiente')
+      await flushPromises()
+
+      expect(wrapper.text()).toContain('la foto no se pudo subir')
+    })
   })
 })
