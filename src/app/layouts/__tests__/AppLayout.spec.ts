@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { clearToken } from '@/core/api/token-storage'
 import { useSessionStore } from '@/core/auth/session-store'
+import type { Establishment } from '@/shared/establishments/types'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import AppLayout from '../AppLayout.vue'
 
@@ -10,14 +11,22 @@ import AppLayout from '../AppLayout.vue'
  * Spec 010 · HU-6: barra lateral. En jsdom no hay matchMedia, así que el
  * layout se comporta como en el celular: el panel empieza cerrado.
  */
-async function mountLayout(path = '/') {
+const principal: Establishment = {
+  id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true,
+}
+const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', is_main: false }
+
+async function mountLayout(path = '/', establishments: Establishment[] = [principal]) {
   const result = await mountWithRouter(AppLayout, {
     path,
     pattern: '/:rest(.*)*',
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: 1 }, role: 'company_admin',
+        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments,
+        company: {
+          id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: establishments.length,
+        },
+        role: 'company_admin',
       }
     },
   })
@@ -41,6 +50,16 @@ describe('AppLayout', () => {
     expect(sidebar.text()).toContain('Administrador')
     expect(sidebar.find('[aria-label^="Tema:"]').exists()).toBe(true)
     expect(sidebar.text()).toContain('Cerrar sesión')
+  })
+
+  it('017 RF-010: el local se elige en la barra lateral solo si la empresa tiene varios', async () => {
+    const single = await mountLayout()
+    expect(single.sidebar.find('[data-test="establishment-switcher"]').exists()).toBe(false)
+    expect(single.sidebar.text()).not.toContain('Principal')
+    single.wrapper.unmount()
+
+    const { sidebar } = await mountLayout('/', [principal, sucursal])
+    expect(sidebar.get('[data-test="establishment-switcher"]').text()).toContain('Elegir local')
   })
 
   it('en el celular el panel empieza cerrado e inerte: sus enlaces no reciben foco', async () => {

@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSessionStore } from '@/core/auth/session-store'
 import { device } from '@/core/device'
 import { useSaleDraftStore } from '@/features/sales/stores/sale-draft'
+import EstablishmentSwitcher from '@/shared/establishments/EstablishmentSwitcher.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
 import LogoApp from '@/shared/ui/LogoApp.vue'
 import ThemeToggle from '@/shared/ui/ThemeToggle.vue'
@@ -27,6 +28,7 @@ const router = useRouter()
 const companyName = computed(
   () => session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social ?? '',
 )
+const draft = useSaleDraftStore()
 const roleLabel = computed(() => (session.role === 'company_admin' ? 'Administrador' : 'Vendedor'))
 
 const isDesktop = useMediaQuery('(min-width: 1024px)')
@@ -92,7 +94,7 @@ async function logout() {
   // La venta en curso es del usuario: se borra al salir (spec 012, RF-003),
   // en todos los locales, antes de perder la sesión que da su clave. Un 401
   // no pasa por aquí.
-  useSaleDraftStore().clearAll()
+  draft.clearAll()
   await session.logout()
   await router.push({ name: 'login' })
 }
@@ -169,6 +171,11 @@ async function logout() {
             <path :d="collapsed ? 'M13 10l2 2-2 2' : 'M15 10l-2 2 2 2'" />
           </svg>
         </button>
+      </div>
+
+      <!-- Local donde se trabaja (spec 017); con un solo local no se pinta. -->
+      <div class="px-3 pt-3 empty:hidden" :class="collapsed && 'lg:px-2'">
+        <EstablishmentSwitcher :collapsed="collapsed" :draft-count="draft.count" />
       </div>
 
       <div class="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
