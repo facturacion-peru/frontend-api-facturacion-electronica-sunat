@@ -24,8 +24,8 @@ const Stub = { template: '<div />' }
 
 const seller: Session = {
   user: { id: 2, name: 'Luis', email: 'luis@example.com' },
-  platform_admin: false,
-  company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null },
+  platform_admin: false, establishments: [],
+  company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, active_establishments_count: 1 },
   role: 'seller',
 }
 
@@ -115,7 +115,7 @@ describe('authGuard', () => {
 
   it('lleva al administrador de la plataforma a su panel y no lo deja en la app de empresa (A-35)', async () => {
     setToken('1|abc')
-    vi.mocked(authApi.me).mockResolvedValue({ ...seller, platform_admin: true, company: null, role: null })
+    vi.mocked(authApi.me).mockResolvedValue({ ...seller, platform_admin: true, establishments: [], company: null, role: null })
     const router = makeRouter()
 
     await router.push('/')

@@ -17,8 +17,8 @@ const azucar: SellableProduct = { id: 2, code: 'AZU-1', name: 'Azúcar', type: '
 function boot(userId = 1, companyId = 1) {
   setActivePinia(createPinia())
   useSessionStore().session = {
-    user: { id: userId, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false,
-    company: { id: companyId, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null }, role: 'seller',
+    user: { id: userId, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
+    company: { id: companyId, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role: 'seller',
   }
   const draft = useSaleDraftStore()
   draft.load()

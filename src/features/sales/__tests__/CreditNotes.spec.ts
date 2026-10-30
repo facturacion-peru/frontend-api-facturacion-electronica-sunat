@@ -44,7 +44,7 @@ async function open(document: SalesDocument, role: CompanyRole = 'seller') {
     path: `/ventas/comprobantes/${document.id}`,
     pattern: '/ventas/comprobantes/:id',
     beforeMount: () => {
-      useSessionStore().session = { user: { id: 2, name: 'Luis', email: 'l@demo.test' }, platform_admin: false, company: { id: 1, ruc: '20600000013', razon_social: 'Demo', nombre_comercial: null }, role }
+      useSessionStore().session = { user: { id: 2, name: 'Luis', email: 'l@demo.test' }, platform_admin: false, establishments: [], company: { id: 1, ruc: '20600000013', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role }
     },
   })
 }

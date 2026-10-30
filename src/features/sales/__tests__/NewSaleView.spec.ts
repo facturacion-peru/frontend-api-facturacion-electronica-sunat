@@ -84,8 +84,8 @@ function mountSale() {
   return mountWithRouter(NewSaleView, {
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Luis', email: 'luis@demo.test' }, platform_admin: false,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null }, role: 'seller',
+        user: { id: 1, name: 'Luis', email: 'luis@demo.test' }, platform_admin: false, establishments: [],
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role: 'seller',
       }
     },
   })

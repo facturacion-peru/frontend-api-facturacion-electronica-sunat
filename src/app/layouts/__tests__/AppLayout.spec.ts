@@ -16,8 +16,8 @@ async function mountLayout(path = '/') {
     pattern: '/:rest(.*)*',
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo' }, role: 'company_admin',
+        user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: 1 }, role: 'company_admin',
       }
     },
   })
