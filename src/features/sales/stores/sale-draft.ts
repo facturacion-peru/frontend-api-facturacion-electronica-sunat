@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { useSessionStore } from '@/core/auth/session-store'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import type { SellableProduct } from '../api'
 import { lineAmount, sumAmounts } from '../pricing'
 import type { Customer, PaymentMethod, SaleKind } from '../types'
@@ -15,6 +16,9 @@ import type { Customer, PaymentMethod, SaleKind } from '../types'
  *
  * Aparte, el último comprobante y serie elegidos (v1.5, A-60) se recuerdan en
  * otra clave que no borra `clear()`: cada venta nueva empieza con ellos.
+ *
+ * Las dos son del local actual (spec 017): cambiar de local guarda la venta
+ * de uno y carga la del otro, sin mezclarlas. Sin local elegido no hay venta.
  */
 export interface DraftLine {
   product: SellableProduct
@@ -69,6 +73,7 @@ function readPreference(key: string): Pick<Preference, 'kind' | 'seriesId'> {
 
 export const useSaleDraftStore = defineStore('sale-draft', () => {
   const session = useSessionStore()
+  const establishments = useEstablishmentStore()
 
   const lines = ref<DraftLine[]>([])
   const kind = ref<SaleKind>('ticket')
@@ -79,12 +84,15 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
   const documentCustomer = ref<Customer | null>(null)
   const idempotencyKey = ref<string>(crypto.randomUUID())
 
-  const storageKey = computed(() => {
+  /** `<empresa>.<usuario>`: lo que tenían las claves antes de la 017. */
+  const owner = computed(() => {
     const companyId = session.session?.company?.id
     const userId = session.session?.user.id
 
-    return companyId && userId ? `sunat.sale-draft.${companyId}.${userId}` : null
+    return companyId && userId ? `${companyId}.${userId}` : null
   })
+  const establishmentId = computed(() => (owner.value ? (establishments.current?.id ?? null) : null))
+  const storageKey = computed(() => (establishmentId.value ? `sunat.sale-draft.${owner.value}.${establishmentId.value}` : null))
   const preferenceKey = computed(() => storageKey.value?.replace('sunat.sale-draft.', 'sunat.sale-preference.') ?? null)
 
   /** Comprobante y serie con que empieza cada venta (RF-009). */
@@ -107,10 +115,41 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     idempotencyKey.value = crypto.randomUUID()
   }
 
-  /** Lee la venta guardada del usuario y empresa actuales. */
+  /**
+   * La 0.3.0 guardaba sin local, y todo lo de entonces es del principal
+   * (A-91): se mueve a la clave del principal para no perder una venta a medias.
+   */
+  function migrateLegacy() {
+    if (!establishments.current?.is_main) return
+    try {
+      for (const [legacy, key] of [
+        [`sunat.sale-draft.${owner.value}`, storageKey.value!],
+        [`sunat.sale-preference.${owner.value}`, preferenceKey.value!],
+      ] as const) {
+        const value = localStorage.getItem(legacy)
+        if (value === null) continue
+        if (localStorage.getItem(key) === null) localStorage.setItem(key, value)
+        localStorage.removeItem(legacy)
+      }
+    } catch {
+      // Sin almacenamiento no hay nada que mover.
+    }
+  }
+
+  /** Lee la venta guardada del usuario, la empresa y el local actuales. */
   function load() {
     const key = storageKey.value
-    if (!key || key === loadedKey) return
+    if (!key) {
+      // Sin local (o sin sesión): nada en memoria que se pueda cobrar en otro.
+      if (loadedKey !== null) {
+        loadedKey = null
+        preference = { kind: 'ticket', seriesId: null }
+        reset()
+      }
+      return
+    }
+    if (key === loadedKey) return
+    migrateLegacy()
     loadedKey = key
     preference = readPreference(preferenceKey.value!)
     reset()
@@ -133,8 +172,10 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     idempotencyKey.value = stored.idempotencyKey
   }
 
+  /** Guarda lo que hay en memoria en la clave de la que se cargó. */
   function save() {
-    if (!storageKey.value || storageKey.value !== loadedKey) return
+    const key = loadedKey
+    if (!key) return
     const data: Stored = {
       v: VERSION,
       lines: lines.value.map(({ product, quantity, discount }) => ({ product, quantity, discount })),
@@ -147,8 +188,8 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
       idempotencyKey: idempotencyKey.value,
     }
     try {
-      if (lines.value.length === 0) localStorage.removeItem(storageKey.value)
-      else localStorage.setItem(storageKey.value, JSON.stringify(data))
+      if (lines.value.length === 0) localStorage.removeItem(key)
+      else localStorage.setItem(key, JSON.stringify(data))
     } catch {
       // Sin almacenamiento la venta dura mientras la app esté abierta.
     }
@@ -157,6 +198,16 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
   watch([lines, kind, seriesId, paymentMethod, customerName, customerDocument, documentCustomer, idempotencyKey], save, {
     deep: true,
   })
+
+  // Cambiar de local: se guarda la venta del anterior tal como está y se carga la del nuevo.
+  watch(
+    storageKey,
+    () => {
+      save()
+      load()
+    },
+    { flush: 'sync' },
+  )
 
   /**
    * Recuerda el comprobante y la serie actuales para las próximas ventas. Solo
@@ -197,7 +248,24 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
   function clear() {
     reset()
     try {
-      if (storageKey.value) localStorage.removeItem(storageKey.value)
+      if (loadedKey) localStorage.removeItem(loadedKey)
+    } catch {
+      // Nada que borrar.
+    }
+  }
+
+  /**
+   * Al cerrar sesión: borra las ventas en curso del usuario en **todos** los
+   * locales (también la de un local desactivado o la de la 0.3.0). La
+   * preferencia de comprobante y serie se conserva (A-60).
+   */
+  function clearAll() {
+    reset()
+    try {
+      const prefix = `sunat.sale-draft.${owner.value}`
+      Object.keys(localStorage)
+        .filter((key) => owner.value && (key === prefix || key.startsWith(`${prefix}.`)))
+        .forEach((key) => localStorage.removeItem(key))
     } catch {
       // Nada que borrar.
     }
@@ -233,6 +301,7 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     customerDocument,
     documentCustomer,
     idempotencyKey,
+    establishmentId,
     count,
     total,
     load,
@@ -240,6 +309,7 @@ export const useSaleDraftStore = defineStore('sale-draft', () => {
     step,
     remove,
     clear,
+    clearAll,
     refresh,
     remember,
   }

@@ -87,19 +87,22 @@ describe('AppLayout', () => {
     expect(router.currentRoute.value.name).toBe('login')
   })
 
-  it('012 RF-003 cerrar sesión borra la venta en curso del dispositivo; vencer la sesión no', async () => {
-    const draftKey = 'sunat.sale-draft.1.1'
-    localStorage.setItem(draftKey, '{"v":1}')
+  it('012 RF-003 cerrar sesión borra la venta en curso de todos los locales (017); vencer la sesión no', async () => {
+    const draftKeys = ['sunat.sale-draft.1.1.1', 'sunat.sale-draft.1.1.2']
+    draftKeys.forEach((key) => localStorage.setItem(key, '{"v":1}'))
+    localStorage.setItem('sunat.sale-draft.1.12.1', '{"v":1}')
 
     clearToken() // lo que pasa con un 401
-    expect(localStorage.getItem(draftKey)).not.toBeNull()
+    expect(localStorage.getItem(draftKeys[0]!)).not.toBeNull()
 
     const { sidebar } = await mountLayout()
     vi.spyOn(useSessionStore(), 'logout').mockResolvedValue()
     await sidebar.findAll('button').find((b) => b.text().includes('Cerrar sesión'))!.trigger('click')
     await flushPromises()
 
-    expect(localStorage.getItem(draftKey)).toBeNull()
+    draftKeys.forEach((key) => expect(localStorage.getItem(key)).toBeNull())
+    expect(localStorage.getItem('sunat.sale-draft.1.12.1')).not.toBeNull()
+    localStorage.removeItem('sunat.sale-draft.1.12.1')
   })
 
   it('010 v1.4 la barra se contrae a íconos, conserva los nombres accesibles y se recuerda', async () => {

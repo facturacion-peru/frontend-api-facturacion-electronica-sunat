@@ -84,7 +84,10 @@ function mountSale() {
   return mountWithRouter(NewSaleView, {
     beforeMount: () => {
       useSessionStore().session = {
-        user: { id: 1, name: 'Luis', email: 'luis@demo.test' }, platform_admin: false, establishments: [],
+        user: { id: 1, name: 'Luis', email: 'luis@demo.test' }, platform_admin: false,
+        establishments: [
+          { id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', is_main: true, active: true, code_locked: true },
+        ],
         company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role: 'seller',
       }
     },
@@ -204,7 +207,7 @@ describe('NewSaleView', () => {
     ;(Array.from(dialog().querySelectorAll('button')).find((b) => b.textContent?.includes('Vaciar')) as HTMLButtonElement).click()
     await flushPromises()
     expect(wrapper.findAll('[data-test="cart-line"]')).toHaveLength(0)
-    expect(localStorage.getItem('sunat.sale-draft.1.1')).toBeNull()
+    expect(localStorage.getItem('sunat.sale-draft.1.1.1')).toBeNull()
   })
 
   it('v1.2 el selector de tipo y el aviso de pruebas están dentro del carrito', async () => {
@@ -267,7 +270,7 @@ describe('NewSaleView', () => {
     expect(dialog()!.textContent).toContain('T-000009')
     expect(dialog()!.textContent).toMatch(/2\.99/)
     expect(wrapper.findAll('[data-test="cart-line"]')).toHaveLength(0)
-    expect(localStorage.getItem('sunat.sale-draft.1.1')).toBeNull()
+    expect(localStorage.getItem('sunat.sale-draft.1.1.1')).toBeNull()
     // El catálogo se recarga: el disponible ya descuenta lo vendido.
     expect(salesApi.listProducts).toHaveBeenCalledTimes(2)
   })
@@ -459,7 +462,7 @@ describe('NewSaleView', () => {
 
     describe('comprobante recordado (v1.5, A-60)', () => {
       const withB002: IssuingAvailability = { ...available, series: [...available.series, { id: 13, document_type: '03', code: 'B002', active: true }] }
-      const preference = () => JSON.parse(localStorage.getItem('sunat.sale-preference.1.1') ?? 'null')
+      const preference = () => JSON.parse(localStorage.getItem('sunat.sale-preference.1.1.1') ?? 'null')
 
       it('HU-6 esc. 1 y CE-004 tras emitir una boleta B002, la siguiente venta ya la tiene elegida', async () => {
         vi.mocked(salesDocumentsApi.availability).mockResolvedValue(withB002)
@@ -481,7 +484,7 @@ describe('NewSaleView', () => {
         document.body.innerHTML = ''
 
         // Otra sesión de la app (p. ej. tras cerrar sesión y volver a entrar).
-        localStorage.removeItem('sunat.sale-draft.1.1')
+        localStorage.removeItem('sunat.sale-draft.1.1.1')
         const { wrapper } = await mountSale()
         await addProducts(wrapper, ['Galletas'])
         await chargeButton(wrapper, 'Emitir boleta · B002').trigger('click')
@@ -504,7 +507,7 @@ describe('NewSaleView', () => {
       })
 
       it('RF-010 serie recordada inactiva: usa la serie por defecto sin olvidar la preferencia', async () => {
-        localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 99 }))
+        localStorage.setItem('sunat.sale-preference.1.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 99 }))
         const { wrapper } = await mountSale()
         await addProducts(wrapper, ['Galletas'])
 
@@ -513,7 +516,7 @@ describe('NewSaleView', () => {
       })
 
       it('RF-010 sin SUNAT disponible vuelve a ticket, y la boleta sigue recordada para cuando vuelva', async () => {
-        localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
+        localStorage.setItem('sunat.sale-preference.1.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
         vi.mocked(salesDocumentsApi.availability).mockRejectedValue(new Error('red'))
         const { wrapper } = await mountSale()
         await addProducts(wrapper, ['Galletas'])
@@ -524,7 +527,7 @@ describe('NewSaleView', () => {
 
       it('RF-011 la barra del celular dice el comprobante y la serie', async () => {
         viewport(false)
-        localStorage.setItem('sunat.sale-preference.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
+        localStorage.setItem('sunat.sale-preference.1.1.1', JSON.stringify({ v: 1, kind: '03', seriesId: 11 }))
         const { wrapper } = await mountSale()
         await addProducts(wrapper, ['Galletas'])
 

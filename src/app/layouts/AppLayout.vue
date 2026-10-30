@@ -90,8 +90,9 @@ onBeforeUnmount(device().onConnectionChange((value) => (online.value = value)))
 
 async function logout() {
   // La venta en curso es del usuario: se borra al salir (spec 012, RF-003),
-  // antes de perder la sesión que da su clave. Un 401 no pasa por aquí.
-  useSaleDraftStore().clear()
+  // en todos los locales, antes de perder la sesión que da su clave. Un 401
+  // no pasa por aquí.
+  useSaleDraftStore().clearAll()
   await session.logout()
   await router.push({ name: 'login' })
 }
