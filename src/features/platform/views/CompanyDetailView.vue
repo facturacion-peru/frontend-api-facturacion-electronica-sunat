@@ -11,9 +11,9 @@ import BaseDialog from '@/shared/ui/BaseDialog.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import UbigeoPicker from '@/shared/ui/UbigeoPicker.vue'
 import { formatDateTime } from '@/shared/utils/format'
 import { platformApi } from '../api'
-import UbigeoPicker from '../components/UbigeoPicker.vue'
 import { sunatVariant, taxRegimeLabels, type LegalDataForm, type PlatformCompanyDetail } from '../types'
 
 /** Ficha de la empresa (HU-1.3) con corrección, suspensión e invitación (HU-2.3, HU-3, HU-4). */
@@ -207,7 +207,7 @@ onMounted(load)
           <BaseInput id="edit-address" v-model="form.fiscal_address.address" :invalid="invalid" :aria-describedby="describedBy" />
         </FormField>
         <FormField v-slot="{ describedBy, invalid }" label="Distrito (ubigeo)" for="edit-ubigeo" :error="editForm.fieldError('fiscal_address.ubigeo')">
-          <UbigeoPicker id="edit-ubigeo" v-model="form.fiscal_address.ubigeo" :label="company.fiscal_address?.district" :invalid="invalid" :described-by="describedBy" />
+          <UbigeoPicker :search="platformApi.searchUbigeos" id="edit-ubigeo" v-model="form.fiscal_address.ubigeo" :label="company.fiscal_address?.district" :invalid="invalid" :described-by="describedBy" />
         </FormField>
       </form>
       <template #actions>

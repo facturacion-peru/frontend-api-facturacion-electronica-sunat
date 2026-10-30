@@ -8,8 +8,8 @@ import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseInput from '@/shared/ui/BaseInput.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
+import UbigeoPicker from '@/shared/ui/UbigeoPicker.vue'
 import { platformApi } from '../api'
-import UbigeoPicker from '../components/UbigeoPicker.vue'
 import { taxRegimeLabels, type NewCompanyForm } from '../types'
 
 /** Alta de una empresa y su administrador (spec 006, HU-2; mismas reglas que la 001). */
@@ -53,7 +53,7 @@ async function onSubmit() {
       <BaseInput id="address" v-model="form.address" :invalid="invalid" :aria-describedby="describedBy" />
     </FormField>
     <FormField v-slot="{ describedBy, invalid }" label="Distrito (ubigeo)" for="ubigeo" :error="fieldError('ubigeo')">
-      <UbigeoPicker id="ubigeo" v-model="form.ubigeo" :invalid="invalid" :described-by="describedBy" />
+      <UbigeoPicker :search="platformApi.searchUbigeos" id="ubigeo" v-model="form.ubigeo" :invalid="invalid" :described-by="describedBy" />
     </FormField>
     <FormField v-slot="{ describedBy, invalid }" label="Correo de la empresa" for="email" :error="fieldError('email')">
       <BaseInput id="email" v-model="form.email" type="email" :invalid="invalid" :aria-describedby="describedBy" />

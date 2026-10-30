@@ -2,26 +2,35 @@
 import { useDebounceFn } from '@vueuse/core'
 import { ref } from 'vue'
 
-import SearchInput from '@/shared/ui/SearchInput.vue'
-import { platformApi } from '../api'
-import type { Ubigeo } from '../types'
+import SearchInput from './SearchInput.vue'
+import type { Ubigeo } from './ubigeo'
 
-/** Buscador de distrito (ubigeo) para el domicilio fiscal. */
-const props = defineProps<{ id: string; label?: string | null; invalid?: boolean; describedBy?: string }>()
+/**
+ * Buscador de distrito (ubigeo): el domicilio fiscal en la plataforma y la
+ * dirección de un local en la empresa (spec 017). Cada uno pasa su búsqueda
+ * (`/platform/ubigeos/search` o `/ubigeos/search`) en `search`.
+ */
+const props = defineProps<{
+  id: string
+  search: (q: string) => Promise<Ubigeo[]>
+  label?: string | null
+  invalid?: boolean
+  describedBy?: string
+}>()
 const ubigeo = defineModel<string>({ default: '' })
 const emit = defineEmits<{ picked: [Ubigeo] }>()
 
-const search = ref(props.label ?? '')
+const text = ref(props.label ?? '')
 const results = ref<Ubigeo[]>([])
 
 const runSearch = useDebounceFn(async () => {
-  const q = search.value.trim()
-  results.value = q.length >= 2 ? await platformApi.searchUbigeos(q).catch(() => []) : []
+  const q = text.value.trim()
+  results.value = q.length >= 2 ? await props.search(q).catch(() => []) : []
 }, 250)
 
 function pick(u: Ubigeo) {
   ubigeo.value = u.id
-  search.value = u.ubigeo_completo
+  text.value = u.ubigeo_completo
   results.value = []
   emit('picked', u)
 }
@@ -31,7 +40,7 @@ function pick(u: Ubigeo) {
   <div>
     <SearchInput
       :id="id"
-      v-model="search"
+      v-model="text"
       placeholder="Escribe el distrito"
       autocomplete="off"
       :invalid="invalid"

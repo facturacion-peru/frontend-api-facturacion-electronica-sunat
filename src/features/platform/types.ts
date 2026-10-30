@@ -59,13 +59,7 @@ export interface LegalDataForm {
   fiscal_address: { address: string; ubigeo: string }
 }
 
-export interface Ubigeo {
-  id: string
-  nombre: string
-  provincia: string
-  region: string
-  ubigeo_completo: string
-}
+export type { Ubigeo } from '@/shared/ui/ubigeo'
 
 /** Refleja App\Http\Resources\PlatformSalesDocumentResource: solo datos de envío (A-37). */
 export interface SupportDocument {
