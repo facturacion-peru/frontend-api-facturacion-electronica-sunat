@@ -16,6 +16,10 @@ import type { Establishment } from './types'
  *   (solo el id). Con un solo permitido es ese; si el recordado ya no está
  *   permitido, queda `null` y hay que elegir (HU-2, esc. 5). No se borra al
  *   cerrar sesión: es del dispositivo, como la impresora.
+ * - `filterOptions` y `defaultFilter`: los locales que se pueden leer en las
+ *   listas (el administrador también ve los inactivos, por su historial) y con
+ *   cuál empieza el filtro: «Todos» (`null`) para el administrador y el local
+ *   actual para el vendedor, que trabaja en uno a la vez (A-87).
  */
 const VERSION = 1
 
@@ -51,6 +55,11 @@ export const useEstablishmentStore = defineStore('establishments', () => {
     return allowed.value.find((e) => e.id === chosenId.value) ?? null
   })
 
+  /** Lista completa para los filtros, con inactivos (`GET /establishments?include_inactive=1`). */
+  const readable = ref<Establishment[] | null>(null)
+  const filterOptions = computed(() => readable.value ?? session.session?.establishments ?? [])
+  const defaultFilter = computed(() => (session.isCompanyAdmin ? null : (current.value?.id ?? null)))
+
   /** Hay varios permitidos y ninguno elegido (o el recordado ya no vale). */
   const needsChoice = computed(() => allowed.value.length > 1 && current.value === null)
 
@@ -69,5 +78,11 @@ export const useEstablishmentStore = defineStore('establishments', () => {
     if (session.session) session.session.establishments = establishments
   }
 
-  return { allowed, multi, noneAllowed, current, needsChoice, choose, setAllowed }
+  function setReadable(establishments: Establishment[]) {
+    readable.value = establishments
+  }
+
+  watch(storageKey, () => (readable.value = null))
+
+  return { allowed, multi, noneAllowed, current, needsChoice, filterOptions, defaultFilter, choose, setAllowed, setReadable }
 })
