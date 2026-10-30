@@ -28,7 +28,8 @@ const circle = (cx: number, cy: number, r: number) => `M${cx - r} ${cy}a${r} ${r
 
 const primary: Item[] = [
   { to: '/', label: 'Inicio', exact: true, icon: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M10 20v-6h4v6' },
-  { to: '/vender', label: 'Vender', icon: `${circle(12, 12, 9)}M12 8v8M8 12h8` },
+  // Carrito de compras: asa, canasta y dos ruedas.
+  { to: '/vender', label: 'Vender', icon: `M2.5 3.5h2.4l2.5 11.3a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.2L20.5 7.5H5.8${circle(9.5, 20, 1.25)}${circle(17.5, 20, 1.25)}` },
   { to: '/ventas', label: 'Ventas', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3' },
   { to: '/productos', label: 'Productos', icon: 'M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4zM3.5 7.5 12 11.5l8.5-4M12 11.5v9' },
   // Impresora Bluetooth: solo existe en la app Android (spec 015).
