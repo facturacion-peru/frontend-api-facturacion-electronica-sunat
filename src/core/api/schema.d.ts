@@ -2026,6 +2026,7 @@ export interface operations {
                 search?: string | null;
                 type?: "good" | "service";
                 status?: "active" | "inactive" | "all";
+                establishment_id?: number;
             };
             header?: never;
             path?: never;
@@ -2064,6 +2065,7 @@ export interface operations {
                 to: string;
                 types?: Record<string, never>[];
                 statuses?: Record<string, never>[];
+                establishment_id?: number;
             };
             header?: never;
             path?: never;
