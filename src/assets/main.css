@@ -190,4 +190,12 @@
     border: 0;
     box-shadow: none;
   }
+
+  /*
+   * Recibo impreso desde un diálogo (va directo en <body>, con Teleport): el
+   * resto de la app ni se dibuja, así no deja páginas en blanco detrás.
+   */
+  body:has(> .print-area) > #app {
+    display: none;
+  }
 }

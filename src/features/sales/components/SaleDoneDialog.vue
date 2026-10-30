@@ -118,13 +118,19 @@ async function viewDetail() {
       @share="printer.sharePdf"
     />
 
-    <TicketReceipt
-      v-if="printing && sale?.kind === 'ticket'"
-      :ticket="sale.ticket"
-      :company-name="session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social ?? ''"
-      :company-ruc="session.session?.company?.ruc ?? ''"
-      class="hidden print:block"
-    />
+    <!--
+      Fuera del diálogo: dentro, el recibo se ubicaba respecto del panel (que
+      tiene posición, alto máximo y desplazamiento) y salía movido y cortado.
+    -->
+    <Teleport to="body">
+      <TicketReceipt
+        v-if="printing && sale?.kind === 'ticket'"
+        :ticket="sale.ticket"
+        :company-name="session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social ?? ''"
+        :company-ruc="session.session?.company?.ruc ?? ''"
+        class="hidden print:block"
+      />
+    </Teleport>
 
     <template #actions>
       <BaseButton variant="ghost" @click="viewDetail">Ver detalle</BaseButton>
