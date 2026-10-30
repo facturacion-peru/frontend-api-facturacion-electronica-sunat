@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
+import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue'
+import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
 import BaseSelect from '@/shared/ui/BaseSelect.vue'
@@ -16,6 +18,7 @@ import type { ExportFormat } from '../types'
  * queda en la auditoría.
  */
 const format = ref<ExportFormat>('xlsx')
+const exportEstablishment = ref(useEstablishmentStore().defaultFilter)
 const exporting = ref<'products' | 'customers' | null>(null)
 const exportError = ref<string | null>(null)
 
@@ -23,7 +26,7 @@ async function exportAll(what: 'products' | 'customers') {
   exporting.value = what
   exportError.value = null
   try {
-    await (what === 'products' ? dataTransferApi.exportProducts(format.value) : dataTransferApi.exportCustomers(format.value))
+    await (what === 'products' ? dataTransferApi.exportProducts(format.value, exportEstablishment.value) : dataTransferApi.exportCustomers(format.value))
   } catch (e) {
     exportError.value = e instanceof ApiError ? e.message : 'No se pudo descargar el archivo.'
   } finally {
@@ -54,6 +57,7 @@ async function exportAll(what: 'products' | 'customers') {
             <option value="csv">CSV</option>
           </BaseSelect>
         </div>
+        <EstablishmentFilter id="export-all-establishment" v-model="exportEstablishment" show-label />
         <div class="flex flex-wrap gap-2">
           <BaseButton variant="secondary" :loading="exporting === 'products'" @click="exportAll('products')">Productos y stock</BaseButton>
           <BaseButton variant="secondary" :loading="exporting === 'customers'" @click="exportAll('customers')">Clientes</BaseButton>

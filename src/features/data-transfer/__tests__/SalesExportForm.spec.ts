@@ -1,17 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 
 import { ApiError } from '@/core/api/errors'
+import { principal, sessionWith, sucursal } from '@/shared/testing/establishments'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 
 vi.mock('../api', () => ({ dataTransferApi: { exportSales: vi.fn<AsyncFn>() } }))
+vi.mock('@/shared/establishments/api', () => ({ establishmentsApi: { list: async () => [principal, sucursal] } }))
 
 const { dataTransferApi } = await import('../api')
 const SalesExportForm = (await import('../components/SalesExportForm.vue')).default
 
 beforeEach(() => {
   vi.clearAllMocks()
+  setActivePinia(createPinia())
   // 7 de octubre de 2026, 22:30 en Lima (ya es el 8 en UTC).
   vi.useFakeTimers({ now: new Date('2026-10-08T03:30:00Z'), shouldAdvanceTime: true })
   vi.mocked(dataTransferApi.exportSales).mockResolvedValue(undefined)
@@ -47,6 +51,7 @@ describe('SalesExportForm', () => {
       types: ['receipt', 'invoice', 'credit_note'],
       statuses: ['issued', 'pending', 'sent', 'accepted', 'observed'],
       format: 'csv',
+      establishment_id: null,
     })
     expect(wrapper.text()).toContain('Descarga lista')
   })
@@ -81,5 +86,22 @@ describe('SalesExportForm', () => {
     await flushPromises()
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Demasiados intentos')
+  })
+
+  it('017 HU-4 esc. 3: con varios locales se puede exportar un solo local', async () => {
+    sessionWith([principal, sucursal])
+    const wrapper = mount(SalesExportForm)
+    await flushPromises()
+
+    await wrapper.get('#sales-export-establishment').setValue('2')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(dataTransferApi.exportSales).toHaveBeenCalledWith(expect.objectContaining({ establishment_id: 2 }))
+  })
+
+  it('RF-010: con un solo local no hay filtro de local', () => {
+    sessionWith([principal])
+    expect(mount(SalesExportForm).find('#sales-export-establishment').exists()).toBe(false)
   })
 })

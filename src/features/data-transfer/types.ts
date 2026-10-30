@@ -15,6 +15,8 @@ export interface SalesExportFilters {
   types: SaleKind[]
   statuses: string[]
   format: ExportFormat
+  /** `null`: todos los locales (spec 017). */
+  establishment_id: number | null
 }
 
 export interface ImportIssue {

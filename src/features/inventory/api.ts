@@ -22,6 +22,7 @@ export const inventoryApi = {
     const query = new URLSearchParams({ format, status: filters.status, lots: lots ? '1' : '0' })
     if (filters.search) query.set('search', filters.search)
     if (filters.type) query.set('type', filters.type)
+    if (filters.establishment_id) query.set('establishment_id', String(filters.establishment_id))
 
     return downloadFile(`/api/v1/exports/products?${query}`, `productos.${format === 'csv' && lots ? 'zip' : format}`)
   },

@@ -16,22 +16,29 @@ export const dataTransferApi = {
     const query = new URLSearchParams({ from: filters.from, to: filters.to, format: filters.format })
     filters.types.forEach((type) => query.append('types[]', type))
     filters.statuses.forEach((status) => query.append('statuses[]', status))
+    if (filters.establishment_id) query.set('establishment_id', String(filters.establishment_id))
     const extension = filters.format === 'csv' ? 'zip' : 'xlsx'
 
     return downloadFile(`/api/v1/exports/sales?${query}`, `ventas-${filters.from}_${filters.to}.${extension}`)
   },
 
-  exportProducts: (format: ExportFormat) => downloadFile(`/api/v1/exports/products?format=${format}&status=all`, `productos.${format}`),
+  exportProducts: (format: ExportFormat, establishmentId: number | null = null) =>
+    downloadFile(
+      `/api/v1/exports/products?format=${format}&status=all${establishmentId ? `&establishment_id=${establishmentId}` : ''}`,
+      `productos.${format}`,
+    ),
 
   exportCustomers: (format: ExportFormat) => downloadFile(`/api/v1/exports/customers?format=${format}`, `clientes.${format}`),
 
   template: (kind: ImportKind) =>
     downloadFile(`/api/v1/imports/${kind}/template`, `plantilla-${kind === 'products' ? 'productos' : 'clientes'}.xlsx`),
 
-  preview: (kind: ImportKind, file: File, mode: ImportMode) => {
+  /** `establishmentId`: local del stock inicial de los productos; sin él, el principal (spec 017). */
+  preview: (kind: ImportKind, file: File, mode: ImportMode, establishmentId: number | null = null) => {
     const form = new FormData()
     form.append('file', file)
     form.append('mode', mode)
+    if (establishmentId) form.append('establishment_id', String(establishmentId))
 
     return unwrapData<ImportPreview>(
       apiClient.POST('/api/v1/imports/{kind}/preview', {

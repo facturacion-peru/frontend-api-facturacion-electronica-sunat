@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 
 import { ApiError } from '@/core/api/errors'
+import { principal, sessionWith, sucursal } from '@/shared/testing/establishments'
 import { mountWithRouter } from '@/shared/testing/mountWithRouter'
 import { dataTransferRoutes } from '../routes'
 
@@ -13,6 +14,8 @@ vi.mock('../api', () => ({
     template: vi.fn<AsyncFn>(), preview: vi.fn<AsyncFn>(), confirm: vi.fn<AsyncFn>(),
   },
 }))
+
+vi.mock('@/shared/establishments/api', () => ({ establishmentsApi: { list: async () => [principal, sucursal] } }))
 
 const { dataTransferApi } = await import('../api')
 const DataTransferView = (await import('../views/DataTransferView.vue')).default
@@ -49,7 +52,7 @@ describe('DataTransferView', () => {
     await wrapper.findAll('button').find((b) => b.text() === 'Clientes')!.trigger('click')
     await flushPromises()
 
-    expect(dataTransferApi.exportProducts).toHaveBeenCalledWith('csv')
+    expect(dataTransferApi.exportProducts).toHaveBeenCalledWith('csv', null)
     expect(dataTransferApi.exportCustomers).toHaveBeenCalledWith('csv')
   })
 
@@ -61,5 +64,15 @@ describe('DataTransferView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('No tienes permiso')
+  })
+
+  it('017: con varios locales exporta el stock de un local', async () => {
+    const { wrapper } = await mountWithRouter(DataTransferView, { beforeMount: () => sessionWith([principal, sucursal]) })
+
+    await wrapper.get('#export-all-establishment').setValue('2')
+    await wrapper.findAll('button').find((b) => b.text() === 'Productos y stock')!.trigger('click')
+    await flushPromises()
+
+    expect(dataTransferApi.exportProducts).toHaveBeenCalledWith('xlsx', 2)
   })
 })
