@@ -97,7 +97,7 @@ function mountSale() {
         establishments: [
           { id: 1, code: '0000', name: 'Principal', address: 'Av. Lima 123', ubigeo: '150101', district: 'Lima / Lima / Lima', is_main: true, active: true, code_locked: true },
         ],
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role: 'seller',
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, logo_url: null, active_establishments_count: 1 }, role: 'seller',
       }
     },
   })

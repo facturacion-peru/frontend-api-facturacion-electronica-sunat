@@ -25,7 +25,7 @@ const Stub = { template: '<div />' }
 const seller: Session = {
   user: { id: 2, name: 'Luis', email: 'luis@example.com' },
   platform_admin: false, establishments: [],
-  company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, active_establishments_count: 1 },
+  company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, logo_url: null, active_establishments_count: 1 },
   role: 'seller',
 }
 

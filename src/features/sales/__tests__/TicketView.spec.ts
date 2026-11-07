@@ -30,7 +30,7 @@ async function mountAs(role: CompanyRole, query = '') {
     beforeMount: () => {
       useSessionStore().session = {
         user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
-        company: { id: 1, ruc: '20600000011', razon_social: 'Empresa Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: 1 }, role,
+        company: { id: 1, ruc: '20600000011', razon_social: 'Empresa Demo S.A.C.', nombre_comercial: 'Bodega Demo', logo_url: null, active_establishments_count: 1 }, role,
       }
     },
   })

@@ -47,7 +47,7 @@ describe('CompanyView', () => {
       beforeMount: () => {
         useSessionStore().session = {
           user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, role: 'company_admin', establishments: [],
-          company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, active_establishments_count: 1 },
+          company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, logo_url: null, active_establishments_count: 1 },
         }
       },
     })
@@ -147,6 +147,24 @@ describe('CompanyView', () => {
       finish({ ...company, logo_url: 'https://img.test/logo.png' })
       await flushPromises()
       expect(wrapper.find('[data-test="logo-progress"]').exists()).toBe(false)
+    })
+
+    it('al subir el logo lo pasa a la sesión: la barra lateral lo muestra sin recargar', async () => {
+      vi.mocked(companyApi.uploadLogo).mockResolvedValue({ ...company, logo_url: 'https://img.test/logo.png' })
+      const { wrapper } = await mountWithRouter(CompanyView, {
+        beforeMount: () => {
+          useSessionStore().session = {
+            user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, role: 'company_admin', establishments: [],
+            company: { id: 7, ruc: '20131312955', razon_social: 'Bodega Ana S.A.C.', nombre_comercial: null, logo_url: null, active_establishments_count: 1 },
+          }
+        },
+      })
+
+      await choose(wrapper, pngFile('logo.png'))
+      await uploadButton(wrapper).trigger('click')
+      await flushPromises()
+
+      expect(useSessionStore().session!.company!.logo_url).toBe('https://img.test/logo.png')
     })
 
     it('rechaza antes de subir un formato distinto de PNG o JPG, o más de 1 MB', async () => {

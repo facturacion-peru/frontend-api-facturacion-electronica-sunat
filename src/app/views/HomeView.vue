@@ -13,6 +13,7 @@ import EstablishmentFilter from '@/shared/establishments/EstablishmentFilter.vue
 import { useEstablishmentStore } from '@/shared/establishments/store'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
 import BaseButton from '@/shared/ui/BaseButton.vue'
+import CompanyMark from '@/shared/ui/CompanyMark.vue'
 import PilotNotice from '@/shared/ui/PilotNotice.vue'
 
 /**
@@ -22,7 +23,10 @@ import PilotNotice from '@/shared/ui/PilotNotice.vue'
  */
 const session = useSessionStore()
 const firstName = computed(() => session.session?.user.name.split(' ')[0] ?? '')
-const company = computed(() => session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social)
+const company = computed(() => session.session?.company ?? null)
+/** Nombre comercial como título; sin él, la razón social (y no se repite debajo). */
+const companyTitle = computed(() => company.value?.nombre_comercial || company.value?.razon_social || '')
+const legalName = computed(() => (company.value?.nombre_comercial ? company.value.razon_social : null))
 
 const establishments = useEstablishmentStore()
 const establishmentFilter = ref(establishments.defaultFilter)
@@ -50,12 +54,25 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-wrap items-end justify-between gap-4">
-    <div class="min-w-0">
-      <h1 class="text-2xl font-semibold tracking-tight">Hola, {{ firstName }}</h1>
-      <p class="mt-1 text-sm text-ink-muted">
-        <span v-if="dateLabel" class="first-letter:uppercase">{{ dateLabel }} · </span>{{ company }}
-      </p>
+  <section
+    class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5"
+    aria-labelledby="home-company"
+    data-test="home-header"
+  >
+    <div class="flex min-w-0 flex-1 items-center gap-4">
+      <!-- En el celular la cabecera del layout ya lleva el logo. -->
+      <div class="hidden shrink-0 sm:block"><CompanyMark :logo-url="company?.logo_url ?? null" :company-name="companyTitle" :size="56" /></div>
+      <div class="min-w-0">
+        <p class="text-sm text-ink-muted">
+          Hola, {{ firstName }}<span v-if="dateLabel"> · <span class="inline-block first-letter:uppercase">{{ dateLabel }}</span></span>
+        </p>
+        <h1 id="home-company" class="mt-0.5 truncate text-2xl font-semibold tracking-tight text-ink" data-test="company-title">{{ companyTitle }}</h1>
+        <p v-if="company" class="mt-1 flex min-w-0 flex-col gap-y-0.5 text-sm text-ink-muted sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2" data-test="company-legal">
+          <span v-if="legalName" class="min-w-0 truncate">{{ legalName }}</span>
+          <span v-if="legalName" class="hidden sm:inline" aria-hidden="true">·</span>
+          <span class="whitespace-nowrap">RUC <span class="font-medium text-ink tabular-nums">{{ company.ruc }}</span></span>
+        </p>
+      </div>
     </div>
     <RouterLink
       :to="{ name: 'new-sale' }"
@@ -66,7 +83,7 @@ onMounted(load)
       </svg>
       Nueva venta
     </RouterLink>
-  </div>
+  </section>
 
   <PilotNotice class="mt-4" />
 

@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import { ApiError } from '@/core/api/errors'
+import { useSessionStore } from '@/core/auth/session-store'
 import { useApiForm } from '@/shared/composables/useApiForm'
 import { checkLogo, ImageRejected } from '@/shared/images/prepare'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
@@ -12,6 +13,7 @@ import { companyApi } from '../api'
 import EstablishmentsSection from '../components/EstablishmentsSection.vue'
 import { personTypeLabels, taxRegimeLabels, type CompanyContactForm, type CompanyDetail } from '../types'
 
+const session = useSessionStore()
 const company = ref<CompanyDetail | null>(null)
 const loadError = ref<string | null>(null)
 const form = ref<CompanyContactForm>({ nombre_comercial: null, email: '', phone: null, expiry_warning_days: 30 })
@@ -26,6 +28,8 @@ const logoProgress = ref(0)
 
 function fill(data: CompanyDetail) {
   company.value = data
+  // La barra lateral muestra el logo de la sesión: al subirlo o quitarlo se ve sin recargar.
+  if (session.session?.company) session.session.company.logo_url = data.logo_url
   form.value = {
     nombre_comercial: data.nombre_comercial,
     email: data.email,
