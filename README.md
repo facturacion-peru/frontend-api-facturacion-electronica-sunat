@@ -1,4 +1,4 @@
-# Frontend — Facturación Electrónica SUNAT
+# Frontend — Comprobante Digital
 
 Cliente web para la [API de Facturación Electrónica SUNAT Perú](https://github.com/facturacion-peru/Api-de-facturacion-electronica-sunat-Peru), construido con Vue 3 y TypeScript.
 
@@ -311,9 +311,11 @@ pnpm android:release   # APK firmado en android/app/build/outputs/apk/release/
 - Hay una copia en `respaldos/android-firma/` y otra debe guardarse fuera de esta máquina.
 - **Si se pierde la clave o su contraseña, la app instalada ya no se puede actualizar**: habría que desinstalarla y empezar con otro identificador.
 
-### Provisional
+### Nombre e identificador
 
-El nombre («Facturación SUNAT») y el identificador (`io.github.facturacion_peru.app`) son provisionales (A-61). Se fijan antes de la primera entrega a una empresa. Para cambiarlos hay que modificar `capacitor.config.ts` y `android/app/build.gradle` y regenerar la plataforma.
+La app se llama «Comprobante Digital» y su identificador es `app.comprobantedigital`, el dominio de producción `comprobantedigital.app` al revés (A-61). Están en `capacitor.config.ts`, `android/app/build.gradle`, `android/app/src/main/res/values/strings.xml` y el paquete Java de `android/app/src/main/java/`. En Google Play el identificador ya no se puede cambiar; con otro identificador, Android la trata como otra app (la anterior hay que desinstalarla).
+
+El nombre de la web sale de `VITE_APP_NAME` (`.env`; la app Android lo toma de `.env.android`).
 
 La impresión Bluetooth directa (ESC/POS) queda para una spec propia. El dato que decide el enfoque es si las térmicas usan **Bluetooth Classic (SPP)** o **BLE**.
 

@@ -1,4 +1,4 @@
-package io.github.facturacion_peru.app.printer;
+package app.comprobantedigital.printer;
 
 import android.Manifest;
 import android.annotation.SuppressLint;

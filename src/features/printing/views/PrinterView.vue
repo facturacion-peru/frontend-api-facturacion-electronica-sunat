@@ -131,7 +131,7 @@ onMounted(refreshStatus)
 
         <BaseAlert v-if="problem === 'permission_denied'" variant="warning" title="Sin permiso de Bluetooth" class="mt-3" data-test="permission-denied">
           <p>
-            Sin el permiso «Dispositivos cercanos» la app no puede ver tus impresoras. Puedes darlo en Ajustes › Apps › Facturación SUNAT ›
+            Sin el permiso «Dispositivos cercanos» la app no puede ver tus impresoras. Puedes darlo en Ajustes › Apps › Comprobante Digital ›
             Permisos. Mientras tanto, «Imprimir» sigue abriendo «Compartir».
           </p>
           <BaseButton variant="secondary" class="mt-3" @click="loadDevices">Volver a intentar</BaseButton>
