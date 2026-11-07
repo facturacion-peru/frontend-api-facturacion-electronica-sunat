@@ -89,6 +89,18 @@ function blockedReason(value: SaleKind): string | null {
   return null
 }
 
+/**
+ * Qué comprobante no se puede emitir y por qué. Si solo falta la serie de uno
+ * (un local sin serie de factura), lo nombra a él: si no, Factura quedaba
+ * deshabilitada sin explicación.
+ */
+const blockedMessage = computed(() => {
+  const receipt = blockedReason('03')
+  const invoice = blockedReason('01')
+  if (receipt && receipt === invoice) return `Boleta y factura: ${receipt}`
+  return [receipt && `Boleta: ${receipt}`, invoice && `Factura: ${invoice}`].filter(Boolean).join(' ') || null
+})
+
 /** Boleta de más de S/ 700 sin comprador identificado (A-22 ⚖️); la API lo hace cumplir. */
 const needsReceiptCustomer = computed(
   () => draft.kind === '03' && !draft.documentCustomer && Number(draft.total) > Number(ANONYMOUS_RECEIPT_LIMIT),
@@ -273,7 +285,7 @@ const kindLabel = computed(() => [kinds.find((k) => k.value === draft.kind)?.lab
 
 const cartProps = computed(() => ({
   kinds: kinds.map((k) => ({ ...k, disabled: blockedReason(k.value) !== null })),
-  blockedMessage: blockedReason('03'),
+  blockedMessage: blockedMessage.value,
   kindSeries: kindSeries.value,
   needsReceiptCustomer: needsReceiptCustomer.value,
   needsInvoiceCustomer: needsInvoiceCustomer.value,

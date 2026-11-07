@@ -438,7 +438,17 @@ describe('NewSaleView', () => {
 
       const inputs = wrapper.findAll('[data-test="sale-kind"] input')
       expect(inputs.map((i) => i.attributes('disabled') !== undefined)).toEqual([false, true, true])
-      expect(wrapper.find('[data-test="kind-blocked"]').text()).toContain('Pendiente de validación')
+      expect(wrapper.find('[data-test="kind-blocked"]').text()).toBe('Boleta y factura: Emisión SUNAT: Pendiente de validación.')
+    })
+
+    it('un local sin serie de factura deja la boleta y dice por qué falta la factura', async () => {
+      vi.mocked(salesDocumentsApi.availability).mockResolvedValue({ ...available, series: available.series.filter((s) => s.document_type === '03') })
+      const { wrapper } = await mountSale()
+      await addProducts(wrapper, ['Galletas'])
+
+      const inputs = wrapper.findAll('[data-test="sale-kind"] input')
+      expect(inputs.map((i) => i.attributes('disabled') !== undefined)).toEqual([false, false, true])
+      expect(wrapper.find('[data-test="kind-blocked"]').text()).toBe('Factura: No hay una serie activa. Pide al administrador que la cree.')
     })
 
     it('con varias series del tipo deja elegir', async () => {

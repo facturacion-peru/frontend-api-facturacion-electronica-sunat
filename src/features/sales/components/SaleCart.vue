@@ -25,7 +25,7 @@ import CustomerPicker from './CustomerPicker.vue'
  */
 defineProps<{
   kinds: { value: SaleKind; label: string; disabled: boolean }[]
-  /** Por qué boleta y factura no están disponibles, o null. */
+  /** Qué comprobante no está disponible y por qué, o null. */
   blockedMessage: string | null
   kindSeries: IssuingAvailability['series']
   needsReceiptCustomer: boolean
@@ -119,7 +119,7 @@ const showCustomer = ref(Boolean(draft.customerName || draft.customerDocument))
             {{ k.label }}
           </label>
         </div>
-        <p v-if="blockedMessage" class="mt-1.5 text-xs text-ink-muted" data-test="kind-blocked">Boleta y factura: {{ blockedMessage }}</p>
+        <p v-if="blockedMessage" class="mt-1.5 text-xs text-ink-muted" data-test="kind-blocked">{{ blockedMessage }}</p>
         <EnvironmentBadge v-if="draft.kind !== 'ticket'" class="mt-2" />
       </fieldset>
 
