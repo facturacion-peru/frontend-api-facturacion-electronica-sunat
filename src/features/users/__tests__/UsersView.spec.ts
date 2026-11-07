@@ -132,7 +132,7 @@ describe('UsersView', () => {
         beforeMount: () => {
           useSessionStore().session = {
             user: { id: 1, name: 'Ana', email: 'ana@example.com' }, platform_admin: false, role: 'company_admin',
-            company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 2 },
+            company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, logo_url: null, active_establishments_count: 2 },
             establishments: [principal, sucursal],
           }
         },

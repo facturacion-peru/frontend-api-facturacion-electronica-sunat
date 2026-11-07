@@ -1,8 +1,8 @@
-package io.github.facturacion_peru.app;
+package app.comprobantedigital;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
-import io.github.facturacion_peru.app.printer.BluetoothPrinterPlugin;
+import app.comprobantedigital.printer.BluetoothPrinterPlugin;
 
 public class MainActivity extends BridgeActivity {
 

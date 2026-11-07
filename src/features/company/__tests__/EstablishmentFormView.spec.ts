@@ -30,7 +30,7 @@ function mountForm(path = '/empresa/locales') {
       useSessionStore().session = {
         user: { id: 1, name: 'Ana', email: 'ana@demo.test' },
         platform_admin: false,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 },
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, logo_url: null, active_establishments_count: 1 },
         role: 'company_admin',
         establishments: [principal],
       }

@@ -16,7 +16,7 @@ const principal: Establishment = {
 }
 const sucursal: Establishment = { ...principal, id: 2, code: '0001', name: 'Sucursal Centro', is_main: false }
 
-async function mountLayout(path = '/', establishments: Establishment[] = [principal]) {
+async function mountLayout(path = '/', establishments: Establishment[] = [principal], logoUrl: string | null = null) {
   const result = await mountWithRouter(AppLayout, {
     path,
     pattern: '/:rest(.*)*',
@@ -24,7 +24,7 @@ async function mountLayout(path = '/', establishments: Establishment[] = [princi
       useSessionStore().session = {
         user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments,
         company: {
-          id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: establishments.length,
+          id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', logo_url: logoUrl, active_establishments_count: establishments.length,
         },
         role: 'company_admin',
       }
@@ -50,6 +50,24 @@ describe('AppLayout', () => {
     expect(sidebar.text()).toContain('Administrador')
     expect(sidebar.find('[aria-label^="Tema:"]').exists()).toBe(true)
     expect(sidebar.text()).toContain('Cerrar sesión')
+  })
+
+  it('muestra el logo de la empresa; sin logo, o si no carga, el del sistema', async () => {
+    const withLogo = await mountLayout('/', [principal], 'https://img.test/logo.png')
+    const logos = withLogo.wrapper.findAll('[data-test="company-logo"]')
+    // Cabecera del celular y barra lateral.
+    expect(withLogo.wrapper.get('header').get('[data-test="company-logo"]').attributes('src')).toBe('https://img.test/logo.png')
+    expect(withLogo.sidebar.get('[data-test="company-logo"]').attributes('alt')).toBe('Logo de Bodega Demo')
+
+    await withLogo.sidebar.get('[data-test="company-logo"]').trigger('error')
+    expect(withLogo.sidebar.find('[data-test="company-logo"]').exists()).toBe(false)
+    expect(withLogo.sidebar.find('svg[role="img"]').exists()).toBe(true)
+    expect(withLogo.wrapper.findAll('[data-test="company-logo"]')).toHaveLength(logos.length - 1)
+    withLogo.wrapper.unmount()
+
+    const { wrapper, sidebar } = await mountLayout()
+    expect(wrapper.find('[data-test="company-logo"]').exists()).toBe(false)
+    expect(sidebar.find('svg[role="img"]').exists()).toBe(true)
   })
 
   it('017 RF-010: el local se elige en la barra lateral solo si la empresa tiene varios', async () => {

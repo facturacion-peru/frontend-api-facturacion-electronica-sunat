@@ -24,7 +24,7 @@ function mountAs(role: CompanyRole) {
     beforeMount: () => {
       useSessionStore().session = {
         user: { id: 1, name: 'Ana Pérez', email: 'ana@demo.test' }, platform_admin: false, establishments: [],
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', active_establishments_count: 1 }, role,
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo S.A.C.', nombre_comercial: 'Bodega Demo', logo_url: null, active_establishments_count: 1 }, role,
       }
     },
   })
@@ -44,6 +44,8 @@ describe('HomeView', () => {
     expect(first.text()).toContain('Nueva venta')
     expect(first.attributes('href')).toBe('/__new-sale')
     expect(dashboardApi.summary).toHaveBeenCalledTimes(1)
+    expect(wrapper.get('[data-test="company-title"]').text()).toBe('Bodega Demo')
+    expect(wrapper.get('[data-test="company-legal"]').text()).toMatch(/Demo S\.A\.C\.\s*·\s*RUC 20600000011/)
     expect(wrapper.text()).toContain('Hola, Ana')
     expect(wrapper.text()).toContain('Ventas de hoy')
     expect(wrapper.text()).toContain('Últimos 7 días')

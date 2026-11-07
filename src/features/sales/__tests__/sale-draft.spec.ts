@@ -29,7 +29,7 @@ function boot(userId = 1, companyId = 1, establishments: Establishment[] = [prin
   useSessionStore().session = {
     user: { id: userId, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, establishments,
     company: {
-      id: companyId, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: establishments.length,
+      id: companyId, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, logo_url: null, active_establishments_count: establishments.length,
     },
     role: 'seller',
   }

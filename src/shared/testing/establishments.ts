@@ -14,7 +14,7 @@ export function sessionWith(establishments: Establishment[], role: CompanyRole =
     user: { id: 1, name: 'Ana', email: 'ana@demo.test' }, platform_admin: false, role, establishments,
     company: {
       id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null,
-      active_establishments_count: activeCount ?? establishments.filter((e) => e.active).length,
+      logo_url: null, active_establishments_count: activeCount ?? establishments.filter((e) => e.active).length,
     },
   }
 }

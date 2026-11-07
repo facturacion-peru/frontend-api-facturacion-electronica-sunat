@@ -19,6 +19,8 @@ export interface SessionCompany {
   ruc: string
   razon_social: string
   nombre_comercial: string | null
+  /** Logo que subió la empresa, o null: la barra lateral usa entonces el del sistema. */
+  logo_url: string | null
   /** Locales activos de la empresa, aunque el usuario no los tenga todos (spec 017, RF-010). */
   active_establishments_count: number
 }

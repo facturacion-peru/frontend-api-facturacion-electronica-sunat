@@ -51,7 +51,7 @@ function mountSale({ establishments = [principal, sucursal], activeCount = 2, ro
     beforeMount: () => {
       useSessionStore().session = {
         user: { id: 1, name: 'Luis', email: 'luis@demo.test' }, platform_admin: false, role, establishments,
-        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: activeCount },
+        company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, logo_url: null, active_establishments_count: activeCount },
       }
     },
   })

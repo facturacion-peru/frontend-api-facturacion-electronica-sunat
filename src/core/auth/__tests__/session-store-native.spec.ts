@@ -20,7 +20,7 @@ const { useSessionStore, PLATFORM_IN_APP_MESSAGE } = await import('../session-st
 const platform: Session = { user: { id: 9, name: 'Plataforma', email: 'plataforma@demo.test' }, platform_admin: true, establishments: [], company: null, role: null }
 const seller: Session = {
   user: { id: 1, name: 'Luis', email: 'luis@demo.test' }, platform_admin: false, establishments: [],
-  company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, active_establishments_count: 1 }, role: 'seller',
+  company: { id: 1, ruc: '20600000011', razon_social: 'Demo', nombre_comercial: null, logo_url: null, active_establishments_count: 1 }, role: 'seller',
 }
 const withToken = (s: Session): SessionWithToken => ({ ...s, token: '1|abc', expires_at: '2026-10-07T12:00:00Z' })
 

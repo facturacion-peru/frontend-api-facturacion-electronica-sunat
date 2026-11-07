@@ -8,9 +8,9 @@ import { device } from '@/core/device'
 import { useSaleDraftStore } from '@/features/sales/stores/sale-draft'
 import EstablishmentSwitcher from '@/shared/establishments/EstablishmentSwitcher.vue'
 import BaseBadge from '@/shared/ui/BaseBadge.vue'
-import LogoApp from '@/shared/ui/LogoApp.vue'
 import ThemeToggle from '@/shared/ui/ThemeToggle.vue'
 import { useDismissable } from '@/shared/ui/dismissable'
+import CompanyMark from '@/shared/ui/CompanyMark.vue'
 import MainNav from './MainNav.vue'
 
 /**
@@ -28,6 +28,7 @@ const router = useRouter()
 const companyName = computed(
   () => session.session?.company?.nombre_comercial ?? session.session?.company?.razon_social ?? '',
 )
+const companyLogo = computed(() => session.session?.company?.logo_url ?? null)
 const draft = useSaleDraftStore()
 const roleLabel = computed(() => (session.role === 'company_admin' ? 'Administrador' : 'Vendedor'))
 
@@ -118,7 +119,7 @@ async function logout() {
         </svg>
       </button>
       <RouterLink to="/" class="flex min-w-0 items-center gap-2 rounded-lg">
-        <LogoApp :size="30" />
+        <CompanyMark :logo-url="companyLogo" :company-name="companyName" :size="30" />
         <span class="truncate font-semibold text-ink">{{ companyName }}</span>
       </RouterLink>
     </header>
@@ -142,10 +143,10 @@ async function logout() {
       :class="[open ? 'translate-x-0 shadow-xl' : '-translate-x-full', collapsed ? 'lg:w-18' : 'lg:w-64']"
     >
       <div class="flex items-center gap-3 border-b border-line px-4 py-4" :class="collapsed && 'lg:flex-col lg:gap-2 lg:px-0'">
-        <RouterLink to="/" class="shrink-0 rounded-xl"><LogoApp :size="40" /></RouterLink>
+        <RouterLink to="/" class="shrink-0 rounded-xl"><CompanyMark :logo-url="companyLogo" :company-name="companyName" :size="40" /></RouterLink>
         <div class="min-w-0 flex-1" :class="collapsed && 'lg:hidden'">
           <p class="truncate font-semibold text-ink">{{ companyName }}</p>
-          <p class="truncate text-xs text-ink-muted">Facturación electrónica</p>
+          <p class="truncate text-xs text-ink-muted">Comprobante Digital</p>
         </div>
         <button
           type="button"
