@@ -20,7 +20,7 @@ describe('PlatformLayout', () => {
 
     // El montaje de prueba vuelve a pintar el layout en su RouterView: basta la primera navegación.
     const links = wrapper.findAll('nav[aria-label="Plataforma"]')[0]!.findAll('a')
-    expect(links.map((a) => a.text())).toEqual(['Empresas', 'Soporte', 'Auditoría'])
+    expect(links.map((a) => a.text())).toEqual(['Empresas', 'Soporte', 'Consultas', 'Auditoría'])
     expect(links.filter((a) => a.attributes('aria-current') === 'page').map((a) => a.text())).toEqual(['Soporte'])
     expect(wrapper.text()).not.toContain('Vender')
     expect(wrapper.text()).toContain('Raúl')

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { computed, ref } from 'vue'
+
+import { ApiError } from '@/core/api/errors'
+import { computed, ref, watch } from 'vue'
 
 import { useApiForm } from '@/shared/composables/useApiForm'
 import BaseAlert from '@/shared/ui/BaseAlert.vue'
@@ -11,12 +13,21 @@ import BaseSelect from '@/shared/ui/BaseSelect.vue'
 import FormField from '@/shared/ui/FormField.vue'
 import PilotNotice from '@/shared/ui/PilotNotice.vue'
 import SearchInput from '@/shared/ui/SearchInput.vue'
+import { documentKind } from '@/shared/utils/documents'
 import { customersApi } from '../api'
-import type { Customer, CustomerDocumentType, CustomerForm } from '../types'
+import { useDocumentLookup } from '../composables/useDocumentLookup'
+import type { Customer, CustomerDocumentType, CustomerForm, LookupResult } from '../types'
+import CustomerVerifiedBadge from './CustomerVerifiedBadge.vue'
+import RucStatusAlert from './RucStatusAlert.vue'
 
 /**
  * Buscar o registrar al cliente sin salir de «Vender» (HU-5, A-34). Con
  * `requireRuc` (factura) solo se pueden elegir clientes con RUC.
+ *
+ * Un DNI o RUC completo se consulta (spec 018): en la empresa, en la tabla
+ * común o en RENIEC/SUNAT, y el cliente queda elegido solo (CE-001). Si no
+ * aparece, se dice por qué y se registra a mano sin perder la venta (RF-010).
+ * Un texto busca por nombre, como siempre.
  */
 const props = withDefaults(defineProps<{ requireRuc?: boolean }>(), { requireRuc: false })
 const customer = defineModel<Customer | null>({ default: null })
@@ -40,14 +51,61 @@ const documentOptions = computed<{ value: CustomerDocumentType; label: string }[
 
 const runSearch = useDebounceFn(async () => {
   const term = search.value.trim()
-  results.value = term ? await customersApi.search(term).catch(() => []) : []
+  // Un DNI o RUC completo lo resuelve la consulta, no la búsqueda por nombre.
+  results.value = term && !documentKind(term) ? await customersApi.search(term).catch(() => []) : []
 }, 250)
+
+const { state: lookup } = useDocumentLookup(search, { lookup: customersApi.lookup, requireRuc: () => props.requireRuc })
+
+/** Por qué no se encontró o no se verificó, dicho para quien atiende. */
+function reasonText(reason: NonNullable<LookupResult['reason']>, kind: 'dni' | 'ruc'): string {
+  const where = kind === 'dni' ? 'ese DNI en RENIEC' : 'ese RUC en SUNAT'
+  return {
+    not_found: `No encontramos ${where}.`,
+    unavailable: 'El servicio de consulta no responde.',
+    quota: 'Se acabaron las consultas automáticas de hoy.',
+    disabled: 'La consulta automática no está disponible.',
+  }[reason]
+}
+
+/** El cliente elegido es manual y no se pudo verificar: el motivo queda a la vista. */
+const unverifiedNote = ref<string | null>(null)
+
+watch(lookup, (state) => {
+  if (state.status !== 'found') return
+  const kind = state.customer.document_type === '6' ? 'ruc' : 'dni'
+  choose(state.customer)
+  unverifiedNote.value = state.reason ? `${reasonText(state.reason, kind)} Se usa el cliente registrado a mano.` : null
+})
 
 function selectable(c: Customer): boolean {
   return !props.requireRuc || c.document_type === '6'
 }
 
+/** «Actualizar datos» (HU-3): el cliente de la venta pasa a tener los datos al día. */
+const refreshing = ref(false)
+const refreshMessage = ref<{ ok: boolean; text: string } | null>(null)
+
+async function refresh() {
+  if (!customer.value) return
+  refreshing.value = true
+  refreshMessage.value = null
+  try {
+    const updated = await customersApi.refresh(customer.value.id)
+    customer.value = updated
+    unverifiedNote.value = null
+    refreshMessage.value = { ok: true, text: 'Datos actualizados.' }
+  } catch (e) {
+    if (!(e instanceof ApiError)) throw e
+    refreshMessage.value = { ok: false, text: e.message }
+  } finally {
+    refreshing.value = false
+  }
+}
+
 function choose(c: Customer) {
+  refreshMessage.value = null
+  unverifiedNote.value = null
   customer.value = c
   search.value = ''
   results.value = []
@@ -71,12 +129,34 @@ async function save() {
 
 <template>
   <div data-test="customer-picker">
-    <div v-if="customer" class="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 py-2" data-test="selected-customer">
-      <p class="min-w-0 text-sm">
-        <span class="block truncate font-medium">{{ customer.name }}</span>
-        <span class="text-xs text-ink-muted">{{ customer.document_type_label }} {{ customer.document_number }}</span>
-      </p>
-      <button type="button" class="min-h-11 shrink-0 text-sm font-medium text-brand-700" @click="customer = null">Cambiar</button>
+    <div v-if="customer" class="space-y-2 rounded-lg border border-line bg-surface px-3 py-2" data-test="selected-customer">
+      <div class="flex items-center justify-between gap-3">
+        <p class="min-w-0 text-sm">
+          <span class="flex flex-wrap items-center gap-2">
+            <span class="min-w-0 truncate font-medium">{{ customer.name }}</span>
+            <CustomerVerifiedBadge :customer="customer" />
+          </span>
+          <span class="block text-xs text-ink-muted">{{ customer.document_type_label }} {{ customer.document_number }}</span>
+          <span v-if="customer.address" class="block truncate text-xs text-ink-muted" data-test="selected-address">{{ customer.address }}</span>
+        </p>
+        <button type="button" class="min-h-11 shrink-0 text-sm font-medium text-brand-700" @click="customer = null">Cambiar</button>
+      </div>
+      <p v-if="unverifiedNote" class="text-xs text-ink-muted" data-test="unverified-note">{{ unverifiedNote }}</p>
+      <RucStatusAlert :customer="customer" />
+      <div v-if="customer.document_type === '1' || customer.document_type === '6'" class="flex flex-wrap items-center gap-x-3">
+        <button
+          type="button"
+          class="min-h-11 text-sm font-medium text-brand-700 disabled:opacity-50"
+          :disabled="refreshing"
+          data-test="refresh-customer"
+          @click="refresh"
+        >
+          {{ refreshing ? 'Actualizando…' : 'Actualizar datos' }}
+        </button>
+        <p v-if="refreshMessage" role="status" class="text-xs" :class="refreshMessage.ok ? 'text-success-700' : 'text-danger-700'" data-test="refresh-message">
+          {{ refreshMessage.text }}
+        </p>
+      </div>
     </div>
 
     <template v-else>
@@ -89,6 +169,21 @@ async function save() {
         @input="runSearch"
         @clear="runSearch"
       />
+      <!-- La consulta y su resultado se anuncian sin mover el foco. -->
+      <div aria-live="polite" data-test="lookup-status">
+        <p v-if="lookup.status === 'searching'" class="mt-2 text-sm text-ink-muted">
+          Buscando en {{ lookup.kind === 'dni' ? 'RENIEC' : 'SUNAT' }}…
+        </p>
+        <p v-else-if="lookup.status === 'invalid'" class="mt-2 text-sm text-danger-700">{{ lookup.message }}</p>
+        <div v-else-if="lookup.status === 'missing' || lookup.status === 'offline'" class="mt-2 rounded-lg bg-subtle p-3 text-sm">
+          <p>
+            <template v-if="lookup.status === 'offline'">Sin conexión: la consulta del DNI o RUC necesita internet.</template>
+            <template v-else>{{ reasonText(lookup.reason, lookup.kind) }}</template>
+            Puedes registrarlo a mano.
+          </p>
+          <BaseButton variant="secondary" class="mt-2" data-test="register-manually" @click="openDialog">Registrar a mano</BaseButton>
+        </div>
+      </div>
       <ul v-if="results.length" class="mt-2 divide-y divide-line rounded-xl border border-line bg-surface" data-test="customer-results">
         <li v-for="c in results" :key="c.id">
           <button

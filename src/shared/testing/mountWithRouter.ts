@@ -31,6 +31,7 @@ const namedStubs: RouteRecordRaw[] = [
   'platform-company-create',
   'platform-support',
   'platform-audit',
+  'platform-lookups',
   'sunat',
   'series',
   'data-transfer',

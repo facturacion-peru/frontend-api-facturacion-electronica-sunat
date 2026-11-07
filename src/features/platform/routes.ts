@@ -6,5 +6,6 @@ export const platformRoutes: RouteRecordRaw[] = [
   { path: 'empresas/nueva', name: 'platform-company-create', component: () => import('./views/NewCompanyView.vue'), meta: { title: 'Nueva empresa' } },
   { path: 'empresas/:id', name: 'platform-company', component: () => import('./views/CompanyDetailView.vue'), meta: { title: 'Empresa' } },
   { path: 'soporte', name: 'platform-support', component: () => import('./views/SupportView.vue'), meta: { title: 'Soporte de la emisión' } },
+  { path: 'consultas', name: 'platform-lookups', component: () => import('./views/LookupUsageView.vue'), meta: { title: 'Consultas DNI/RUC' } },
   { path: 'auditoria', name: 'platform-audit', component: () => import('./views/PlatformAuditView.vue'), meta: { title: 'Auditoría de la plataforma' } },
 ]

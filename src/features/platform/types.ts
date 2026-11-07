@@ -116,3 +116,13 @@ export const auditActionLabels: Record<string, string> = {
   'sales_document.retry_requested': 'Reintento de envío',
   'sales_document.status_changed': 'Respuesta de SUNAT',
 }
+
+/** Uso diario del servicio de consulta de DNI y RUC (spec 018, HU-4); sin números de documento. */
+export interface LookupUsageDay {
+  date: string
+  total: number
+  found: number
+  not_found: number
+  /** Servicio caído o sin cupo. */
+  failed: number
+}

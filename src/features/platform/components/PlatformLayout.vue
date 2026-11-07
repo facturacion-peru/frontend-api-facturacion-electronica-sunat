@@ -12,6 +12,7 @@ const router = useRouter()
 const links = [
   { to: { name: 'platform-companies' }, label: 'Empresas', prefix: ['/plataforma', '/plataforma/empresas'] },
   { to: { name: 'platform-support' }, label: 'Soporte', prefix: ['/plataforma/soporte'] },
+  { to: { name: 'platform-lookups' }, label: 'Consultas', prefix: ['/plataforma/consultas'] },
   { to: { name: 'platform-audit' }, label: 'Auditoría', prefix: ['/plataforma/auditoria'] },
 ]
 
